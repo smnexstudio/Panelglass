@@ -1,0 +1,38 @@
+# Build and unit tests for every pull request into main and every push to main.
+# Nothing is published from here: no signing secrets are available to this workflow.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Gradle daemon must run on JDK 21 (gradle/gradle-daemon-jvm.properties).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # :core:model is plain Kotlin: its tests run under `test`, which testDebugUnitTest does not include.
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest :core:model:test --no-configuration-cache
+
+      - name: Debug build
+        run: ./gradlew assembleDebug --no-configuration-cache

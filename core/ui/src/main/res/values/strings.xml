@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every user-visible string of the app, in one place for translators: feature modules read them as
+  com.smnexstudio.panelglass.core.ui.R.string.*. Translations live in values-<lang>/strings.xml.
+  Product, engine, model and font names (Panelglass, Gemini, Qwen, Coming Soon...) are not translated.
+-->
+<resources>
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_download">Download</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_save">Save</string>
+    <string name="action_add">Add</string>
+    <string name="action_add_key">Add key</string>
+    <string name="action_use_google_translate">Use Google Translate</string>
+    <string name="action_use_on_device">Use on-device</string>
+
+    <!-- Accessibility labels -->
+    <string name="cd_selected">Selected</string>
+    <string name="cd_select_engine">Select %1$s</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_more">More options</string>
+    <string name="cd_dismiss">Dismiss</string>
+    <string name="cd_remove">Remove</string>
+    <string name="cd_logo">Panelglass logo</string>
+    <string name="cd_pin">Pin</string>
+    <string name="cd_unpin">Unpin</string>
+
+    <!-- Navigation -->
+    <string name="nav_sites">Sites</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Languages -->
+    <string name="lang_source">Source language</string>
+    <string name="lang_target">Target language</string>
+    <string name="lang_translate_from">From</string>
+    <string name="lang_translate_to">To</string>
+    <!-- A site that follows the app-wide language; %1$s is the language name -->
+    <string name="lang_default">%1$s (default)</string>
+
+    <!-- Shared section titles -->
+    <string name="section_translation">Translation</string>
+    <string name="section_browsing">Browsing</string>
+    <string name="block_ads">Block ads and popups</string>
+    <string name="qwen_backend">Qwen runs on</string>
+    <string name="qwen_backend_auto">Automatic · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">CPU on phones with less than %1$d GB of RAM, GPU otherwise</string>
+    <string name="qwen_backend_gpu_note">About 3× faster; needs about 3 GB of free memory</string>
+    <string name="qwen_backend_cpu_note">About 3× slower; needs much less memory</string>
+
+    <!-- Library -->
+    <string name="library_subtitle">Your reading list</string>
+    <string name="library_search">Search sites or enter a URL</string>
+    <string name="library_pinned">Pinned</string>
+    <string name="library_all_sites">All sites</string>
+    <string name="library_add_site_row">+ Add site</string>
+    <string name="library_empty">No sites yet. Add the comic sites you read; Panelglass never ships a default list.</string>
+    <string name="site_add_title">Add site</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">Name</string>
+    <string name="site_name_optional">Name (optional)</string>
+    <string name="site_read_in">Read in</string>
+    <string name="site_read">Read</string>
+    <string name="site_pin_to_top">Pin to top</string>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_empty">Pages you read appear here.</string>
+
+    <!-- Reader -->
+    <string name="reader_adblock_on">Ad blocking on</string>
+    <string name="reader_adblock_off">Ad blocking off</string>
+    <string name="reader_reload">Reload</string>
+    <string name="reader_adblock_turn_off">Turn off ad blocking here</string>
+    <string name="reader_adblock_turn_on">Turn on ad blocking here</string>
+    <string name="reader_retranslate">Re-translate</string>
+    <string name="reader_add_to_sites">Add to sites</string>
+    <plurals name="reader_blocked">
+        <item quantity="one">%d request blocked on this page</item>
+        <item quantity="other">%d requests blocked on this page</item>
+    </plurals>
+    <string name="reader_translating">Translating screen…</string>
+    <plurals name="reader_patches">
+        <item quantity="one">Screen translation on · %d patch</item>
+        <item quantity="other">Screen translation on · %d patches</item>
+    </plurals>
+    <string name="reader_start">Start</string>
+    <string name="reader_stop">Stop</string>
+    <string name="reader_screen_translated">Screen translated</string>
+    <string name="reader_capture_failed">Could not capture the page</string>
+
+    <!-- Engine failures; %1$s is an engine name such as Gemini -->
+    <string name="error_needs_key">%1$s needs an API key</string>
+    <string name="error_quota">%1$s quota exhausted</string>
+    <string name="error_unavailable_now">%1$s is unavailable right now</string>
+    <string name="error_unavailable">%1$s is unavailable</string>
+    <string name="error_rate_limited">%1$s is rate limited; try again shortly</string>
+    <string name="error_overloaded">%1$s is overloaded right now; try again, or pick another model</string>
+    <string name="error_overloaded_scroll">%1$s is overloaded right now; scroll or Re-translate to retry</string>
+    <string name="error_malformed">%1$s returned an unusable reply</string>
+    <string name="error_network">Network error reaching %1$s</string>
+    <string name="error_too_long">%1$s took too long</string>
+    <string name="error_failed">%1$s failed</string>
+    <string name="error_translation_failed">Translation failed</string>
+    <string name="error_model_missing">The on-device model is not downloaded yet</string>
+    <!-- A message followed by the provider's own reason, e.g. "Gemini is unavailable (quota)" -->
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <!-- Engines -->
+    <!-- An on-device model name, e.g. "Qwen 2.5 1.5B (on-device)" -->
+    <string name="engine_on_device">%1$s (on-device)</string>
+    <string name="picker_title">Select engine</string>
+    <string name="picker_subtitle">Choose the engine for this translation</string>
+    <string name="picker_local">On this device · download the model in Settings</string>
+    <string name="picker_local_ready">On this device · downloaded</string>
+    <string name="picker_google">Free · on this device · language packs download once</string>
+    <string name="picker_custom_keys">Custom keys (no quota usage)</string>
+    <string name="picker_set_key">Tap to set API key</string>
+    <string name="picker_model_not_set">Model not set</string>
+    <!-- %1$s is a model id such as gemini-flash-latest -->
+    <string name="picker_key_saved">%1$s · key saved · tap to change</string>
+
+    <!-- API key dialog -->
+    <string name="key_title">%1$s key</string>
+    <string name="key_hint">API key</string>
+    <string name="key_hint_saved">API key (saved · leave empty to keep)</string>
+    <string name="key_model">Model</string>
+    <string name="key_models_loading">Loading models…</string>
+    <plurals name="key_models_count">
+        <item quantity="one">%d model for this key</item>
+        <item quantity="other">%d models for this key</item>
+    </plurals>
+    <string name="key_models_hint">Model list loads from your key</string>
+    <string name="key_refresh">Refresh list</string>
+    <string name="key_note">Stored encrypted on this device. Requests using this key go straight to %1$s — Panelglass never sees or stores your traffic.</string>
+    <string name="key_remove">Remove key</string>
+    <string name="key_models_error_key">Enter a valid key to list models</string>
+    <string name="key_models_error_network">Could not reach %1$s to list models</string>
+    <string name="key_models_error">Could not list models</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_translation_model">Translation model</string>
+    <string name="settings_try">Try a translation</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_fonts">Fonts</string>
+    <string name="settings_models">Models</string>
+    <string name="settings_keys_note">Keys are encrypted on this device and never leave it except to the provider you chose.</string>
+    <string name="settings_storage">Storage</string>
+    <string name="settings_history">Browsing history</string>
+    <string name="settings_history_clear">Clear recorded visit history</string>
+    <string name="blocklist_none">Lists not downloaded yet</string>
+    <string name="blocklist_now">Lists updated just now</string>
+    <plurals name="blocklist_hours">
+        <item quantity="one">Lists updated %d hour ago</item>
+        <item quantity="other">Lists updated %d hours ago</item>
+    </plurals>
+
+    <!-- Themes (Panel Pop, Soft Bloom and Paper & Ink are names and stay as they are) -->
+    <string name="theme_default">Default</string>
+    <string name="theme_tag_default">Signature yellow</string>
+    <string name="theme_tag_panel_pop">Comic · bold outlines</string>
+    <string name="theme_tag_soft_bloom">Pastel · soft diffused</string>
+    <string name="theme_tag_paper_ink">Editorial · minimal</string>
+
+    <!-- Try box -->
+    <string name="try_source_text">Source text</string>
+    <string name="try_translate">Translate</string>
+    <!-- Which engine produced the translation, e.g. "via Gemini · gemini-flash-latest · 812 ms" -->
+    <string name="try_via">via %1$s</string>
+
+    <!-- Downloadable models; %1$s is a technical name such as LiteRT-LM or manga-ocr -->
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">needs %1$d GB RAM</string>
+    <string name="model_manga_ocr">Japanese manga OCR</string>
+    <string name="model_manga_ready">used for Japanese bubbles</string>
+    <string name="model_manga_missing">reads vertical Japanese bubbles far better than the default</string>
+    <string name="model_missing">%1$s · not on this device · %2$s</string>
+    <!-- %2$s is a status such as "downloading", %3$s and %4$s are sizes such as "120 MB" -->
+    <string name="model_downloading">%1$s · %2$s · %3$s of %4$s · continues in the background</string>
+    <string name="model_ready">%1$s · ready · %2$s</string>
+    <string name="model_failed">%1$s · failed · %2$s</string>
+    <string name="download_downloading">downloading</string>
+    <string name="download_checking">checking the file</string>
+    <string name="download_waiting_network">waiting for network</string>
+    <string name="download_retrying">connection lost, retrying</string>
+    <string name="download_waiting_wifi">waiting for Wi-Fi</string>
+    <string name="download_paused">paused</string>
+    <string name="download_corrupt">File failed its integrity check; tap Retry</string>
+    <string name="download_no_space">Not enough storage</string>
+    <string name="download_no_storage">Storage unavailable</string>
+    <string name="download_refused">Server refused the download</string>
+    <string name="download_connection_failed">Connection failed; tap Retry</string>
+    <string name="download_incomplete">Download incomplete; tap Retry</string>
+    <string name="download_failed">Download failed</string>
+
+    <!-- Google Translate language packs -->
+    <string name="packs_title">Google Translate language packs</string>
+    <string name="packs_downloading">Downloading %1$s · %2$d of %3$d</string>
+    <string name="packs_failed">%1$s · %2$d of %3$d downloaded</string>
+    <string name="packs_complete">All %1$d languages ready · works offline</string>
+    <string name="packs_none">None downloaded · fetched per language on first use · ~30 MB each</string>
+    <string name="packs_some">%1$d of %2$d downloaded</string>
+    <string name="packs_download_all">Download all</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">App language</string>
+    <string name="app_language">Language</string>
+    <string name="reader_translate_page">Translate page</string>
+    <string name="pt_detect">Detect language</string>
+    <string name="pt_detected">%1$s (detected)</string>
+    <string name="pt_detecting">Detecting the language…</string>
+    <string name="pt_downloading">Getting language packs…</string>
+    <string name="pt_translating">Translating the page…</string>
+    <string name="pt_done">Page translated</string>
+    <string name="pt_same">This page is already in %1$s</string>
+    <string name="pt_undetected">Couldn\'t tell the page\'s language. Pick it in the first list.</string>
+    <string name="pt_failed">Couldn\'t translate this page. Check your connection and try again.</string>
+    <string name="pt_show_original">Show original</string>
+    <string name="pt_translate">Translate</string>
+    <string name="pt_source">Translate from</string>
+    <string name="pt_target">Translate to</string>
+    <string name="pt_original">Showing the original</string>
+    <string name="cd_close_translate_bar">Close the translation bar</string>
+</resources>

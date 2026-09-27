@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">キャンセル</string>
+    <string name="action_delete">削除</string>
+    <string name="action_retry">再試行</string>
+    <string name="action_download">ダウンロード</string>
+    <string name="action_clear">消去</string>
+    <string name="action_save">保存</string>
+    <string name="action_add">追加</string>
+    <string name="action_add_key">キーを追加</string>
+    <string name="action_use_google_translate">Google 翻訳を使う</string>
+    <string name="action_use_on_device">端末上で翻訳</string>
+
+    <string name="cd_selected">選択中</string>
+    <string name="cd_select_engine">%1$s を選択</string>
+    <string name="cd_back">戻る</string>
+    <string name="cd_more">その他のオプション</string>
+    <string name="cd_dismiss">閉じる</string>
+    <string name="cd_remove">削除</string>
+    <string name="cd_logo">Panelglass のロゴ</string>
+    <string name="cd_pin">ピン留め</string>
+    <string name="cd_unpin">ピン留めを解除</string>
+
+    <string name="nav_sites">サイト</string>
+    <string name="nav_history">履歴</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="lang_source">翻訳元の言語</string>
+    <string name="lang_target">翻訳先の言語</string>
+    <string name="lang_translate_from">翻訳元</string>
+    <string name="lang_translate_to">翻訳先</string>
+    <string name="lang_default">%1$s（デフォルト）</string>
+
+    <string name="section_translation">翻訳</string>
+    <string name="section_browsing">ブラウジング</string>
+    <string name="block_ads">広告とポップアップをブロック</string>
+    <string name="qwen_backend">Qwen の実行先</string>
+    <string name="qwen_backend_auto">自動 · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">RAM が %1$d GB 未満の端末は CPU、それ以外は GPU</string>
+    <string name="qwen_backend_gpu_note">約 3 倍高速。約 3 GB の空きメモリが必要</string>
+    <string name="qwen_backend_cpu_note">約 3 倍低速。メモリ使用量は大幅に少ない</string>
+
+    <string name="library_subtitle">読書リスト</string>
+    <string name="library_search">サイトを検索、または URL を入力</string>
+    <string name="library_pinned">ピン留め</string>
+    <string name="library_all_sites">すべてのサイト</string>
+    <string name="library_add_site_row">+ サイトを追加</string>
+    <string name="library_empty">まだサイトがありません。読んでいるコミックサイトを追加してください。Panelglass にはサイトの初期リストはありません。</string>
+    <string name="site_add_title">サイトを追加</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">名前</string>
+    <string name="site_name_optional">名前（任意）</string>
+    <string name="site_read_in">読む言語</string>
+    <string name="site_read">読む</string>
+    <string name="site_pin_to_top">上部にピン留め</string>
+
+    <string name="history_title">履歴</string>
+    <string name="history_empty">読んだページがここに表示されます。</string>
+
+    <string name="reader_adblock_on">広告ブロック オン</string>
+    <string name="reader_adblock_off">広告ブロック オフ</string>
+    <string name="reader_reload">再読み込み</string>
+    <string name="reader_adblock_turn_off">このサイトで広告ブロックをオフ</string>
+    <string name="reader_adblock_turn_on">このサイトで広告ブロックをオン</string>
+    <string name="reader_retranslate">再翻訳</string>
+    <string name="reader_add_to_sites">サイトに追加</string>
+    <plurals name="reader_blocked">
+        <item quantity="other">このページで %d 件のリクエストをブロックしました</item>
+    </plurals>
+    <string name="reader_translating">画面を翻訳中…</string>
+    <plurals name="reader_patches">
+        <item quantity="other">画面翻訳 オン · %d 件</item>
+    </plurals>
+    <string name="reader_start">開始</string>
+    <string name="reader_stop">停止</string>
+    <string name="reader_screen_translated">画面を翻訳しました</string>
+    <string name="reader_capture_failed">ページを取得できませんでした</string>
+
+    <string name="error_needs_key">%1$s には API キーが必要です</string>
+    <string name="error_quota">%1$s の利用上限に達しました</string>
+    <string name="error_unavailable_now">%1$s は現在利用できません</string>
+    <string name="error_unavailable">%1$s を利用できません</string>
+    <string name="error_rate_limited">%1$s のリクエストが多すぎます。しばらくしてからお試しください</string>
+    <string name="error_overloaded">%1$s は現在混雑しています。再試行するか、別のモデルを選んでください</string>
+    <string name="error_overloaded_scroll">%1$s は現在混雑しています。スクロールするか再翻訳してください</string>
+    <string name="error_malformed">%1$s から使用できない応答が返されました</string>
+    <string name="error_network">%1$s への接続でネットワークエラーが発生しました</string>
+    <string name="error_too_long">%1$s の処理に時間がかかりすぎました</string>
+    <string name="error_failed">%1$s でエラーが発生しました</string>
+    <string name="error_translation_failed">翻訳に失敗しました</string>
+    <string name="error_model_missing">端末上のモデルがまだダウンロードされていません</string>
+    <string name="error_with_reason">%1$s（%2$s）</string>
+
+    <string name="engine_on_device">%1$s（端末上）</string>
+    <string name="picker_title">エンジンを選択</string>
+    <string name="picker_subtitle">翻訳に使うエンジンを選んでください</string>
+    <string name="picker_local">この端末で実行 · 設定でモデルをダウンロード</string>
+    <string name="picker_local_ready">この端末で実行 · ダウンロード済み</string>
+    <string name="picker_google">無料 · この端末で実行 · 言語パックは初回のみダウンロード</string>
+    <string name="picker_custom_keys">自分のキー（割り当ては消費しません）</string>
+    <string name="picker_set_key">タップして API キーを設定</string>
+    <string name="picker_model_not_set">モデル未設定</string>
+    <string name="picker_key_saved">%1$s · キー保存済み · タップして変更</string>
+
+    <string name="key_title">%1$s のキー</string>
+    <string name="key_hint">API キー</string>
+    <string name="key_hint_saved">API キー（保存済み · 空欄のままで維持）</string>
+    <string name="key_model">モデル</string>
+    <string name="key_models_loading">モデルを読み込み中…</string>
+    <plurals name="key_models_count">
+        <item quantity="other">このキーで使えるモデル: %d 件</item>
+    </plurals>
+    <string name="key_models_hint">モデルの一覧はキーから読み込まれます</string>
+    <string name="key_refresh">一覧を更新</string>
+    <string name="key_note">この端末に暗号化して保存されます。このキーを使うリクエストは %1$s に直接送られ、Panelglass が通信内容を見たり保存したりすることはありません。</string>
+    <string name="key_remove">キーを削除</string>
+    <string name="key_models_error_key">モデルを表示するには有効なキーを入力してください</string>
+    <string name="key_models_error_network">%1$s に接続できず、モデルを取得できませんでした</string>
+    <string name="key_models_error">モデルの一覧を取得できませんでした</string>
+
+    <string name="settings_title">設定</string>
+    <string name="settings_translation_model">翻訳モデル</string>
+    <string name="settings_try">翻訳を試す</string>
+    <string name="settings_theme">テーマ</string>
+    <string name="settings_fonts">フォント</string>
+    <string name="settings_models">モデル</string>
+    <string name="settings_keys_note">キーはこの端末に暗号化して保存され、選んだプロバイダ以外に送信されることはありません。</string>
+    <string name="settings_storage">ストレージ</string>
+    <string name="settings_history">閲覧履歴</string>
+    <string name="settings_history_clear">記録された閲覧履歴を消去</string>
+    <string name="blocklist_none">リストはまだダウンロードされていません</string>
+    <string name="blocklist_now">リストはたった今更新されました</string>
+    <plurals name="blocklist_hours">
+        <item quantity="other">リストは %d 時間前に更新されました</item>
+    </plurals>
+
+    <string name="theme_default">デフォルト</string>
+    <string name="theme_tag_default">シグネチャーイエロー</string>
+    <string name="theme_tag_panel_pop">コミック · 太い輪郭線</string>
+    <string name="theme_tag_soft_bloom">パステル · やわらかい光</string>
+    <string name="theme_tag_paper_ink">エディトリアル · ミニマル</string>
+
+    <string name="try_source_text">原文</string>
+    <string name="try_translate">翻訳</string>
+    <string name="try_via">%1$s で翻訳</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">RAM %1$d GB が必要</string>
+    <string name="model_manga_ocr">日本語マンガ OCR</string>
+    <string name="model_manga_ready">日本語の吹き出しに使用</string>
+    <string name="model_manga_missing">縦書きの日本語の吹き出しを標準よりはるかに正確に読み取ります</string>
+    <string name="model_missing">%1$s · この端末にありません · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s / %4$s · バックグラウンドで続行します</string>
+    <string name="model_ready">%1$s · 準備完了 · %2$s</string>
+    <string name="model_failed">%1$s · 失敗 · %2$s</string>
+    <string name="download_downloading">ダウンロード中</string>
+    <string name="download_checking">ファイルを確認中</string>
+    <string name="download_waiting_network">ネットワークを待機中</string>
+    <string name="download_retrying">接続が切れました。再試行中</string>
+    <string name="download_waiting_wifi">Wi-Fi を待機中</string>
+    <string name="download_paused">一時停止中</string>
+    <string name="download_corrupt">ファイルの整合性チェックに失敗しました。再試行をタップしてください</string>
+    <string name="download_no_space">ストレージの空き容量が不足しています</string>
+    <string name="download_no_storage">ストレージを利用できません</string>
+    <string name="download_refused">サーバーがダウンロードを拒否しました</string>
+    <string name="download_connection_failed">接続に失敗しました。再試行をタップしてください</string>
+    <string name="download_incomplete">ダウンロードが完了していません。再試行をタップしてください</string>
+    <string name="download_failed">ダウンロードに失敗しました</string>
+
+    <string name="packs_title">Google 翻訳の言語パック</string>
+    <string name="packs_downloading">%1$s をダウンロード中 · %2$d / %3$d</string>
+    <string name="packs_failed">%1$s · %2$d / %3$d ダウンロード済み</string>
+    <string name="packs_complete">全 %1$d 言語の準備完了 · オフラインで動作</string>
+    <string name="packs_none">未ダウンロード · 各言語の初回使用時に取得 · 1 言語あたり約 30 MB</string>
+    <string name="packs_some">%1$d / %2$d ダウンロード済み</string>
+    <string name="packs_download_all">すべてダウンロード</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">アプリの言語</string>
+    <string name="app_language">言語</string>
+    <string name="reader_translate_page">ページを翻訳</string>
+    <string name="pt_detect">言語を検出</string>
+    <string name="pt_detected">%1$s（検出）</string>
+    <string name="pt_detecting">言語を検出しています…</string>
+    <string name="pt_downloading">言語パックを取得しています…</string>
+    <string name="pt_translating">ページを翻訳しています…</string>
+    <string name="pt_done">ページを翻訳しました</string>
+    <string name="pt_same">このページはすでに%1$sです</string>
+    <string name="pt_undetected">ページの言語を判別できませんでした。最初のリストで選んでください。</string>
+    <string name="pt_failed">このページを翻訳できませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="pt_show_original">原文を表示</string>
+    <string name="pt_translate">翻訳</string>
+    <string name="pt_source">翻訳元</string>
+    <string name="pt_target">翻訳先</string>
+    <string name="pt_original">原文を表示しています</string>
+    <string name="cd_close_translate_bar">翻訳バーを閉じる</string>
+</resources>

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">Batal</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_retry">Coba lagi</string>
+    <string name="action_download">Unduh</string>
+    <string name="action_clear">Hapus</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_add">Tambah</string>
+    <string name="action_add_key">Tambah kunci</string>
+    <string name="action_use_google_translate">Gunakan Google Terjemahan</string>
+    <string name="action_use_on_device">Terjemahkan di perangkat</string>
+
+    <string name="cd_selected">Dipilih</string>
+    <string name="cd_select_engine">Pilih %1$s</string>
+    <string name="cd_back">Kembali</string>
+    <string name="cd_more">Opsi lainnya</string>
+    <string name="cd_dismiss">Tutup</string>
+    <string name="cd_remove">Hapus</string>
+    <string name="cd_logo">Logo Panelglass</string>
+    <string name="cd_pin">Sematkan</string>
+    <string name="cd_unpin">Lepas sematan</string>
+
+    <string name="nav_sites">Situs</string>
+    <string name="nav_history">Riwayat</string>
+    <string name="nav_settings">Setelan</string>
+
+    <string name="lang_source">Bahasa sumber</string>
+    <string name="lang_target">Bahasa tujuan</string>
+    <string name="lang_translate_from">Dari</string>
+    <string name="lang_translate_to">Ke</string>
+    <string name="lang_default">%1$s (default)</string>
+
+    <string name="section_translation">Terjemahan</string>
+    <string name="section_browsing">Penjelajahan</string>
+    <string name="block_ads">Blokir iklan dan pop-up</string>
+    <string name="qwen_backend">Qwen berjalan di</string>
+    <string name="qwen_backend_auto">Otomatis · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">CPU pada ponsel dengan RAM kurang dari %1$d GB, selain itu GPU</string>
+    <string name="qwen_backend_gpu_note">Sekitar 3× lebih cepat; butuh sekitar 3 GB memori kosong</string>
+    <string name="qwen_backend_cpu_note">Sekitar 3× lebih lambat; memakai memori jauh lebih sedikit</string>
+
+    <string name="library_subtitle">Daftar bacaan Anda</string>
+    <string name="library_search">Cari situs atau masukkan URL</string>
+    <string name="library_pinned">Disematkan</string>
+    <string name="library_all_sites">Semua situs</string>
+    <string name="library_add_site_row">+ Tambah situs</string>
+    <string name="library_empty">Belum ada situs. Tambahkan situs komik yang Anda baca; Panelglass tidak pernah menyertakan daftar bawaan.</string>
+    <string name="site_add_title">Tambah situs</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">Nama</string>
+    <string name="site_name_optional">Nama (opsional)</string>
+    <string name="site_read_in">Baca dalam</string>
+    <string name="site_read">Baca</string>
+    <string name="site_pin_to_top">Sematkan di atas</string>
+
+    <string name="history_title">Riwayat</string>
+    <string name="history_empty">Halaman yang Anda baca akan muncul di sini.</string>
+
+    <string name="reader_adblock_on">Pemblokir iklan aktif</string>
+    <string name="reader_adblock_off">Pemblokir iklan nonaktif</string>
+    <string name="reader_reload">Muat ulang</string>
+    <string name="reader_adblock_turn_off">Nonaktifkan pemblokir iklan di sini</string>
+    <string name="reader_adblock_turn_on">Aktifkan pemblokir iklan di sini</string>
+    <string name="reader_retranslate">Terjemahkan ulang</string>
+    <string name="reader_add_to_sites">Tambahkan ke situs</string>
+    <plurals name="reader_blocked">
+        <item quantity="other">%d permintaan diblokir di halaman ini</item>
+    </plurals>
+    <string name="reader_translating">Menerjemahkan layar…</string>
+    <plurals name="reader_patches">
+        <item quantity="other">Terjemahan layar aktif · %d bagian</item>
+    </plurals>
+    <string name="reader_start">Mulai</string>
+    <string name="reader_stop">Berhenti</string>
+    <string name="reader_screen_translated">Layar diterjemahkan</string>
+    <string name="reader_capture_failed">Tidak dapat mengambil gambar halaman</string>
+
+    <string name="error_needs_key">%1$s memerlukan kunci API</string>
+    <string name="error_quota">Kuota %1$s habis</string>
+    <string name="error_unavailable_now">%1$s tidak tersedia saat ini</string>
+    <string name="error_unavailable">%1$s tidak tersedia</string>
+    <string name="error_rate_limited">%1$s sedang membatasi permintaan; coba lagi sebentar lagi</string>
+    <string name="error_overloaded">%1$s sedang sibuk; coba lagi, atau pilih model lain</string>
+    <string name="error_overloaded_scroll">%1$s sedang sibuk; gulir atau terjemahkan ulang untuk mencoba lagi</string>
+    <string name="error_malformed">%1$s mengirim balasan yang tidak dapat digunakan</string>
+    <string name="error_network">Kesalahan jaringan saat menghubungi %1$s</string>
+    <string name="error_too_long">%1$s terlalu lama merespons</string>
+    <string name="error_failed">%1$s gagal</string>
+    <string name="error_translation_failed">Terjemahan gagal</string>
+    <string name="error_model_missing">Model di perangkat belum diunduh</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (di perangkat)</string>
+    <string name="picker_title">Pilih mesin</string>
+    <string name="picker_subtitle">Pilih mesin untuk terjemahan ini</string>
+    <string name="picker_local">Di perangkat ini · unduh modelnya di Setelan</string>
+    <string name="picker_local_ready">Di perangkat ini · sudah diunduh</string>
+    <string name="picker_google">Gratis · di perangkat ini · paket bahasa diunduh sekali</string>
+    <string name="picker_custom_keys">Kunci sendiri (tanpa memakai kuota)</string>
+    <string name="picker_set_key">Ketuk untuk mengatur kunci API</string>
+    <string name="picker_model_not_set">Model belum diatur</string>
+    <string name="picker_key_saved">%1$s · kunci tersimpan · ketuk untuk mengubah</string>
+
+    <string name="key_title">Kunci %1$s</string>
+    <string name="key_hint">Kunci API</string>
+    <string name="key_hint_saved">Kunci API (tersimpan · biarkan kosong untuk mempertahankan)</string>
+    <string name="key_model">Model</string>
+    <string name="key_models_loading">Memuat model…</string>
+    <plurals name="key_models_count">
+        <item quantity="other">%d model untuk kunci ini</item>
+    </plurals>
+    <string name="key_models_hint">Daftar model dimuat dari kunci Anda</string>
+    <string name="key_refresh">Muat ulang daftar</string>
+    <string name="key_note">Disimpan terenkripsi di perangkat ini. Permintaan dengan kunci ini langsung dikirim ke %1$s — Panelglass tidak pernah melihat atau menyimpan lalu lintas Anda.</string>
+    <string name="key_remove">Hapus kunci</string>
+    <string name="key_models_error_key">Masukkan kunci yang valid untuk melihat daftar model</string>
+    <string name="key_models_error_network">Tidak dapat menghubungi %1$s untuk melihat daftar model</string>
+    <string name="key_models_error">Tidak dapat memuat daftar model</string>
+
+    <string name="settings_title">Setelan</string>
+    <string name="settings_translation_model">Model terjemahan</string>
+    <string name="settings_try">Coba terjemahan</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_fonts">Font</string>
+    <string name="settings_models">Model</string>
+    <string name="settings_keys_note">Kunci dienkripsi di perangkat ini dan hanya dikirim ke penyedia yang Anda pilih.</string>
+    <string name="settings_storage">Penyimpanan</string>
+    <string name="settings_history">Riwayat penjelajahan</string>
+    <string name="settings_history_clear">Hapus riwayat kunjungan yang tercatat</string>
+    <string name="blocklist_none">Daftar belum diunduh</string>
+    <string name="blocklist_now">Daftar baru saja diperbarui</string>
+    <plurals name="blocklist_hours">
+        <item quantity="other">Daftar diperbarui %d jam lalu</item>
+    </plurals>
+
+    <string name="theme_default">Default</string>
+    <string name="theme_tag_default">Kuning khas</string>
+    <string name="theme_tag_panel_pop">Komik · garis tebal</string>
+    <string name="theme_tag_soft_bloom">Pastel · lembut berpendar</string>
+    <string name="theme_tag_paper_ink">Editorial · minimal</string>
+
+    <string name="try_source_text">Teks sumber</string>
+    <string name="try_translate">Terjemahkan</string>
+    <string name="try_via">melalui %1$s</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">memerlukan RAM %1$d GB</string>
+    <string name="model_manga_ocr">OCR manga Jepang</string>
+    <string name="model_manga_ready">dipakai untuk balon kata berbahasa Jepang</string>
+    <string name="model_manga_missing">membaca balon kata Jepang vertikal jauh lebih baik daripada pengenalan bawaan</string>
+    <string name="model_missing">%1$s · tidak ada di perangkat ini · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s dari %4$s · berlanjut di latar belakang</string>
+    <string name="model_ready">%1$s · siap · %2$s</string>
+    <string name="model_failed">%1$s · gagal · %2$s</string>
+    <string name="download_downloading">mengunduh</string>
+    <string name="download_checking">memeriksa file</string>
+    <string name="download_waiting_network">menunggu jaringan</string>
+    <string name="download_retrying">koneksi terputus, mencoba lagi</string>
+    <string name="download_waiting_wifi">menunggu Wi-Fi</string>
+    <string name="download_paused">dijeda</string>
+    <string name="download_corrupt">File gagal dalam pemeriksaan integritas; ketuk Coba lagi</string>
+    <string name="download_no_space">Ruang penyimpanan tidak cukup</string>
+    <string name="download_no_storage">Penyimpanan tidak tersedia</string>
+    <string name="download_refused">Server menolak unduhan</string>
+    <string name="download_connection_failed">Koneksi gagal; ketuk Coba lagi</string>
+    <string name="download_incomplete">Unduhan belum selesai; ketuk Coba lagi</string>
+    <string name="download_failed">Unduhan gagal</string>
+
+    <string name="packs_title">Paket bahasa Google Terjemahan</string>
+    <string name="packs_downloading">Mengunduh %1$s · %2$d dari %3$d</string>
+    <string name="packs_failed">%1$s · %2$d dari %3$d diunduh</string>
+    <string name="packs_complete">Semua %1$d bahasa siap · berfungsi offline</string>
+    <string name="packs_none">Belum ada yang diunduh · tiap bahasa diambil saat pertama dipakai · masing-masing sekitar 30 MB</string>
+    <string name="packs_some">%1$d dari %2$d diunduh</string>
+    <string name="packs_download_all">Unduh semua</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">Bahasa aplikasi</string>
+    <string name="app_language">Bahasa</string>
+    <string name="reader_translate_page">Terjemahkan halaman</string>
+    <string name="pt_detect">Deteksi bahasa</string>
+    <string name="pt_detected">%1$s (terdeteksi)</string>
+    <string name="pt_detecting">Mendeteksi bahasa…</string>
+    <string name="pt_downloading">Mengambil paket bahasa…</string>
+    <string name="pt_translating">Menerjemahkan halaman…</string>
+    <string name="pt_done">Halaman diterjemahkan</string>
+    <string name="pt_same">Halaman ini sudah dalam %1$s</string>
+    <string name="pt_undetected">Bahasa halaman tidak dikenali. Pilih di daftar pertama.</string>
+    <string name="pt_failed">Halaman ini tidak dapat diterjemahkan. Periksa koneksi, lalu coba lagi.</string>
+    <string name="pt_show_original">Tampilkan asli</string>
+    <string name="pt_translate">Terjemahkan</string>
+    <string name="pt_source">Terjemahkan dari</string>
+    <string name="pt_target">Terjemahkan ke</string>
+    <string name="pt_original">Menampilkan versi asli</string>
+    <string name="cd_close_translate_bar">Tutup bilah terjemahan</string>
+</resources>

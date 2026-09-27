@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_retry">إعادة المحاولة</string>
+    <string name="action_download">تنزيل</string>
+    <string name="action_clear">مسح</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_add">إضافة</string>
+    <string name="action_add_key">إضافة مفتاح</string>
+    <string name="action_use_google_translate">استخدام ترجمة Google</string>
+    <string name="action_use_on_device">الترجمة على الجهاز</string>
+
+    <string name="cd_selected">محدَّد</string>
+    <string name="cd_select_engine">تحديد %1$s</string>
+    <string name="cd_back">رجوع</string>
+    <string name="cd_more">خيارات إضافية</string>
+    <string name="cd_dismiss">إغلاق</string>
+    <string name="cd_remove">إزالة</string>
+    <string name="cd_logo">شعار Panelglass</string>
+    <string name="cd_pin">تثبيت</string>
+    <string name="cd_unpin">إلغاء التثبيت</string>
+
+    <string name="nav_sites">المواقع</string>
+    <string name="nav_history">السجلّ</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <string name="lang_source">اللغة المصدر</string>
+    <string name="lang_target">اللغة الهدف</string>
+    <string name="lang_translate_from">من</string>
+    <string name="lang_translate_to">إلى</string>
+    <string name="lang_default">%1$s (تلقائي)</string>
+
+    <string name="section_translation">الترجمة</string>
+    <string name="section_browsing">التصفّح</string>
+    <string name="block_ads">حظر الإعلانات والنوافذ المنبثقة</string>
+    <string name="qwen_backend">يعمل Qwen على</string>
+    <string name="qwen_backend_auto">تلقائي · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">المعالج (CPU) في الهواتف ذات ذاكرة أقل من %1$d غيغابايت، ووحدة الرسومات (GPU) في غيرها</string>
+    <string name="qwen_backend_gpu_note">أسرع بنحو 3 مرات؛ يحتاج إلى نحو 3 غيغابايت من الذاكرة الحرة</string>
+    <string name="qwen_backend_cpu_note">أبطأ بنحو 3 مرات؛ يحتاج إلى ذاكرة أقل بكثير</string>
+
+    <string name="library_subtitle">قائمة قراءتك</string>
+    <string name="library_search">ابحث عن موقع أو أدخِل عنوان URL</string>
+    <string name="library_pinned">المثبَّتة</string>
+    <string name="library_all_sites">كل المواقع</string>
+    <string name="library_add_site_row">+ إضافة موقع</string>
+    <string name="library_empty">لا توجد مواقع بعد. أضِف مواقع القصص المصوّرة التي تقرؤها؛ لا يتضمّن Panelglass أي قائمة مواقع جاهزة.</string>
+    <string name="site_add_title">إضافة موقع</string>
+    <string name="site_url">عنوان URL</string>
+    <string name="site_name">الاسم</string>
+    <string name="site_name_optional">الاسم (اختياري)</string>
+    <string name="site_read_in">القراءة بلغة</string>
+    <string name="site_read">قراءة</string>
+    <string name="site_pin_to_top">تثبيت في الأعلى</string>
+
+    <string name="history_title">السجلّ</string>
+    <string name="history_empty">ستظهر هنا الصفحات التي تقرؤها.</string>
+
+    <string name="reader_adblock_on">حظر الإعلانات مفعّل</string>
+    <string name="reader_adblock_off">حظر الإعلانات متوقف</string>
+    <string name="reader_reload">إعادة التحميل</string>
+    <string name="reader_adblock_turn_off">إيقاف حظر الإعلانات هنا</string>
+    <string name="reader_adblock_turn_on">تفعيل حظر الإعلانات هنا</string>
+    <string name="reader_retranslate">إعادة الترجمة</string>
+    <string name="reader_add_to_sites">إضافة إلى المواقع</string>
+    <plurals name="reader_blocked">
+        <item quantity="zero">لم يتم حظر أي طلب في هذه الصفحة</item>
+        <item quantity="one">تم حظر طلب واحد في هذه الصفحة</item>
+        <item quantity="two">تم حظر طلبين في هذه الصفحة</item>
+        <item quantity="few">تم حظر %d طلبات في هذه الصفحة</item>
+        <item quantity="many">تم حظر %d طلبًا في هذه الصفحة</item>
+        <item quantity="other">تم حظر %d طلب في هذه الصفحة</item>
+    </plurals>
+    <string name="reader_translating">جارٍ ترجمة الشاشة…</string>
+    <plurals name="reader_patches">
+        <item quantity="zero">ترجمة الشاشة مفعّلة · لا مقاطع</item>
+        <item quantity="one">ترجمة الشاشة مفعّلة · مقطع واحد</item>
+        <item quantity="two">ترجمة الشاشة مفعّلة · مقطعان</item>
+        <item quantity="few">ترجمة الشاشة مفعّلة · %d مقاطع</item>
+        <item quantity="many">ترجمة الشاشة مفعّلة · %d مقطعًا</item>
+        <item quantity="other">ترجمة الشاشة مفعّلة · %d مقطع</item>
+    </plurals>
+    <string name="reader_start">بدء</string>
+    <string name="reader_stop">إيقاف</string>
+    <string name="reader_screen_translated">تمّت ترجمة الشاشة</string>
+    <string name="reader_capture_failed">تعذّر التقاط الصفحة</string>
+
+    <string name="error_needs_key">يحتاج %1$s إلى مفتاح API</string>
+    <string name="error_quota">نفدت حصة %1$s</string>
+    <string name="error_unavailable_now">%1$s غير متاح حاليًا</string>
+    <string name="error_unavailable">%1$s غير متاح</string>
+    <string name="error_rate_limited">يحدّ %1$s من عدد الطلبات؛ حاول مرة أخرى بعد قليل</string>
+    <string name="error_overloaded">%1$s مزدحم حاليًا؛ حاول مرة أخرى أو اختر نموذجًا آخر</string>
+    <string name="error_overloaded_scroll">%1$s مزدحم حاليًا؛ مرِّر الصفحة أو أعِد الترجمة للمحاولة مرة أخرى</string>
+    <string name="error_malformed">أرسل %1$s ردًا غير صالح للاستخدام</string>
+    <string name="error_network">خطأ في الشبكة أثناء الاتصال بـ %1$s</string>
+    <string name="error_too_long">استغرق %1$s وقتًا طويلًا</string>
+    <string name="error_failed">حدث خطأ في %1$s</string>
+    <string name="error_translation_failed">تعذّرت الترجمة</string>
+    <string name="error_model_missing">لم يتم تنزيل النموذج على الجهاز بعد</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (على الجهاز)</string>
+    <string name="picker_title">اختيار المحرّك</string>
+    <string name="picker_subtitle">اختر المحرّك لهذه الترجمة</string>
+    <string name="picker_local">على هذا الجهاز · نزِّل النموذج من الإعدادات</string>
+    <string name="picker_local_ready">على هذا الجهاز · تم التنزيل</string>
+    <string name="picker_google">مجاني · على هذا الجهاز · تُنزَّل حزم اللغات مرة واحدة</string>
+    <string name="picker_custom_keys">مفاتيح خاصة (دون استهلاك الحصة)</string>
+    <string name="picker_set_key">انقر لإعداد مفتاح API</string>
+    <string name="picker_model_not_set">لم يتم تحديد نموذج</string>
+    <string name="picker_key_saved">%1$s · تم حفظ المفتاح · انقر للتغيير</string>
+
+    <string name="key_title">مفتاح %1$s</string>
+    <string name="key_hint">مفتاح API</string>
+    <string name="key_hint_saved">مفتاح API (محفوظ · اتركه فارغًا للإبقاء عليه)</string>
+    <string name="key_model">النموذج</string>
+    <string name="key_models_loading">جارٍ تحميل النماذج…</string>
+    <plurals name="key_models_count">
+        <item quantity="zero">لا توجد نماذج لهذا المفتاح</item>
+        <item quantity="one">نموذج واحد لهذا المفتاح</item>
+        <item quantity="two">نموذجان لهذا المفتاح</item>
+        <item quantity="few">%d نماذج لهذا المفتاح</item>
+        <item quantity="many">%d نموذجًا لهذا المفتاح</item>
+        <item quantity="other">%d نموذج لهذا المفتاح</item>
+    </plurals>
+    <string name="key_models_hint">تُحمَّل قائمة النماذج من مفتاحك</string>
+    <string name="key_refresh">تحديث القائمة</string>
+    <string name="key_note">يُحفظ مشفّرًا على هذا الجهاز. تُرسَل الطلبات التي تستخدم هذا المفتاح مباشرةً إلى %1$s، ولا يطّلع Panelglass على بياناتك أو يخزّنها أبدًا.</string>
+    <string name="key_remove">إزالة المفتاح</string>
+    <string name="key_models_error_key">أدخِل مفتاحًا صالحًا لعرض النماذج</string>
+    <string name="key_models_error_network">تعذّر الاتصال بـ %1$s لعرض النماذج</string>
+    <string name="key_models_error">تعذّر عرض النماذج</string>
+
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_translation_model">نموذج الترجمة</string>
+    <string name="settings_try">جرّب الترجمة</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="settings_fonts">الخطوط</string>
+    <string name="settings_models">النماذج</string>
+    <string name="settings_keys_note">تُشفَّر المفاتيح على هذا الجهاز ولا تُرسَل إلا إلى مقدّم الخدمة الذي اخترته.</string>
+    <string name="settings_storage">مساحة التخزين</string>
+    <string name="settings_history">سجلّ التصفّح</string>
+    <string name="settings_history_clear">مسح سجلّ الزيارات المحفوظ</string>
+    <string name="blocklist_none">لم يتم تنزيل القوائم بعد</string>
+    <string name="blocklist_now">تم تحديث القوائم للتو</string>
+    <plurals name="blocklist_hours">
+        <item quantity="zero">تم تحديث القوائم منذ %d ساعة</item>
+        <item quantity="one">تم تحديث القوائم منذ ساعة</item>
+        <item quantity="two">تم تحديث القوائم منذ ساعتين</item>
+        <item quantity="few">تم تحديث القوائم منذ %d ساعات</item>
+        <item quantity="many">تم تحديث القوائم منذ %d ساعة</item>
+        <item quantity="other">تم تحديث القوائم منذ %d ساعة</item>
+    </plurals>
+
+    <string name="theme_default">التلقائي</string>
+    <string name="theme_tag_default">الأصفر المميّز</string>
+    <string name="theme_tag_panel_pop">قصص مصوّرة · حواف عريضة</string>
+    <string name="theme_tag_soft_bloom">ألوان باستيل · توهّج ناعم</string>
+    <string name="theme_tag_paper_ink">تحريري · بسيط</string>
+
+    <string name="try_source_text">النص المصدر</string>
+    <string name="try_translate">ترجمة</string>
+    <string name="try_via">عبر %1$s</string>
+
+    <string name="size_mb">%1$d ميغابايت</string>
+    <string name="model_needs_ram">يتطلّب ذاكرة %1$d غيغابايت</string>
+    <string name="model_manga_ocr">التعرّف على نصوص المانغا اليابانية</string>
+    <string name="model_manga_ready">يُستخدم لفقاعات الحوار اليابانية</string>
+    <string name="model_manga_missing">يقرأ فقاعات الحوار اليابانية العمودية أفضل بكثير من الطريقة التلقائية</string>
+    <string name="model_missing">%1$s · غير موجود على هذا الجهاز · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s من %4$s · يستمر في الخلفية</string>
+    <string name="model_ready">%1$s · جاهز · %2$s</string>
+    <string name="model_failed">%1$s · تعذّر · %2$s</string>
+    <string name="download_downloading">جارٍ التنزيل</string>
+    <string name="download_checking">جارٍ التحقّق من الملف</string>
+    <string name="download_waiting_network">في انتظار الشبكة</string>
+    <string name="download_retrying">انقطع الاتصال، جارٍ إعادة المحاولة</string>
+    <string name="download_waiting_wifi">في انتظار Wi-Fi</string>
+    <string name="download_paused">متوقف مؤقتًا</string>
+    <string name="download_corrupt">فشل الملف في التحقّق من السلامة؛ انقر على إعادة المحاولة</string>
+    <string name="download_no_space">مساحة التخزين غير كافية</string>
+    <string name="download_no_storage">مساحة التخزين غير متاحة</string>
+    <string name="download_refused">رفض الخادم التنزيل</string>
+    <string name="download_connection_failed">تعذّر الاتصال؛ انقر على إعادة المحاولة</string>
+    <string name="download_incomplete">لم يكتمل التنزيل؛ انقر على إعادة المحاولة</string>
+    <string name="download_failed">تعذّر التنزيل</string>
+
+    <string name="packs_title">حزم لغات ترجمة Google</string>
+    <string name="packs_downloading">جارٍ تنزيل %1$s · %2$d من %3$d</string>
+    <string name="packs_failed">%1$s · تم تنزيل %2$d من %3$d</string>
+    <string name="packs_complete">كل اللغات (%1$d) جاهزة · تعمل دون اتصال</string>
+    <string name="packs_none">لم يتم تنزيل شيء · تُنزَّل كل لغة عند أول استخدام · نحو 30 ميغابايت لكل لغة</string>
+    <string name="packs_some">تم تنزيل %1$d من %2$d</string>
+    <string name="packs_download_all">تنزيل الكل</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">لغة التطبيق</string>
+    <string name="app_language">اللغة</string>
+    <string name="reader_translate_page">ترجمة الصفحة</string>
+    <string name="pt_detect">اكتشاف اللغة</string>
+    <string name="pt_detected">%1$s (تم اكتشافها)</string>
+    <string name="pt_detecting">جارٍ اكتشاف اللغة…</string>
+    <string name="pt_downloading">جارٍ جلب حزم اللغات…</string>
+    <string name="pt_translating">جارٍ ترجمة الصفحة…</string>
+    <string name="pt_done">تمت ترجمة الصفحة</string>
+    <string name="pt_same">هذه الصفحة باللغة %1$s بالفعل</string>
+    <string name="pt_undetected">تعذّر تحديد لغة الصفحة. اخترها من القائمة الأولى.</string>
+    <string name="pt_failed">تعذّرت ترجمة هذه الصفحة. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="pt_show_original">عرض الأصل</string>
+    <string name="pt_translate">ترجمة</string>
+    <string name="pt_source">الترجمة من</string>
+    <string name="pt_target">الترجمة إلى</string>
+    <string name="pt_original">يُعرض الأصل</string>
+    <string name="cd_close_translate_bar">إغلاق شريط الترجمة</string>
+</resources>

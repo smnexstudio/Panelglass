@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_retry">Повторить</string>
+    <string name="action_download">Скачать</string>
+    <string name="action_clear">Очистить</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_add">Добавить</string>
+    <string name="action_add_key">Добавить ключ</string>
+    <string name="action_use_google_translate">Использовать Google Переводчик</string>
+    <string name="action_use_on_device">Переводить на устройстве</string>
+
+    <string name="cd_selected">Выбрано</string>
+    <string name="cd_select_engine">Выбрать %1$s</string>
+    <string name="cd_back">Назад</string>
+    <string name="cd_more">Другие параметры</string>
+    <string name="cd_dismiss">Закрыть</string>
+    <string name="cd_remove">Удалить</string>
+    <string name="cd_logo">Логотип Panelglass</string>
+    <string name="cd_pin">Закрепить</string>
+    <string name="cd_unpin">Открепить</string>
+
+    <string name="nav_sites">Сайты</string>
+    <string name="nav_history">История</string>
+    <string name="nav_settings">Настройки</string>
+
+    <string name="lang_source">Исходный язык</string>
+    <string name="lang_target">Язык перевода</string>
+    <string name="lang_translate_from">С языка</string>
+    <string name="lang_translate_to">На язык</string>
+    <string name="lang_default">%1$s (по умолчанию)</string>
+
+    <string name="section_translation">Перевод</string>
+    <string name="section_browsing">Просмотр</string>
+    <string name="block_ads">Блокировать рекламу и всплывающие окна</string>
+    <string name="qwen_backend">Qwen работает на</string>
+    <string name="qwen_backend_auto">Автоматически · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">CPU на телефонах с ОЗУ меньше %1$d ГБ, иначе GPU</string>
+    <string name="qwen_backend_gpu_note">Примерно в 3 раза быстрее; нужно около 3 ГБ свободной памяти</string>
+    <string name="qwen_backend_cpu_note">Примерно в 3 раза медленнее; расходует гораздо меньше памяти</string>
+
+    <string name="library_subtitle">Ваш список для чтения</string>
+    <string name="library_search">Поиск сайтов или ввод URL</string>
+    <string name="library_pinned">Закреплённые</string>
+    <string name="library_all_sites">Все сайты</string>
+    <string name="library_add_site_row">+ Добавить сайт</string>
+    <string name="library_empty">Сайтов пока нет. Добавьте сайты с комиксами, которые вы читаете: Panelglass не поставляется со списком по умолчанию.</string>
+    <string name="site_add_title">Добавить сайт</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">Название</string>
+    <string name="site_name_optional">Название (необязательно)</string>
+    <string name="site_read_in">Читать на языке</string>
+    <string name="site_read">Читать</string>
+    <string name="site_pin_to_top">Закрепить вверху</string>
+
+    <string name="history_title">История</string>
+    <string name="history_empty">Здесь появятся прочитанные страницы.</string>
+
+    <string name="reader_adblock_on">Блокировка рекламы включена</string>
+    <string name="reader_adblock_off">Блокировка рекламы выключена</string>
+    <string name="reader_reload">Перезагрузить</string>
+    <string name="reader_adblock_turn_off">Выключить блокировку рекламы здесь</string>
+    <string name="reader_adblock_turn_on">Включить блокировку рекламы здесь</string>
+    <string name="reader_retranslate">Перевести заново</string>
+    <string name="reader_add_to_sites">Добавить в сайты</string>
+    <plurals name="reader_blocked">
+        <item quantity="one">На этой странице заблокирован %d запрос</item>
+        <item quantity="few">На этой странице заблокировано %d запроса</item>
+        <item quantity="many">На этой странице заблокировано %d запросов</item>
+        <item quantity="other">На этой странице заблокировано %d запроса</item>
+    </plurals>
+    <string name="reader_translating">Перевод экрана…</string>
+    <plurals name="reader_patches">
+        <item quantity="one">Перевод экрана включён · %d фрагмент</item>
+        <item quantity="few">Перевод экрана включён · %d фрагмента</item>
+        <item quantity="many">Перевод экрана включён · %d фрагментов</item>
+        <item quantity="other">Перевод экрана включён · %d фрагмента</item>
+    </plurals>
+    <string name="reader_start">Начать</string>
+    <string name="reader_stop">Остановить</string>
+    <string name="reader_screen_translated">Экран переведён</string>
+    <string name="reader_capture_failed">Не удалось захватить страницу</string>
+
+    <string name="error_needs_key">Для %1$s нужен ключ API</string>
+    <string name="error_quota">Квота %1$s исчерпана</string>
+    <string name="error_unavailable_now">%1$s сейчас недоступен</string>
+    <string name="error_unavailable">%1$s недоступен</string>
+    <string name="error_rate_limited">%1$s ограничивает частоту запросов; повторите чуть позже</string>
+    <string name="error_overloaded">%1$s сейчас перегружен; повторите попытку или выберите другую модель</string>
+    <string name="error_overloaded_scroll">%1$s сейчас перегружен; прокрутите страницу или переведите заново</string>
+    <string name="error_malformed">%1$s вернул непригодный ответ</string>
+    <string name="error_network">Ошибка сети при подключении к %1$s</string>
+    <string name="error_too_long">%1$s отвечает слишком долго</string>
+    <string name="error_failed">Ошибка %1$s</string>
+    <string name="error_translation_failed">Не удалось перевести</string>
+    <string name="error_model_missing">Модель для устройства ещё не скачана</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (на устройстве)</string>
+    <string name="picker_title">Выбор движка</string>
+    <string name="picker_subtitle">Выберите движок для этого перевода</string>
+    <string name="picker_local">На этом устройстве · скачайте модель в настройках</string>
+    <string name="picker_local_ready">На этом устройстве · загружено</string>
+    <string name="picker_google">Бесплатно · на этом устройстве · языковые пакеты скачиваются один раз</string>
+    <string name="picker_custom_keys">Свои ключи (без расхода квоты)</string>
+    <string name="picker_set_key">Нажмите, чтобы указать ключ API</string>
+    <string name="picker_model_not_set">Модель не выбрана</string>
+    <string name="picker_key_saved">%1$s · ключ сохранён · нажмите, чтобы изменить</string>
+
+    <string name="key_title">Ключ %1$s</string>
+    <string name="key_hint">Ключ API</string>
+    <string name="key_hint_saved">Ключ API (сохранён · оставьте пустым, чтобы не менять)</string>
+    <string name="key_model">Модель</string>
+    <string name="key_models_loading">Загрузка моделей…</string>
+    <plurals name="key_models_count">
+        <item quantity="one">Для этого ключа доступна %d модель</item>
+        <item quantity="few">Для этого ключа доступно %d модели</item>
+        <item quantity="many">Для этого ключа доступно %d моделей</item>
+        <item quantity="other">Для этого ключа доступно %d модели</item>
+    </plurals>
+    <string name="key_models_hint">Список моделей загружается по вашему ключу</string>
+    <string name="key_refresh">Обновить список</string>
+    <string name="key_note">Хранится в зашифрованном виде на этом устройстве. Запросы с этим ключом идут напрямую в %1$s — Panelglass никогда не видит и не хранит ваш трафик.</string>
+    <string name="key_remove">Удалить ключ</string>
+    <string name="key_models_error_key">Введите действительный ключ, чтобы увидеть модели</string>
+    <string name="key_models_error_network">Не удалось подключиться к %1$s, чтобы получить модели</string>
+    <string name="key_models_error">Не удалось получить список моделей</string>
+
+    <string name="settings_title">Настройки</string>
+    <string name="settings_translation_model">Модель перевода</string>
+    <string name="settings_try">Попробовать перевод</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_fonts">Шрифты</string>
+    <string name="settings_models">Модели</string>
+    <string name="settings_keys_note">Ключи хранятся на этом устройстве в зашифрованном виде и передаются только выбранному вами поставщику.</string>
+    <string name="settings_storage">Хранилище</string>
+    <string name="settings_history">История просмотров</string>
+    <string name="settings_history_clear">Очистить сохранённую историю посещений</string>
+    <string name="blocklist_none">Списки ещё не скачаны</string>
+    <string name="blocklist_now">Списки только что обновлены</string>
+    <plurals name="blocklist_hours">
+        <item quantity="one">Списки обновлены %d час назад</item>
+        <item quantity="few">Списки обновлены %d часа назад</item>
+        <item quantity="many">Списки обновлены %d часов назад</item>
+        <item quantity="other">Списки обновлены %d часа назад</item>
+    </plurals>
+
+    <string name="theme_default">По умолчанию</string>
+    <string name="theme_tag_default">Фирменный жёлтый</string>
+    <string name="theme_tag_panel_pop">Комикс · жирные контуры</string>
+    <string name="theme_tag_soft_bloom">Пастель · мягкое свечение</string>
+    <string name="theme_tag_paper_ink">Журнальный · минимализм</string>
+
+    <string name="try_source_text">Исходный текст</string>
+    <string name="try_translate">Перевести</string>
+    <string name="try_via">через %1$s</string>
+
+    <string name="size_mb">%1$d МБ</string>
+    <string name="model_needs_ram">нужно %1$d ГБ ОЗУ</string>
+    <string name="model_manga_ocr">Распознавание японской манги</string>
+    <string name="model_manga_ready">используется для японских реплик</string>
+    <string name="model_manga_missing">читает вертикальные японские реплики гораздо лучше стандартного распознавания</string>
+    <string name="model_missing">%1$s · нет на устройстве · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s из %4$s · продолжается в фоне</string>
+    <string name="model_ready">%1$s · готово · %2$s</string>
+    <string name="model_failed">%1$s · ошибка · %2$s</string>
+    <string name="download_downloading">скачивание</string>
+    <string name="download_checking">проверка файла</string>
+    <string name="download_waiting_network">ожидание сети</string>
+    <string name="download_retrying">соединение потеряно, повторная попытка</string>
+    <string name="download_waiting_wifi">ожидание Wi-Fi</string>
+    <string name="download_paused">приостановлено</string>
+    <string name="download_corrupt">Файл не прошёл проверку целостности; нажмите «Повторить»</string>
+    <string name="download_no_space">Недостаточно места</string>
+    <string name="download_no_storage">Хранилище недоступно</string>
+    <string name="download_refused">Сервер отклонил скачивание</string>
+    <string name="download_connection_failed">Ошибка подключения; нажмите «Повторить»</string>
+    <string name="download_incomplete">Скачивание не завершено; нажмите «Повторить»</string>
+    <string name="download_failed">Не удалось скачать</string>
+
+    <string name="packs_title">Языковые пакеты Google Переводчика</string>
+    <string name="packs_downloading">Скачивание: %1$s · %2$d из %3$d</string>
+    <string name="packs_failed">%1$s · скачано %2$d из %3$d</string>
+    <string name="packs_complete">Все языки (%1$d) готовы · работает офлайн</string>
+    <string name="packs_none">Ничего не скачано · каждый язык скачивается при первом использовании · около 30 МБ</string>
+    <string name="packs_some">Скачано %1$d из %2$d</string>
+    <string name="packs_download_all">Скачать все</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">Язык приложения</string>
+    <string name="app_language">Язык</string>
+    <string name="reader_translate_page">Перевести страницу</string>
+    <string name="pt_detect">Определить язык</string>
+    <string name="pt_detected">%1$s (определён)</string>
+    <string name="pt_detecting">Определение языка…</string>
+    <string name="pt_downloading">Загрузка языковых пакетов…</string>
+    <string name="pt_translating">Перевод страницы…</string>
+    <string name="pt_done">Страница переведена</string>
+    <string name="pt_same">Эта страница уже на языке: %1$s</string>
+    <string name="pt_undetected">Не удалось определить язык страницы. Выберите его в первом списке.</string>
+    <string name="pt_failed">Не удалось перевести страницу. Проверьте подключение и повторите попытку.</string>
+    <string name="pt_show_original">Показать оригинал</string>
+    <string name="pt_translate">Перевести</string>
+    <string name="pt_source">Перевести с</string>
+    <string name="pt_target">Перевести на</string>
+    <string name="pt_original">Показан оригинал</string>
+    <string name="cd_close_translate_bar">Закрыть панель перевода</string>
+</resources>

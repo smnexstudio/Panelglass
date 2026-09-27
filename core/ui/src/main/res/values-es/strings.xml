@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_download">Descargar</string>
+    <string name="action_clear">Borrar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_add_key">Añadir clave</string>
+    <string name="action_use_google_translate">Usar Google Traductor</string>
+    <string name="action_use_on_device">Usar en el dispositivo</string>
+
+    <string name="cd_selected">Seleccionado</string>
+    <string name="cd_select_engine">Seleccionar %1$s</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_more">Más opciones</string>
+    <string name="cd_dismiss">Cerrar</string>
+    <string name="cd_remove">Quitar</string>
+    <string name="cd_logo">Logotipo de Panelglass</string>
+    <string name="cd_pin">Fijar</string>
+    <string name="cd_unpin">Dejar de fijar</string>
+
+    <string name="nav_sites">Sitios</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <string name="lang_source">Idioma de origen</string>
+    <string name="lang_target">Idioma de destino</string>
+    <string name="lang_translate_from">De</string>
+    <string name="lang_translate_to">A</string>
+    <string name="lang_default">%1$s (predeterminado)</string>
+
+    <string name="section_translation">Traducción</string>
+    <string name="section_browsing">Navegación</string>
+    <string name="block_ads">Bloquear anuncios y ventanas emergentes</string>
+    <string name="qwen_backend">Qwen se ejecuta en</string>
+    <string name="qwen_backend_auto">Automático · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">CPU en teléfonos con menos de %1$d GB de RAM; GPU en los demás</string>
+    <string name="qwen_backend_gpu_note">Unas 3× más rápido; necesita unos 3 GB de memoria libre</string>
+    <string name="qwen_backend_cpu_note">Unas 3× más lento; usa mucha menos memoria</string>
+
+    <string name="library_subtitle">Tu lista de lectura</string>
+    <string name="library_search">Busca sitios o escribe una URL</string>
+    <string name="library_pinned">Fijados</string>
+    <string name="library_all_sites">Todos los sitios</string>
+    <string name="library_add_site_row">+ Añadir sitio</string>
+    <string name="library_empty">Todavía no hay sitios. Añade los sitios de cómics que lees; Panelglass nunca incluye una lista predeterminada.</string>
+    <string name="site_add_title">Añadir sitio</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">Nombre</string>
+    <string name="site_name_optional">Nombre (opcional)</string>
+    <string name="site_read_in">Leer en</string>
+    <string name="site_read">Leer</string>
+    <string name="site_pin_to_top">Fijar arriba</string>
+
+    <string name="history_title">Historial</string>
+    <string name="history_empty">Las páginas que leas aparecerán aquí.</string>
+
+    <string name="reader_adblock_on">Bloqueo de anuncios activado</string>
+    <string name="reader_adblock_off">Bloqueo de anuncios desactivado</string>
+    <string name="reader_reload">Recargar</string>
+    <string name="reader_adblock_turn_off">Desactivar el bloqueo de anuncios aquí</string>
+    <string name="reader_adblock_turn_on">Activar el bloqueo de anuncios aquí</string>
+    <string name="reader_retranslate">Volver a traducir</string>
+    <string name="reader_add_to_sites">Añadir a sitios</string>
+    <plurals name="reader_blocked">
+        <item quantity="one">%d solicitud bloqueada en esta página</item>
+        <item quantity="other">%d solicitudes bloqueadas en esta página</item>
+    </plurals>
+    <string name="reader_translating">Traduciendo la pantalla…</string>
+    <plurals name="reader_patches">
+        <item quantity="one">Traducción de pantalla activada · %d parche</item>
+        <item quantity="other">Traducción de pantalla activada · %d parches</item>
+    </plurals>
+    <string name="reader_start">Iniciar</string>
+    <string name="reader_stop">Detener</string>
+    <string name="reader_screen_translated">Pantalla traducida</string>
+    <string name="reader_capture_failed">No se pudo capturar la página</string>
+
+    <string name="error_needs_key">%1$s necesita una clave de API</string>
+    <string name="error_quota">Se agotó la cuota de %1$s</string>
+    <string name="error_unavailable_now">%1$s no está disponible en este momento</string>
+    <string name="error_unavailable">%1$s no está disponible</string>
+    <string name="error_rate_limited">%1$s ha limitado las solicitudes; inténtalo de nuevo en breve</string>
+    <string name="error_overloaded">%1$s está saturado en este momento; inténtalo de nuevo o elige otro modelo</string>
+    <string name="error_overloaded_scroll">%1$s está saturado en este momento; desplázate o vuelve a traducir para reintentar</string>
+    <string name="error_malformed">%1$s devolvió una respuesta inutilizable</string>
+    <string name="error_network">Error de red al conectar con %1$s</string>
+    <string name="error_too_long">%1$s tardó demasiado</string>
+    <string name="error_failed">%1$s falló</string>
+    <string name="error_translation_failed">La traducción falló</string>
+    <string name="error_model_missing">El modelo del dispositivo aún no se ha descargado</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (en el dispositivo)</string>
+    <string name="picker_title">Seleccionar motor</string>
+    <string name="picker_subtitle">Elige el motor para esta traducción</string>
+    <string name="picker_local">En este dispositivo · descarga el modelo en Ajustes</string>
+    <string name="picker_local_ready">En este dispositivo · descargado</string>
+    <string name="picker_google">Gratis · en este dispositivo · los paquetes de idioma se descargan una vez</string>
+    <string name="picker_custom_keys">Claves propias (sin consumo de cuota)</string>
+    <string name="picker_set_key">Toca para configurar la clave de API</string>
+    <string name="picker_model_not_set">Modelo sin configurar</string>
+    <string name="picker_key_saved">%1$s · clave guardada · toca para cambiar</string>
+
+    <string name="key_title">Clave de %1$s</string>
+    <string name="key_hint">Clave de API</string>
+    <string name="key_hint_saved">Clave de API (guardada · déjala vacía para conservarla)</string>
+    <string name="key_model">Modelo</string>
+    <string name="key_models_loading">Cargando modelos…</string>
+    <plurals name="key_models_count">
+        <item quantity="one">%d modelo para esta clave</item>
+        <item quantity="other">%d modelos para esta clave</item>
+    </plurals>
+    <string name="key_models_hint">La lista de modelos se carga con tu clave</string>
+    <string name="key_refresh">Actualizar lista</string>
+    <string name="key_note">Se guarda cifrada en este dispositivo. Las solicitudes con esta clave van directamente a %1$s; Panelglass nunca ve ni guarda tu tráfico.</string>
+    <string name="key_remove">Quitar clave</string>
+    <string name="key_models_error_key">Introduce una clave válida para ver los modelos</string>
+    <string name="key_models_error_network">No se pudo conectar con %1$s para ver los modelos</string>
+    <string name="key_models_error">No se pudieron obtener los modelos</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_translation_model">Modelo de traducción</string>
+    <string name="settings_try">Prueba una traducción</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_fonts">Fuentes</string>
+    <string name="settings_models">Modelos</string>
+    <string name="settings_keys_note">Las claves se guardan cifradas en este dispositivo y solo se envían al proveedor que elegiste.</string>
+    <string name="settings_storage">Almacenamiento</string>
+    <string name="settings_history">Historial de navegación</string>
+    <string name="settings_history_clear">Borrar el historial de visitas guardado</string>
+    <string name="blocklist_none">Las listas aún no se han descargado</string>
+    <string name="blocklist_now">Listas actualizadas ahora mismo</string>
+    <plurals name="blocklist_hours">
+        <item quantity="one">Listas actualizadas hace %d hora</item>
+        <item quantity="other">Listas actualizadas hace %d horas</item>
+    </plurals>
+
+    <string name="theme_default">Predeterminado</string>
+    <string name="theme_tag_default">Amarillo característico</string>
+    <string name="theme_tag_panel_pop">Cómic · contornos gruesos</string>
+    <string name="theme_tag_soft_bloom">Pastel · difuminado suave</string>
+    <string name="theme_tag_paper_ink">Editorial · minimalista</string>
+
+    <string name="try_source_text">Texto de origen</string>
+    <string name="try_translate">Traducir</string>
+    <string name="try_via">con %1$s</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">requiere %1$d GB de RAM</string>
+    <string name="model_manga_ocr">OCR de manga japonés</string>
+    <string name="model_manga_ready">se usa para los bocadillos en japonés</string>
+    <string name="model_manga_missing">lee los bocadillos en japonés vertical mucho mejor que la opción predeterminada</string>
+    <string name="model_missing">%1$s · no está en este dispositivo · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s de %4$s · continúa en segundo plano</string>
+    <string name="model_ready">%1$s · listo · %2$s</string>
+    <string name="model_failed">%1$s · error · %2$s</string>
+    <string name="download_downloading">descargando</string>
+    <string name="download_checking">comprobando el archivo</string>
+    <string name="download_waiting_network">esperando conexión</string>
+    <string name="download_retrying">conexión perdida, reintentando</string>
+    <string name="download_waiting_wifi">esperando Wi-Fi</string>
+    <string name="download_paused">en pausa</string>
+    <string name="download_corrupt">El archivo no superó la comprobación de integridad; toca Reintentar</string>
+    <string name="download_no_space">No hay suficiente espacio</string>
+    <string name="download_no_storage">Almacenamiento no disponible</string>
+    <string name="download_refused">El servidor rechazó la descarga</string>
+    <string name="download_connection_failed">Error de conexión; toca Reintentar</string>
+    <string name="download_incomplete">Descarga incompleta; toca Reintentar</string>
+    <string name="download_failed">La descarga falló</string>
+
+    <string name="packs_title">Paquetes de idioma de Google Traductor</string>
+    <string name="packs_downloading">Descargando %1$s · %2$d de %3$d</string>
+    <string name="packs_failed">%1$s · %2$d de %3$d descargados</string>
+    <string name="packs_complete">Los %1$d idiomas están listos · funciona sin conexión</string>
+    <string name="packs_none">Nada descargado · se obtiene cada idioma al usarlo por primera vez · unos 30 MB cada uno</string>
+    <string name="packs_some">%1$d de %2$d descargados</string>
+    <string name="packs_download_all">Descargar todo</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">Idioma de la aplicación</string>
+    <string name="app_language">Idioma</string>
+    <string name="reader_translate_page">Traducir página</string>
+    <string name="pt_detect">Detectar idioma</string>
+    <string name="pt_detected">%1$s (detectado)</string>
+    <string name="pt_detecting">Detectando el idioma…</string>
+    <string name="pt_downloading">Obteniendo paquetes de idioma…</string>
+    <string name="pt_translating">Traduciendo la página…</string>
+    <string name="pt_done">Página traducida</string>
+    <string name="pt_same">Esta página ya está en %1$s</string>
+    <string name="pt_undetected">No se pudo saber el idioma de la página. Elígelo en la primera lista.</string>
+    <string name="pt_failed">No se pudo traducir esta página. Revisa la conexión e inténtalo de nuevo.</string>
+    <string name="pt_show_original">Ver original</string>
+    <string name="pt_translate">Traducir</string>
+    <string name="pt_source">Traducir de</string>
+    <string name="pt_target">Traducir a</string>
+    <string name="pt_original">Mostrando el original</string>
+    <string name="cd_close_translate_bar">Cerrar la barra de traducción</string>
+</resources>

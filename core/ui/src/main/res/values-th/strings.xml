@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">ยกเลิก</string>
+    <string name="action_delete">ลบ</string>
+    <string name="action_retry">ลองอีกครั้ง</string>
+    <string name="action_download">ดาวน์โหลด</string>
+    <string name="action_clear">ล้าง</string>
+    <string name="action_save">บันทึก</string>
+    <string name="action_add">เพิ่ม</string>
+    <string name="action_add_key">เพิ่มคีย์</string>
+    <string name="action_use_google_translate">ใช้ Google แปลภาษา</string>
+    <string name="action_use_on_device">แปลบนอุปกรณ์</string>
+
+    <string name="cd_selected">เลือกอยู่</string>
+    <string name="cd_select_engine">เลือก %1$s</string>
+    <string name="cd_back">กลับ</string>
+    <string name="cd_more">ตัวเลือกเพิ่มเติม</string>
+    <string name="cd_dismiss">ปิด</string>
+    <string name="cd_remove">นำออก</string>
+    <string name="cd_logo">โลโก้ Panelglass</string>
+    <string name="cd_pin">ปักหมุด</string>
+    <string name="cd_unpin">เลิกปักหมุด</string>
+
+    <string name="nav_sites">เว็บไซต์</string>
+    <string name="nav_history">ประวัติ</string>
+    <string name="nav_settings">การตั้งค่า</string>
+
+    <string name="lang_source">ภาษาต้นฉบับ</string>
+    <string name="lang_target">ภาษาปลายทาง</string>
+    <string name="lang_translate_from">จาก</string>
+    <string name="lang_translate_to">เป็น</string>
+    <string name="lang_default">%1$s (ค่าเริ่มต้น)</string>
+
+    <string name="section_translation">การแปล</string>
+    <string name="section_browsing">การท่องเว็บ</string>
+    <string name="block_ads">บล็อกโฆษณาและป๊อปอัป</string>
+    <string name="qwen_backend">Qwen ทำงานบน</string>
+    <string name="qwen_backend_auto">อัตโนมัติ · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">ใช้ CPU บนโทรศัพท์ที่มี RAM น้อยกว่า %1$d GB นอกนั้นใช้ GPU</string>
+    <string name="qwen_backend_gpu_note">เร็วกว่าประมาณ 3 เท่า ต้องมีหน่วยความจำว่างราว 3 GB</string>
+    <string name="qwen_backend_cpu_note">ช้ากว่าประมาณ 3 เท่า ใช้หน่วยความจำน้อยกว่ามาก</string>
+
+    <string name="library_subtitle">รายการอ่านของคุณ</string>
+    <string name="library_search">ค้นหาเว็บไซต์หรือป้อน URL</string>
+    <string name="library_pinned">ปักหมุดไว้</string>
+    <string name="library_all_sites">เว็บไซต์ทั้งหมด</string>
+    <string name="library_add_site_row">+ เพิ่มเว็บไซต์</string>
+    <string name="library_empty">ยังไม่มีเว็บไซต์ เพิ่มเว็บการ์ตูนที่คุณอ่าน Panelglass ไม่มีรายการเว็บไซต์เริ่มต้นให้</string>
+    <string name="site_add_title">เพิ่มเว็บไซต์</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">ชื่อ</string>
+    <string name="site_name_optional">ชื่อ (ไม่บังคับ)</string>
+    <string name="site_read_in">อ่านเป็นภาษา</string>
+    <string name="site_read">อ่าน</string>
+    <string name="site_pin_to_top">ปักหมุดไว้ด้านบน</string>
+
+    <string name="history_title">ประวัติ</string>
+    <string name="history_empty">หน้าที่คุณอ่านจะแสดงที่นี่</string>
+
+    <string name="reader_adblock_on">เปิดการบล็อกโฆษณาอยู่</string>
+    <string name="reader_adblock_off">ปิดการบล็อกโฆษณาอยู่</string>
+    <string name="reader_reload">โหลดซ้ำ</string>
+    <string name="reader_adblock_turn_off">ปิดการบล็อกโฆษณาในเว็บนี้</string>
+    <string name="reader_adblock_turn_on">เปิดการบล็อกโฆษณาในเว็บนี้</string>
+    <string name="reader_retranslate">แปลใหม่</string>
+    <string name="reader_add_to_sites">เพิ่มลงในเว็บไซต์</string>
+    <plurals name="reader_blocked">
+        <item quantity="other">บล็อกคำขอในหน้านี้แล้ว %d รายการ</item>
+    </plurals>
+    <string name="reader_translating">กำลังแปลหน้าจอ…</string>
+    <plurals name="reader_patches">
+        <item quantity="other">เปิดการแปลหน้าจออยู่ · %d จุด</item>
+    </plurals>
+    <string name="reader_start">เริ่ม</string>
+    <string name="reader_stop">หยุด</string>
+    <string name="reader_screen_translated">แปลหน้าจอแล้ว</string>
+    <string name="reader_capture_failed">จับภาพหน้าเว็บไม่ได้</string>
+
+    <string name="error_needs_key">%1$s ต้องใช้คีย์ API</string>
+    <string name="error_quota">โควตาของ %1$s หมดแล้ว</string>
+    <string name="error_unavailable_now">%1$s ใช้งานไม่ได้ในขณะนี้</string>
+    <string name="error_unavailable">%1$s ใช้งานไม่ได้</string>
+    <string name="error_rate_limited">%1$s จำกัดจำนวนคำขออยู่ โปรดลองอีกครั้งในอีกสักครู่</string>
+    <string name="error_overloaded">%1$s มีผู้ใช้หนาแน่นในขณะนี้ โปรดลองอีกครั้งหรือเลือกโมเดลอื่น</string>
+    <string name="error_overloaded_scroll">%1$s มีผู้ใช้หนาแน่นในขณะนี้ โปรดเลื่อนหน้าหรือแปลใหม่เพื่อลองอีกครั้ง</string>
+    <string name="error_malformed">%1$s ส่งคำตอบที่ใช้งานไม่ได้กลับมา</string>
+    <string name="error_network">เครือข่ายขัดข้องขณะเชื่อมต่อ %1$s</string>
+    <string name="error_too_long">%1$s ใช้เวลานานเกินไป</string>
+    <string name="error_failed">%1$s ทำงานไม่สำเร็จ</string>
+    <string name="error_translation_failed">แปลไม่สำเร็จ</string>
+    <string name="error_model_missing">ยังไม่ได้ดาวน์โหลดโมเดลบนอุปกรณ์</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (บนอุปกรณ์)</string>
+    <string name="picker_title">เลือกเครื่องมือแปล</string>
+    <string name="picker_subtitle">เลือกเครื่องมือสำหรับการแปลนี้</string>
+    <string name="picker_local">ทำงานบนอุปกรณ์นี้ · ดาวน์โหลดโมเดลในการตั้งค่า</string>
+    <string name="picker_local_ready">ทำงานบนอุปกรณ์นี้ · ดาวน์โหลดแล้ว</string>
+    <string name="picker_google">ฟรี · ทำงานบนอุปกรณ์นี้ · ดาวน์โหลดแพ็กภาษาครั้งเดียว</string>
+    <string name="picker_custom_keys">คีย์ของคุณเอง (ไม่ใช้โควตา)</string>
+    <string name="picker_set_key">แตะเพื่อตั้งค่าคีย์ API</string>
+    <string name="picker_model_not_set">ยังไม่ได้ตั้งค่าโมเดล</string>
+    <string name="picker_key_saved">%1$s · บันทึกคีย์แล้ว · แตะเพื่อเปลี่ยน</string>
+
+    <string name="key_title">คีย์ %1$s</string>
+    <string name="key_hint">คีย์ API</string>
+    <string name="key_hint_saved">คีย์ API (บันทึกแล้ว · เว้นว่างไว้เพื่อใช้คีย์เดิม)</string>
+    <string name="key_model">โมเดล</string>
+    <string name="key_models_loading">กำลังโหลดโมเดล…</string>
+    <plurals name="key_models_count">
+        <item quantity="other">คีย์นี้ใช้ได้กับ %d โมเดล</item>
+    </plurals>
+    <string name="key_models_hint">รายการโมเดลจะโหลดจากคีย์ของคุณ</string>
+    <string name="key_refresh">รีเฟรชรายการ</string>
+    <string name="key_note">จัดเก็บแบบเข้ารหัสไว้ในอุปกรณ์นี้ คำขอที่ใช้คีย์นี้จะส่งตรงไปยัง %1$s โดย Panelglass ไม่เคยเห็นหรือจัดเก็บการรับส่งข้อมูลของคุณ</string>
+    <string name="key_remove">นำคีย์ออก</string>
+    <string name="key_models_error_key">ป้อนคีย์ที่ถูกต้องเพื่อดูรายการโมเดล</string>
+    <string name="key_models_error_network">เชื่อมต่อ %1$s เพื่อดูรายการโมเดลไม่ได้</string>
+    <string name="key_models_error">ดูรายการโมเดลไม่ได้</string>
+
+    <string name="settings_title">การตั้งค่า</string>
+    <string name="settings_translation_model">โมเดลการแปล</string>
+    <string name="settings_try">ลองแปล</string>
+    <string name="settings_theme">ธีม</string>
+    <string name="settings_fonts">แบบอักษร</string>
+    <string name="settings_models">โมเดล</string>
+    <string name="settings_keys_note">คีย์จะถูกเข้ารหัสไว้ในอุปกรณ์นี้ และจะส่งไปยังผู้ให้บริการที่คุณเลือกเท่านั้น</string>
+    <string name="settings_storage">พื้นที่เก็บข้อมูล</string>
+    <string name="settings_history">ประวัติการท่องเว็บ</string>
+    <string name="settings_history_clear">ล้างประวัติการเข้าชมที่บันทึกไว้</string>
+    <string name="blocklist_none">ยังไม่ได้ดาวน์โหลดรายการ</string>
+    <string name="blocklist_now">อัปเดตรายการเมื่อสักครู่</string>
+    <plurals name="blocklist_hours">
+        <item quantity="other">อัปเดตรายการเมื่อ %d ชั่วโมงที่แล้ว</item>
+    </plurals>
+
+    <string name="theme_default">ค่าเริ่มต้น</string>
+    <string name="theme_tag_default">สีเหลืองเอกลักษณ์</string>
+    <string name="theme_tag_panel_pop">การ์ตูน · เส้นขอบหนา</string>
+    <string name="theme_tag_soft_bloom">พาสเทล · นุ่มนวล</string>
+    <string name="theme_tag_paper_ink">นิตยสาร · มินิมอล</string>
+
+    <string name="try_source_text">ข้อความต้นฉบับ</string>
+    <string name="try_translate">แปล</string>
+    <string name="try_via">ผ่าน %1$s</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">ต้องใช้ RAM %1$d GB</string>
+    <string name="model_manga_ocr">OCR มังงะญี่ปุ่น</string>
+    <string name="model_manga_ready">ใช้กับกรอบคำพูดภาษาญี่ปุ่น</string>
+    <string name="model_manga_missing">อ่านกรอบคำพูดภาษาญี่ปุ่นแนวตั้งได้ดีกว่าค่าเริ่มต้นมาก</string>
+    <string name="model_missing">%1$s · ไม่มีในอุปกรณ์นี้ · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s จาก %4$s · ทำงานต่อในเบื้องหลัง</string>
+    <string name="model_ready">%1$s · พร้อมใช้ · %2$s</string>
+    <string name="model_failed">%1$s · ไม่สำเร็จ · %2$s</string>
+    <string name="download_downloading">กำลังดาวน์โหลด</string>
+    <string name="download_checking">กำลังตรวจสอบไฟล์</string>
+    <string name="download_waiting_network">กำลังรอเครือข่าย</string>
+    <string name="download_retrying">การเชื่อมต่อขาดหาย กำลังลองอีกครั้ง</string>
+    <string name="download_waiting_wifi">กำลังรอ Wi-Fi</string>
+    <string name="download_paused">หยุดชั่วคราว</string>
+    <string name="download_corrupt">ไฟล์ไม่ผ่านการตรวจสอบความสมบูรณ์ แตะลองอีกครั้ง</string>
+    <string name="download_no_space">พื้นที่เก็บข้อมูลไม่พอ</string>
+    <string name="download_no_storage">ใช้พื้นที่เก็บข้อมูลไม่ได้</string>
+    <string name="download_refused">เซิร์ฟเวอร์ปฏิเสธการดาวน์โหลด</string>
+    <string name="download_connection_failed">เชื่อมต่อไม่สำเร็จ แตะลองอีกครั้ง</string>
+    <string name="download_incomplete">ดาวน์โหลดไม่ครบ แตะลองอีกครั้ง</string>
+    <string name="download_failed">ดาวน์โหลดไม่สำเร็จ</string>
+
+    <string name="packs_title">แพ็กภาษาของ Google แปลภาษา</string>
+    <string name="packs_downloading">กำลังดาวน์โหลด%1$s · %2$d จาก %3$d</string>
+    <string name="packs_failed">%1$s · ดาวน์โหลดแล้ว %2$d จาก %3$d</string>
+    <string name="packs_complete">พร้อมใช้ครบทั้ง %1$d ภาษา · ใช้งานแบบออฟไลน์ได้</string>
+    <string name="packs_none">ยังไม่ได้ดาวน์โหลด · แต่ละภาษาจะดาวน์โหลดเมื่อใช้ครั้งแรก · ภาษาละประมาณ 30 MB</string>
+    <string name="packs_some">ดาวน์โหลดแล้ว %1$d จาก %2$d</string>
+    <string name="packs_download_all">ดาวน์โหลดทั้งหมด</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">ภาษาของแอป</string>
+    <string name="app_language">ภาษา</string>
+    <string name="reader_translate_page">แปลหน้าเว็บ</string>
+    <string name="pt_detect">ตรวจหาภาษา</string>
+    <string name="pt_detected">%1$s (ตรวจพบ)</string>
+    <string name="pt_detecting">กำลังตรวจหาภาษา…</string>
+    <string name="pt_downloading">กำลังดาวน์โหลดชุดภาษา…</string>
+    <string name="pt_translating">กำลังแปลหน้าเว็บ…</string>
+    <string name="pt_done">แปลหน้าเว็บแล้ว</string>
+    <string name="pt_same">หน้านี้เป็นภาษา%1$sอยู่แล้ว</string>
+    <string name="pt_undetected">ระบุภาษาของหน้าไม่ได้ โปรดเลือกในรายการแรก</string>
+    <string name="pt_failed">แปลหน้านี้ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
+    <string name="pt_show_original">แสดงต้นฉบับ</string>
+    <string name="pt_translate">แปล</string>
+    <string name="pt_source">แปลจาก</string>
+    <string name="pt_target">แปลเป็น</string>
+    <string name="pt_original">กำลังแสดงต้นฉบับ</string>
+    <string name="cd_close_translate_bar">ปิดแถบการแปล</string>
+</resources>

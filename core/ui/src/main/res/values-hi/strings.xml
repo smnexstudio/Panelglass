@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">रद्द करें</string>
+    <string name="action_delete">मिटाएं</string>
+    <string name="action_retry">फिर से कोशिश करें</string>
+    <string name="action_download">डाउनलोड करें</string>
+    <string name="action_clear">साफ़ करें</string>
+    <string name="action_save">सेव करें</string>
+    <string name="action_add">जोड़ें</string>
+    <string name="action_add_key">कुंजी जोड़ें</string>
+    <string name="action_use_google_translate">Google अनुवाद इस्तेमाल करें</string>
+    <string name="action_use_on_device">डिवाइस पर अनुवाद करें</string>
+
+    <string name="cd_selected">चुना गया</string>
+    <string name="cd_select_engine">%1$s चुनें</string>
+    <string name="cd_back">वापस जाएं</string>
+    <string name="cd_more">ज़्यादा विकल्प</string>
+    <string name="cd_dismiss">बंद करें</string>
+    <string name="cd_remove">हटाएं</string>
+    <string name="cd_logo">Panelglass लोगो</string>
+    <string name="cd_pin">पिन करें</string>
+    <string name="cd_unpin">अनपिन करें</string>
+
+    <string name="nav_sites">साइटें</string>
+    <string name="nav_history">इतिहास</string>
+    <string name="nav_settings">सेटिंग</string>
+
+    <string name="lang_source">मूल भाषा</string>
+    <string name="lang_target">लक्षित भाषा</string>
+    <string name="lang_translate_from">स्रोत भाषा</string>
+    <string name="lang_translate_to">लक्ष्य भाषा</string>
+    <string name="lang_default">%1$s (डिफ़ॉल्ट)</string>
+
+    <string name="section_translation">अनुवाद</string>
+    <string name="section_browsing">ब्राउज़िंग</string>
+    <string name="block_ads">विज्ञापन और पॉप-अप ब्लॉक करें</string>
+    <string name="qwen_backend">Qwen यहाँ चलता है</string>
+    <string name="qwen_backend_auto">स्वचालित · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">%1$d GB से कम RAM वाले फ़ोन पर CPU, बाकी पर GPU</string>
+    <string name="qwen_backend_gpu_note">लगभग 3 गुना तेज़; लगभग 3 GB खाली मेमोरी चाहिए</string>
+    <string name="qwen_backend_cpu_note">लगभग 3 गुना धीमा; बहुत कम मेमोरी लेता है</string>
+
+    <string name="library_subtitle">आपकी पढ़ने की सूची</string>
+    <string name="library_search">साइटें खोजें या URL डालें</string>
+    <string name="library_pinned">पिन की गई</string>
+    <string name="library_all_sites">सभी साइटें</string>
+    <string name="library_add_site_row">+ साइट जोड़ें</string>
+    <string name="library_empty">अभी कोई साइट नहीं है। आप जो कॉमिक साइटें पढ़ते हैं उन्हें जोड़ें; Panelglass कभी भी डिफ़ॉल्ट सूची के साथ नहीं आता।</string>
+    <string name="site_add_title">साइट जोड़ें</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">नाम</string>
+    <string name="site_name_optional">नाम (ज़रूरी नहीं)</string>
+    <string name="site_read_in">इस भाषा में पढ़ें</string>
+    <string name="site_read">पढ़ें</string>
+    <string name="site_pin_to_top">सबसे ऊपर पिन करें</string>
+
+    <string name="history_title">इतिहास</string>
+    <string name="history_empty">आपके पढ़े गए पेज यहां दिखेंगे।</string>
+
+    <string name="reader_adblock_on">विज्ञापन ब्लॉक करना चालू है</string>
+    <string name="reader_adblock_off">विज्ञापन ब्लॉक करना बंद है</string>
+    <string name="reader_reload">फिर से लोड करें</string>
+    <string name="reader_adblock_turn_off">यहां विज्ञापन ब्लॉक करना बंद करें</string>
+    <string name="reader_adblock_turn_on">यहां विज्ञापन ब्लॉक करना चालू करें</string>
+    <string name="reader_retranslate">फिर से अनुवाद करें</string>
+    <string name="reader_add_to_sites">साइटों में जोड़ें</string>
+    <plurals name="reader_blocked">
+        <item quantity="one">इस पेज पर %d अनुरोध ब्लॉक किया गया</item>
+        <item quantity="other">इस पेज पर %d अनुरोध ब्लॉक किए गए</item>
+    </plurals>
+    <string name="reader_translating">स्क्रीन का अनुवाद हो रहा है…</string>
+    <plurals name="reader_patches">
+        <item quantity="one">स्क्रीन अनुवाद चालू · %d हिस्सा</item>
+        <item quantity="other">स्क्रीन अनुवाद चालू · %d हिस्से</item>
+    </plurals>
+    <string name="reader_start">शुरू करें</string>
+    <string name="reader_stop">रोकें</string>
+    <string name="reader_screen_translated">स्क्रीन का अनुवाद हो गया</string>
+    <string name="reader_capture_failed">पेज कैप्चर नहीं किया जा सका</string>
+
+    <string name="error_needs_key">%1$s के लिए API कुंजी ज़रूरी है</string>
+    <string name="error_quota">%1$s का कोटा खत्म हो गया है</string>
+    <string name="error_unavailable_now">%1$s अभी उपलब्ध नहीं है</string>
+    <string name="error_unavailable">%1$s उपलब्ध नहीं है</string>
+    <string name="error_rate_limited">%1$s अनुरोधों को सीमित कर रहा है; थोड़ी देर बाद फिर से कोशिश करें</string>
+    <string name="error_overloaded">%1$s पर अभी बहुत ज़्यादा लोड है; फिर से कोशिश करें या कोई दूसरा मॉडल चुनें</string>
+    <string name="error_overloaded_scroll">%1$s पर अभी बहुत ज़्यादा लोड है; फिर से कोशिश करने के लिए स्क्रोल करें या फिर से अनुवाद करें</string>
+    <string name="error_malformed">%1$s से ऐसा जवाब मिला जिसका इस्तेमाल नहीं हो सकता</string>
+    <string name="error_network">%1$s से कनेक्ट करते समय नेटवर्क की गड़बड़ी हुई</string>
+    <string name="error_too_long">%1$s ने बहुत ज़्यादा समय लिया</string>
+    <string name="error_failed">%1$s काम नहीं कर सका</string>
+    <string name="error_translation_failed">अनुवाद नहीं हो सका</string>
+    <string name="error_model_missing">डिवाइस वाला मॉडल अभी डाउनलोड नहीं हुआ है</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (डिवाइस पर)</string>
+    <string name="picker_title">इंजन चुनें</string>
+    <string name="picker_subtitle">इस अनुवाद के लिए इंजन चुनें</string>
+    <string name="picker_local">इस डिवाइस पर · मॉडल को सेटिंग में डाउनलोड करें</string>
+    <string name="picker_local_ready">इस डिवाइस पर · डाउनलोड हो चुका है</string>
+    <string name="picker_google">मुफ़्त · इस डिवाइस पर · भाषा पैक एक बार डाउनलोड होते हैं</string>
+    <string name="picker_custom_keys">अपनी कुंजियां (कोटा इस्तेमाल नहीं होता)</string>
+    <string name="picker_set_key">API कुंजी सेट करने के लिए टैप करें</string>
+    <string name="picker_model_not_set">मॉडल सेट नहीं है</string>
+    <string name="picker_key_saved">%1$s · कुंजी सेव है · बदलने के लिए टैप करें</string>
+
+    <string name="key_title">%1$s कुंजी</string>
+    <string name="key_hint">API कुंजी</string>
+    <string name="key_hint_saved">API कुंजी (सेव है · बनाए रखने के लिए खाली छोड़ें)</string>
+    <string name="key_model">मॉडल</string>
+    <string name="key_models_loading">मॉडल लोड हो रहे हैं…</string>
+    <plurals name="key_models_count">
+        <item quantity="one">इस कुंजी के लिए %d मॉडल</item>
+        <item quantity="other">इस कुंजी के लिए %d मॉडल</item>
+    </plurals>
+    <string name="key_models_hint">मॉडल की सूची आपकी कुंजी से लोड होती है</string>
+    <string name="key_refresh">सूची रीफ़्रेश करें</string>
+    <string name="key_note">इस डिवाइस पर एन्क्रिप्ट करके सेव की जाती है। इस कुंजी वाले अनुरोध सीधे %1$s को जाते हैं — Panelglass आपका ट्रैफ़िक कभी नहीं देखता या सेव करता।</string>
+    <string name="key_remove">कुंजी हटाएं</string>
+    <string name="key_models_error_key">मॉडल देखने के लिए मान्य कुंजी डालें</string>
+    <string name="key_models_error_network">मॉडल देखने के लिए %1$s से कनेक्ट नहीं हो सका</string>
+    <string name="key_models_error">मॉडल की सूची नहीं मिल सकी</string>
+
+    <string name="settings_title">सेटिंग</string>
+    <string name="settings_translation_model">अनुवाद मॉडल</string>
+    <string name="settings_try">अनुवाद आज़माएं</string>
+    <string name="settings_theme">थीम</string>
+    <string name="settings_fonts">फ़ॉन्ट</string>
+    <string name="settings_models">मॉडल</string>
+    <string name="settings_keys_note">कुंजियां इस डिवाइस पर एन्क्रिप्ट की जाती हैं और सिर्फ़ आपकी चुनी हुई सेवा देने वाली कंपनी को भेजी जाती हैं।</string>
+    <string name="settings_storage">स्टोरेज</string>
+    <string name="settings_history">ब्राउज़िंग इतिहास</string>
+    <string name="settings_history_clear">रिकॉर्ड किया गया विज़िट इतिहास साफ़ करें</string>
+    <string name="blocklist_none">सूचियां अभी डाउनलोड नहीं हुई हैं</string>
+    <string name="blocklist_now">सूचियां अभी-अभी अपडेट हुईं</string>
+    <plurals name="blocklist_hours">
+        <item quantity="one">सूचियां %d घंटे पहले अपडेट हुईं</item>
+        <item quantity="other">सूचियां %d घंटे पहले अपडेट हुईं</item>
+    </plurals>
+
+    <string name="theme_default">डिफ़ॉल्ट</string>
+    <string name="theme_tag_default">खास पीला</string>
+    <string name="theme_tag_panel_pop">कॉमिक · मोटी आउटलाइन</string>
+    <string name="theme_tag_soft_bloom">पेस्टल · हल्की चमक</string>
+    <string name="theme_tag_paper_ink">संपादकीय · सादा</string>
+
+    <string name="try_source_text">मूल टेक्स्ट</string>
+    <string name="try_translate">अनुवाद करें</string>
+    <string name="try_via">%1$s से</string>
+
+    <string name="size_mb">%1$d एमबी</string>
+    <string name="model_needs_ram">%1$d जीबी रैम ज़रूरी है</string>
+    <string name="model_manga_ocr">जापानी मांगा OCR</string>
+    <string name="model_manga_ready">जापानी स्पीच बबल के लिए इस्तेमाल होता है</string>
+    <string name="model_manga_missing">खड़ी लिखी जापानी स्पीच बबल को डिफ़ॉल्ट से कहीं बेहतर पढ़ता है</string>
+    <string name="model_missing">%1$s · इस डिवाइस पर नहीं है · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %4$s में से %3$s · बैकग्राउंड में जारी रहेगा</string>
+    <string name="model_ready">%1$s · तैयार · %2$s</string>
+    <string name="model_failed">%1$s · नहीं हो सका · %2$s</string>
+    <string name="download_downloading">डाउनलोड हो रहा है</string>
+    <string name="download_checking">फ़ाइल की जांच हो रही है</string>
+    <string name="download_waiting_network">नेटवर्क का इंतज़ार है</string>
+    <string name="download_retrying">कनेक्शन टूट गया, फिर से कोशिश हो रही है</string>
+    <string name="download_waiting_wifi">वाई-फ़ाई का इंतज़ार है</string>
+    <string name="download_paused">रोका गया</string>
+    <string name="download_corrupt">फ़ाइल सही होने की जांच में फ़ेल हो गई; फिर से कोशिश करें पर टैप करें</string>
+    <string name="download_no_space">स्टोरेज में जगह कम है</string>
+    <string name="download_no_storage">स्टोरेज उपलब्ध नहीं है</string>
+    <string name="download_refused">सर्वर ने डाउनलोड मना कर दिया</string>
+    <string name="download_connection_failed">कनेक्शन नहीं हो सका; फिर से कोशिश करें पर टैप करें</string>
+    <string name="download_incomplete">डाउनलोड पूरा नहीं हुआ; फिर से कोशिश करें पर टैप करें</string>
+    <string name="download_failed">डाउनलोड नहीं हो सका</string>
+
+    <string name="packs_title">Google अनुवाद के भाषा पैक</string>
+    <string name="packs_downloading">%1$s डाउनलोड हो रहा है · %3$d में से %2$d</string>
+    <string name="packs_failed">%1$s · %3$d में से %2$d डाउनलोड हुए</string>
+    <string name="packs_complete">सभी %1$d भाषाएं तैयार हैं · ऑफ़लाइन काम करता है</string>
+    <string name="packs_none">कुछ भी डाउनलोड नहीं हुआ · हर भाषा पहली बार इस्तेमाल पर मिलती है · हर एक करीब 30 एमबी</string>
+    <string name="packs_some">%2$d में से %1$d डाउनलोड हुए</string>
+    <string name="packs_download_all">सभी डाउनलोड करें</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">ऐप की भाषा</string>
+    <string name="app_language">भाषा</string>
+    <string name="reader_translate_page">पेज का अनुवाद करें</string>
+    <string name="pt_detect">भाषा पहचानें</string>
+    <string name="pt_detected">%1$s (पहचानी गई)</string>
+    <string name="pt_detecting">भाषा पहचानी जा रही है…</string>
+    <string name="pt_downloading">भाषा पैक लाए जा रहे हैं…</string>
+    <string name="pt_translating">पेज का अनुवाद हो रहा है…</string>
+    <string name="pt_done">पेज का अनुवाद हो गया</string>
+    <string name="pt_same">यह पेज पहले से %1$s में है</string>
+    <string name="pt_undetected">पेज की भाषा पता नहीं चली। पहली सूची में चुनें।</string>
+    <string name="pt_failed">इस पेज का अनुवाद नहीं हो सका। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="pt_show_original">मूल दिखाएं</string>
+    <string name="pt_translate">अनुवाद करें</string>
+    <string name="pt_source">इससे अनुवाद करें</string>
+    <string name="pt_target">इसमें अनुवाद करें</string>
+    <string name="pt_original">मूल दिखाया जा रहा है</string>
+    <string name="cd_close_translate_bar">अनुवाद बार बंद करें</string>
+</resources>

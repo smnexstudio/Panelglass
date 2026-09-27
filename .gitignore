@@ -1,0 +1,78 @@
+# --- Gradle / Kotlin build output --------------------------------------------
+.gradle/
+build/
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+# IDE-compiled output (VS Code / Eclipse Java tooling writes `bin/` per module)
+bin/
+out/
+
+# --- IDE and OS ----------------------------------------------------------------
+*.iml
+/.idea
+/.run
+.vscode/
+.fleet/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# --- Machine-local configuration -----------------------------------------------
+# sdk.dir (the Android SDK location) is written here by Android Studio.
+local.properties
+
+# Claude Code: its instruction file and per-machine settings stay on the maintainer's machine.
+CLAUDE.md
+.claude/
+
+# --- Secrets and signing -------------------------------------------------------
+# Provider API keys never touch the repo: they live in SecureKeyStore on the device.
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+google-services.json
+*.env
+.env*
+
+# --- Build artifacts -------------------------------------------------------------
+*.apk
+*.aab
+*.aar
+/release
+lint-results*.html
+lint-results*.xml
+/reports
+
+# --- Profiling, logs and debug dumps ---------------------------------------------
+*.hprof
+*.trace
+*.log
+/perf-*.json
+debug-dump/
+
+# --- Models ------------------------------------------------------------------------
+# The comic text detector under core/ocr/src/main/assets/ ships with the app and IS
+# committed. Everything else is downloaded at runtime (LiteRT-LM translators,
+# manga-ocr) or is training/conversion scratch, and stays out.
+/models/
+/training/
+*.pt
+*.pth
+*.task
+*.litertlm
+*.onnx.fp32
+
+# --- Raw screen recordings (too large for GitHub; edited versions are committed) ---
+docs/ScreenRecordings/raw/
+
+# JVM crash logs
+hs_err_pid*.log
+
+# Personal notes that stay on this machine
+*.local.md

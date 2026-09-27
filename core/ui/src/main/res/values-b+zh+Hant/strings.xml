@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">取消</string>
+    <string name="action_delete">刪除</string>
+    <string name="action_retry">重試</string>
+    <string name="action_download">下載</string>
+    <string name="action_clear">清除</string>
+    <string name="action_save">儲存</string>
+    <string name="action_add">新增</string>
+    <string name="action_add_key">新增金鑰</string>
+    <string name="action_use_google_translate">使用 Google 翻譯</string>
+    <string name="action_use_on_device">使用裝置端翻譯</string>
+
+    <string name="cd_selected">已選取</string>
+    <string name="cd_select_engine">選取 %1$s</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_more">更多選項</string>
+    <string name="cd_dismiss">關閉</string>
+    <string name="cd_remove">移除</string>
+    <string name="cd_logo">Panelglass 標誌</string>
+    <string name="cd_pin">釘選</string>
+    <string name="cd_unpin">取消釘選</string>
+
+    <string name="nav_sites">網站</string>
+    <string name="nav_history">記錄</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="lang_source">來源語言</string>
+    <string name="lang_target">目標語言</string>
+    <string name="lang_translate_from">來源語言</string>
+    <string name="lang_translate_to">目標語言</string>
+    <string name="lang_default">%1$s（預設）</string>
+
+    <string name="section_translation">翻譯</string>
+    <string name="section_browsing">瀏覽</string>
+    <string name="block_ads">封鎖廣告和彈出式視窗</string>
+    <string name="qwen_backend">Qwen 執行於</string>
+    <string name="qwen_backend_auto">自動 · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">記憶體小於 %1$d GB 的手機用 CPU，其餘用 GPU</string>
+    <string name="qwen_backend_gpu_note">約快 3 倍；需要約 3 GB 可用記憶體</string>
+    <string name="qwen_backend_cpu_note">約慢 3 倍；佔用記憶體少得多</string>
+
+    <string name="library_subtitle">你的閱讀清單</string>
+    <string name="library_search">搜尋網站或輸入網址</string>
+    <string name="library_pinned">已釘選</string>
+    <string name="library_all_sites">所有網站</string>
+    <string name="library_add_site_row">+ 新增網站</string>
+    <string name="library_empty">還沒有網站。新增你常看的漫畫網站；Panelglass 不附帶任何預設網站清單。</string>
+    <string name="site_add_title">新增網站</string>
+    <string name="site_url">網址</string>
+    <string name="site_name">名稱</string>
+    <string name="site_name_optional">名稱（選填）</string>
+    <string name="site_read_in">閱讀語言</string>
+    <string name="site_read">閱讀</string>
+    <string name="site_pin_to_top">釘選到頂端</string>
+
+    <string name="history_title">記錄</string>
+    <string name="history_empty">你讀過的頁面會顯示在這裡。</string>
+
+    <string name="reader_adblock_on">廣告封鎖已開啟</string>
+    <string name="reader_adblock_off">廣告封鎖已關閉</string>
+    <string name="reader_reload">重新載入</string>
+    <string name="reader_adblock_turn_off">在此網站關閉廣告封鎖</string>
+    <string name="reader_adblock_turn_on">在此網站開啟廣告封鎖</string>
+    <string name="reader_retranslate">重新翻譯</string>
+    <string name="reader_add_to_sites">新增到網站</string>
+    <plurals name="reader_blocked">
+        <item quantity="other">已在此頁面封鎖 %d 個要求</item>
+    </plurals>
+    <string name="reader_translating">正在翻譯畫面…</string>
+    <plurals name="reader_patches">
+        <item quantity="other">畫面翻譯已開啟 · %d 處</item>
+    </plurals>
+    <string name="reader_start">開始</string>
+    <string name="reader_stop">停止</string>
+    <string name="reader_screen_translated">畫面已翻譯</string>
+    <string name="reader_capture_failed">無法擷取頁面</string>
+
+    <string name="error_needs_key">%1$s 需要 API 金鑰</string>
+    <string name="error_quota">%1$s 配額已用完</string>
+    <string name="error_unavailable_now">%1$s 目前無法使用</string>
+    <string name="error_unavailable">%1$s 無法使用</string>
+    <string name="error_rate_limited">%1$s 要求過於頻繁，請稍後再試</string>
+    <string name="error_overloaded">%1$s 目前負載過高，請重試或選擇其他模型</string>
+    <string name="error_overloaded_scroll">%1$s 目前負載過高，請捲動頁面或重新翻譯</string>
+    <string name="error_malformed">%1$s 傳回了無法使用的回覆</string>
+    <string name="error_network">連線至 %1$s 時發生網路錯誤</string>
+    <string name="error_too_long">%1$s 回應時間過長</string>
+    <string name="error_failed">%1$s 發生錯誤</string>
+    <string name="error_translation_failed">翻譯失敗</string>
+    <string name="error_model_missing">裝置端模型尚未下載</string>
+    <string name="error_with_reason">%1$s（%2$s）</string>
+
+    <string name="engine_on_device">%1$s（裝置端）</string>
+    <string name="picker_title">選取引擎</string>
+    <string name="picker_subtitle">選擇用於翻譯的引擎</string>
+    <string name="picker_local">在此裝置上執行 · 請在設定中下載模型</string>
+    <string name="picker_local_ready">在此裝置上執行 · 已下載</string>
+    <string name="picker_google">免費 · 在此裝置上執行 · 語言套件只需下載一次</string>
+    <string name="picker_custom_keys">自有金鑰（不佔用配額）</string>
+    <string name="picker_set_key">輕觸以設定 API 金鑰</string>
+    <string name="picker_model_not_set">未設定模型</string>
+    <string name="picker_key_saved">%1$s · 已儲存金鑰 · 輕觸以變更</string>
+
+    <string name="key_title">%1$s 金鑰</string>
+    <string name="key_hint">API 金鑰</string>
+    <string name="key_hint_saved">API 金鑰（已儲存 · 留空則保留）</string>
+    <string name="key_model">模型</string>
+    <string name="key_models_loading">正在載入模型…</string>
+    <plurals name="key_models_count">
+        <item quantity="other">此金鑰可用 %d 個模型</item>
+    </plurals>
+    <string name="key_models_hint">模型清單會透過你的金鑰載入</string>
+    <string name="key_refresh">重新整理清單</string>
+    <string name="key_note">加密儲存在此裝置上。使用此金鑰的要求會直接傳送至 %1$s，Panelglass 不會查看或儲存你的流量。</string>
+    <string name="key_remove">移除金鑰</string>
+    <string name="key_models_error_key">請輸入有效的金鑰以列出模型</string>
+    <string name="key_models_error_network">無法連線至 %1$s，未能列出模型</string>
+    <string name="key_models_error">無法列出模型</string>
+
+    <string name="settings_title">設定</string>
+    <string name="settings_translation_model">翻譯模型</string>
+    <string name="settings_try">試試翻譯</string>
+    <string name="settings_theme">主題</string>
+    <string name="settings_fonts">字型</string>
+    <string name="settings_models">模型</string>
+    <string name="settings_keys_note">金鑰加密儲存在此裝置上，只會傳送給你選擇的服務供應商。</string>
+    <string name="settings_storage">儲存空間</string>
+    <string name="settings_history">瀏覽記錄</string>
+    <string name="settings_history_clear">清除已記錄的造訪記錄</string>
+    <string name="blocklist_none">清單尚未下載</string>
+    <string name="blocklist_now">清單剛剛更新</string>
+    <plurals name="blocklist_hours">
+        <item quantity="other">清單於 %d 小時前更新</item>
+    </plurals>
+
+    <string name="theme_default">預設</string>
+    <string name="theme_tag_default">招牌黃</string>
+    <string name="theme_tag_panel_pop">漫畫 · 粗輪廓</string>
+    <string name="theme_tag_soft_bloom">粉彩 · 柔和光暈</string>
+    <string name="theme_tag_paper_ink">雜誌風 · 極簡</string>
+
+    <string name="try_source_text">原文</string>
+    <string name="try_translate">翻譯</string>
+    <string name="try_via">來自 %1$s</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">需要 %1$d GB 記憶體</string>
+    <string name="model_manga_ocr">日文漫畫 OCR</string>
+    <string name="model_manga_ready">用於日文對話框</string>
+    <string name="model_manga_missing">辨識直排日文對話框的效果遠優於預設方式</string>
+    <string name="model_missing">%1$s · 不在此裝置上 · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s / %4$s · 將在背景繼續</string>
+    <string name="model_ready">%1$s · 就緒 · %2$s</string>
+    <string name="model_failed">%1$s · 失敗 · %2$s</string>
+    <string name="download_downloading">正在下載</string>
+    <string name="download_checking">正在驗證檔案</string>
+    <string name="download_waiting_network">正在等待網路</string>
+    <string name="download_retrying">連線中斷，正在重試</string>
+    <string name="download_waiting_wifi">正在等待 Wi-Fi</string>
+    <string name="download_paused">已暫停</string>
+    <string name="download_corrupt">檔案完整性驗證失敗，請輕觸「重試」</string>
+    <string name="download_no_space">儲存空間不足</string>
+    <string name="download_no_storage">無法使用儲存空間</string>
+    <string name="download_refused">伺服器拒絕了下載</string>
+    <string name="download_connection_failed">連線失敗，請輕觸「重試」</string>
+    <string name="download_incomplete">下載未完成，請輕觸「重試」</string>
+    <string name="download_failed">下載失敗</string>
+
+    <string name="packs_title">Google 翻譯語言套件</string>
+    <string name="packs_downloading">正在下載%1$s · %2$d/%3$d</string>
+    <string name="packs_failed">%1$s · 已下載 %2$d/%3$d</string>
+    <string name="packs_complete">全部 %1$d 種語言已就緒 · 可離線使用</string>
+    <string name="packs_none">尚未下載 · 每種語言首次使用時取得 · 每種約 30 MB</string>
+    <string name="packs_some">已下載 %1$d/%2$d</string>
+    <string name="packs_download_all">全部下載</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">應用程式語言</string>
+    <string name="app_language">語言</string>
+    <string name="reader_translate_page">翻譯網頁</string>
+    <string name="pt_detect">偵測語言</string>
+    <string name="pt_detected">%1$s（已偵測）</string>
+    <string name="pt_detecting">正在偵測語言…</string>
+    <string name="pt_downloading">正在取得語言套件…</string>
+    <string name="pt_translating">正在翻譯網頁…</string>
+    <string name="pt_done">網頁已翻譯</string>
+    <string name="pt_same">這個網頁已經是%1$s</string>
+    <string name="pt_undetected">無法判斷網頁語言，請在第一個清單中選擇。</string>
+    <string name="pt_failed">無法翻譯這個網頁。請檢查網路連線後再試一次。</string>
+    <string name="pt_show_original">顯示原文</string>
+    <string name="pt_translate">翻譯</string>
+    <string name="pt_source">翻譯來源</string>
+    <string name="pt_target">翻譯成</string>
+    <string name="pt_original">正在顯示原文</string>
+    <string name="cd_close_translate_bar">關閉翻譯列</string>
+</resources>

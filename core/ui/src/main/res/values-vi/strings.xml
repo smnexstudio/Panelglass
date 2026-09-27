@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">Hủy</string>
+    <string name="action_delete">Xóa</string>
+    <string name="action_retry">Thử lại</string>
+    <string name="action_download">Tải xuống</string>
+    <string name="action_clear">Xóa</string>
+    <string name="action_save">Lưu</string>
+    <string name="action_add">Thêm</string>
+    <string name="action_add_key">Thêm khóa</string>
+    <string name="action_use_google_translate">Dùng Google Dịch</string>
+    <string name="action_use_on_device">Dịch trên thiết bị</string>
+
+    <string name="cd_selected">Đã chọn</string>
+    <string name="cd_select_engine">Chọn %1$s</string>
+    <string name="cd_back">Quay lại</string>
+    <string name="cd_more">Tùy chọn khác</string>
+    <string name="cd_dismiss">Đóng</string>
+    <string name="cd_remove">Xóa</string>
+    <string name="cd_logo">Biểu trưng Panelglass</string>
+    <string name="cd_pin">Ghim</string>
+    <string name="cd_unpin">Bỏ ghim</string>
+
+    <string name="nav_sites">Trang web</string>
+    <string name="nav_history">Lịch sử</string>
+    <string name="nav_settings">Cài đặt</string>
+
+    <string name="lang_source">Ngôn ngữ nguồn</string>
+    <string name="lang_target">Ngôn ngữ đích</string>
+    <string name="lang_translate_from">Từ</string>
+    <string name="lang_translate_to">Sang</string>
+    <string name="lang_default">%1$s (mặc định)</string>
+
+    <string name="section_translation">Dịch</string>
+    <string name="section_browsing">Duyệt web</string>
+    <string name="block_ads">Chặn quảng cáo và cửa sổ bật lên</string>
+    <string name="qwen_backend">Qwen chạy trên</string>
+    <string name="qwen_backend_auto">Tự động · %1$s</string>
+    <string name="qwen_backend_gpu">GPU</string>
+    <string name="qwen_backend_cpu">CPU</string>
+    <string name="qwen_backend_auto_note">CPU trên điện thoại có RAM dưới %1$d GB, còn lại dùng GPU</string>
+    <string name="qwen_backend_gpu_note">Nhanh hơn khoảng 3 lần; cần khoảng 3 GB bộ nhớ trống</string>
+    <string name="qwen_backend_cpu_note">Chậm hơn khoảng 3 lần; dùng ít bộ nhớ hơn nhiều</string>
+
+    <string name="library_subtitle">Danh sách đọc của bạn</string>
+    <string name="library_search">Tìm trang web hoặc nhập URL</string>
+    <string name="library_pinned">Đã ghim</string>
+    <string name="library_all_sites">Tất cả trang web</string>
+    <string name="library_add_site_row">+ Thêm trang web</string>
+    <string name="library_empty">Chưa có trang web nào. Hãy thêm các trang truyện tranh bạn đọc; Panelglass không bao giờ kèm sẵn danh sách mặc định.</string>
+    <string name="site_add_title">Thêm trang web</string>
+    <string name="site_url">URL</string>
+    <string name="site_name">Tên</string>
+    <string name="site_name_optional">Tên (không bắt buộc)</string>
+    <string name="site_read_in">Đọc bằng</string>
+    <string name="site_read">Đọc</string>
+    <string name="site_pin_to_top">Ghim lên đầu</string>
+
+    <string name="history_title">Lịch sử</string>
+    <string name="history_empty">Các trang bạn đã đọc sẽ hiển thị ở đây.</string>
+
+    <string name="reader_adblock_on">Đang bật chặn quảng cáo</string>
+    <string name="reader_adblock_off">Đang tắt chặn quảng cáo</string>
+    <string name="reader_reload">Tải lại</string>
+    <string name="reader_adblock_turn_off">Tắt chặn quảng cáo tại đây</string>
+    <string name="reader_adblock_turn_on">Bật chặn quảng cáo tại đây</string>
+    <string name="reader_retranslate">Dịch lại</string>
+    <string name="reader_add_to_sites">Thêm vào trang web</string>
+    <plurals name="reader_blocked">
+        <item quantity="other">Đã chặn %d yêu cầu trên trang này</item>
+    </plurals>
+    <string name="reader_translating">Đang dịch màn hình…</string>
+    <plurals name="reader_patches">
+        <item quantity="other">Đang bật dịch màn hình · %d vùng</item>
+    </plurals>
+    <string name="reader_start">Bắt đầu</string>
+    <string name="reader_stop">Dừng</string>
+    <string name="reader_screen_translated">Đã dịch màn hình</string>
+    <string name="reader_capture_failed">Không thể chụp trang</string>
+
+    <string name="error_needs_key">%1$s cần khóa API</string>
+    <string name="error_quota">Đã hết hạn mức của %1$s</string>
+    <string name="error_unavailable_now">%1$s hiện không khả dụng</string>
+    <string name="error_unavailable">%1$s không khả dụng</string>
+    <string name="error_rate_limited">%1$s đang giới hạn yêu cầu; hãy thử lại sau ít phút</string>
+    <string name="error_overloaded">%1$s hiện đang quá tải; hãy thử lại hoặc chọn mô hình khác</string>
+    <string name="error_overloaded_scroll">%1$s hiện đang quá tải; hãy cuộn hoặc dịch lại để thử lại</string>
+    <string name="error_malformed">%1$s trả về phản hồi không dùng được</string>
+    <string name="error_network">Lỗi mạng khi kết nối tới %1$s</string>
+    <string name="error_too_long">%1$s mất quá nhiều thời gian</string>
+    <string name="error_failed">%1$s gặp lỗi</string>
+    <string name="error_translation_failed">Dịch không thành công</string>
+    <string name="error_model_missing">Chưa tải mô hình trên thiết bị</string>
+    <string name="error_with_reason">%1$s (%2$s)</string>
+
+    <string name="engine_on_device">%1$s (trên thiết bị)</string>
+    <string name="picker_title">Chọn công cụ</string>
+    <string name="picker_subtitle">Chọn công cụ cho lần dịch này</string>
+    <string name="picker_local">Trên thiết bị này · tải mô hình trong Cài đặt</string>
+    <string name="picker_local_ready">Trên thiết bị này · đã tải xuống</string>
+    <string name="picker_google">Miễn phí · trên thiết bị này · gói ngôn ngữ chỉ tải một lần</string>
+    <string name="picker_custom_keys">Khóa riêng (không dùng hạn mức)</string>
+    <string name="picker_set_key">Nhấn để đặt khóa API</string>
+    <string name="picker_model_not_set">Chưa đặt mô hình</string>
+    <string name="picker_key_saved">%1$s · đã lưu khóa · nhấn để thay đổi</string>
+
+    <string name="key_title">Khóa %1$s</string>
+    <string name="key_hint">Khóa API</string>
+    <string name="key_hint_saved">Khóa API (đã lưu · để trống để giữ nguyên)</string>
+    <string name="key_model">Mô hình</string>
+    <string name="key_models_loading">Đang tải mô hình…</string>
+    <plurals name="key_models_count">
+        <item quantity="other">%d mô hình cho khóa này</item>
+    </plurals>
+    <string name="key_models_hint">Danh sách mô hình được tải từ khóa của bạn</string>
+    <string name="key_refresh">Làm mới danh sách</string>
+    <string name="key_note">Được lưu mã hóa trên thiết bị này. Các yêu cầu dùng khóa này được gửi thẳng tới %1$s — Panelglass không bao giờ xem hay lưu lưu lượng của bạn.</string>
+    <string name="key_remove">Xóa khóa</string>
+    <string name="key_models_error_key">Nhập khóa hợp lệ để xem danh sách mô hình</string>
+    <string name="key_models_error_network">Không thể kết nối tới %1$s để lấy danh sách mô hình</string>
+    <string name="key_models_error">Không thể lấy danh sách mô hình</string>
+
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_translation_model">Mô hình dịch</string>
+    <string name="settings_try">Thử dịch</string>
+    <string name="settings_theme">Giao diện</string>
+    <string name="settings_fonts">Phông chữ</string>
+    <string name="settings_models">Mô hình</string>
+    <string name="settings_keys_note">Khóa được mã hóa trên thiết bị này và chỉ được gửi tới nhà cung cấp bạn đã chọn.</string>
+    <string name="settings_storage">Bộ nhớ</string>
+    <string name="settings_history">Lịch sử duyệt web</string>
+    <string name="settings_history_clear">Xóa lịch sử truy cập đã ghi</string>
+    <string name="blocklist_none">Chưa tải danh sách</string>
+    <string name="blocklist_now">Danh sách vừa được cập nhật</string>
+    <plurals name="blocklist_hours">
+        <item quantity="other">Danh sách được cập nhật %d giờ trước</item>
+    </plurals>
+
+    <string name="theme_default">Mặc định</string>
+    <string name="theme_tag_default">Vàng đặc trưng</string>
+    <string name="theme_tag_panel_pop">Truyện tranh · viền đậm</string>
+    <string name="theme_tag_soft_bloom">Pastel · dịu nhẹ</string>
+    <string name="theme_tag_paper_ink">Tạp chí · tối giản</string>
+
+    <string name="try_source_text">Văn bản nguồn</string>
+    <string name="try_translate">Dịch</string>
+    <string name="try_via">qua %1$s</string>
+
+    <string name="size_mb">%1$d MB</string>
+    <string name="model_needs_ram">cần %1$d GB RAM</string>
+    <string name="model_manga_ocr">OCR manga tiếng Nhật</string>
+    <string name="model_manga_ready">dùng cho bóng thoại tiếng Nhật</string>
+    <string name="model_manga_missing">đọc bóng thoại tiếng Nhật viết dọc tốt hơn nhiều so với mặc định</string>
+    <string name="model_missing">%1$s · không có trên thiết bị này · %2$s</string>
+    <string name="model_downloading">%1$s · %2$s · %3$s / %4$s · tiếp tục chạy trong nền</string>
+    <string name="model_ready">%1$s · sẵn sàng · %2$s</string>
+    <string name="model_failed">%1$s · không thành công · %2$s</string>
+    <string name="download_downloading">đang tải xuống</string>
+    <string name="download_checking">đang kiểm tra tệp</string>
+    <string name="download_waiting_network">đang chờ mạng</string>
+    <string name="download_retrying">mất kết nối, đang thử lại</string>
+    <string name="download_waiting_wifi">đang chờ Wi-Fi</string>
+    <string name="download_paused">đã tạm dừng</string>
+    <string name="download_corrupt">Tệp không vượt qua bước kiểm tra toàn vẹn; nhấn Thử lại</string>
+    <string name="download_no_space">Không đủ dung lượng lưu trữ</string>
+    <string name="download_no_storage">Bộ nhớ không khả dụng</string>
+    <string name="download_refused">Máy chủ đã từ chối tải xuống</string>
+    <string name="download_connection_failed">Kết nối không thành công; nhấn Thử lại</string>
+    <string name="download_incomplete">Tải xuống chưa hoàn tất; nhấn Thử lại</string>
+    <string name="download_failed">Tải xuống không thành công</string>
+
+    <string name="packs_title">Gói ngôn ngữ Google Dịch</string>
+    <string name="packs_downloading">Đang tải %1$s · %2$d/%3$d</string>
+    <string name="packs_failed">%1$s · đã tải %2$d/%3$d</string>
+    <string name="packs_complete">Cả %1$d ngôn ngữ đã sẵn sàng · dùng được khi ngoại tuyến</string>
+    <string name="packs_none">Chưa tải gói nào · mỗi ngôn ngữ được tải ở lần dùng đầu tiên · khoảng 30 MB mỗi gói</string>
+    <string name="packs_some">Đã tải %1$d/%2$d</string>
+    <string name="packs_download_all">Tải tất cả</string>
+
+    <!-- App language, and the reader's Translate page bar -->
+    <string name="settings_app_language">Ngôn ngữ ứng dụng</string>
+    <string name="app_language">Ngôn ngữ</string>
+    <string name="reader_translate_page">Dịch trang</string>
+    <string name="pt_detect">Phát hiện ngôn ngữ</string>
+    <string name="pt_detected">%1$s (đã phát hiện)</string>
+    <string name="pt_detecting">Đang phát hiện ngôn ngữ…</string>
+    <string name="pt_downloading">Đang tải gói ngôn ngữ…</string>
+    <string name="pt_translating">Đang dịch trang…</string>
+    <string name="pt_done">Đã dịch trang</string>
+    <string name="pt_same">Trang này đã ở %1$s</string>
+    <string name="pt_undetected">Không xác định được ngôn ngữ của trang. Hãy chọn trong danh sách đầu tiên.</string>
+    <string name="pt_failed">Không dịch được trang này. Hãy kiểm tra kết nối rồi thử lại.</string>
+    <string name="pt_show_original">Hiện bản gốc</string>
+    <string name="pt_translate">Dịch</string>
+    <string name="pt_source">Dịch từ</string>
+    <string name="pt_target">Dịch sang</string>
+    <string name="pt_original">Đang hiện bản gốc</string>
+    <string name="cd_close_translate_bar">Đóng thanh dịch</string>
+</resources>

@@ -1,0 +1,51 @@
+Panelglass
+Copyright 2026 smnexstudio
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+That licence covers the Panelglass source code and documentation. The
+third-party files below are included in this repository under their own terms
+and are NOT covered by it.
+
+-------------------------------------------------------------------------------
+Comic text and bubble detector
+  core/ocr/src/main/assets/detector-v4-s_int8.onnx
+  ogkalu/comic-text-and-bubble-detector (RT-DETR-v2), https://huggingface.co/ogkalu
+  Licensed under the Apache License, Version 2.0.
+
+Plus Jakarta Sans
+  core/ui/src/main/res/font/plus_jakarta_sans.ttf
+  core/render/src/main/res/font/plus_jakarta_sans.ttf
+  Copyright 2020 The Plus Jakarta Sans Project Authors
+  (https://github.com/tokotype/PlusJakartaSans)
+  Licensed under the SIL Open Font License, Version 1.1
+  (core/ui/PlusJakartaSans-OFL.txt).
+
+Coming Soon
+  core/ui/src/main/res/font/coming_soon.ttf
+  core/render/src/main/res/font/coming_soon.ttf
+  Copyright (c) 2010 by Open Window. From Google Fonts (google/fonts, apache/comingsoon).
+  Licensed under the Apache License, Version 2.0.
+
+Luckiest Guy
+  core/ui/src/main/res/font/luckiest_guy.ttf
+  core/render/src/main/res/font/luckiest_guy.ttf
+  Copyright (c) 2010 by Brian J. Bonislawsky DBA Astigmatic (AOETI).
+  From Google Fonts (google/fonts, apache/luckiestguy).
+  Licensed under the Apache License, Version 2.0.
+
+-------------------------------------------------------------------------------
+Models downloaded at runtime (not included in this repository) keep their own
+licences: manga-ocr (Apache-2.0), Qwen2.5-1.5B-Instruct (Apache-2.0) and
+Gemma 4 E2B (Gemma Terms of Use). Libraries are listed in
+gradle/libs.versions.toml and keep their own licences.
+
+-------------------------------------------------------------------------------
+Block lists fetched at runtime (not included in this repository or the app)
+The app downloads these on the user's device, directly from each project, and
+keeps them under their own licences:
+  AdGuard DNS filter, https://github.com/AdguardTeam/AdGuardSDNSFilter
+    Licensed under the GNU General Public License v3.0.
+  HaGeZi DNS blocklists (pop-up ads), https://github.com/hagezi/dns-blocklists
+    Licensed under the GNU General Public License v3.0.
+  StevenBlack unified hosts, https://github.com/StevenBlack/hosts
+    Licensed under the MIT License.
