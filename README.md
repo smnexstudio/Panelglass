@@ -1,14 +1,15 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Panelglass logo" width="112">
+  <img src="docs/assets/logo.svg" alt="Panelglass logo - Manga Translator for Android" width="112">
 </p>
 
-<h1 align="center">Panelglass</h1>
+<h1 align="center">Panelglass: Real-Time Manga &amp; Webtoon Translator for Android</h1>
 
 <p align="center">
   <strong>Read manga, manhwa and manhua in your language, translated in place as you scroll.</strong>
 </p>
 
 <p align="center">
+  <a href="../../releases/latest"><img alt="Download Latest APK" src="https://img.shields.io/badge/Download-Latest%20APK-brightgreen?logo=android"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF">
   <img alt="UI" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4">
@@ -20,20 +21,22 @@
 <p align="center">
   <a href="#screenshots">Screenshots</a> ·
   <a href="#features">Features</a> ·
+  <a href="#why-panelglass">Why Panelglass</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#getting-started">Getting started</a> ·
   <a href="#documentation">Documentation</a> ·
+  <a href="#faq">FAQ</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 ---
 
-Panelglass is an open-source **manga translator for Android**: a browser for the manga, manhwa, manhua and webtoon
-sites you already read. It reads Japanese, Korean and Chinese comics and translates them on your phone or with
-Gemini. Press **Start** and it translates the screen: every speech balloon, caption and sound effect is erased and
-redrawn in your language, right where it was. Scroll, and the next screen is translated as soon as the page settles;
-translations stay pinned to the art as it moves.
+Panelglass is an open-source **manga translator for Android**: a dedicated browser for the raw manga, manhwa,
+manhua and webtoon sites you already read. It reads Japanese, Korean and Chinese comics and translates them directly
+on your phone (offline with LiteRT-LM and manga-ocr) or with Gemini. Press **Start** and it translates the screen:
+every speech balloon, caption and sound effect is erased and redrawn in your language, right where it was. Scroll,
+and the next screen is translated as soon as the page settles; translations stay pinned to the art as it moves.
 
 It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
 site does with its pages, Panelglass sees the same pixels you do.
@@ -41,7 +44,7 @@ site does with its pages, Panelglass sees the same pixels you do.
 ## Screenshots
 
 <p align="center">
-  <img src="docs/ScreenRecordings/translate-ja-en.gif" width="280" alt="Animation: the Japanese speech bubbles on a manga page are replaced by English ones">
+  <img src="docs/ScreenRecordings/translate-ja-en.gif" width="280" alt="Panelglass Android manga translator demo - real-time in-place Japanese to English speech bubble translation">
   <br>
   <sub>Real time, on a phone, fully offline (Gemma 4 E2B): the bubbles are redrawn in English as the model finishes them.<br>
   <a href="docs/ScreenRecordings/translate-while-scrolling.mp4">Watch the full recording</a> (70 s): translating while
@@ -50,9 +53,9 @@ site does with its pages, Panelglass sees the same pixels you do.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/Screenshots/reader-original-ja.jpg" width="240" alt="A raw Japanese manga page open in the reader, before translation"></td>
-    <td align="center"><img src="docs/Screenshots/reader-translated-en.jpg" width="240" alt="The same page with every speech bubble redrawn in English"></td>
-    <td align="center"><img src="docs/Screenshots/reader-translated-hi.jpg" width="240" alt="The same page with the bubbles redrawn in Hindi"></td>
+    <td align="center"><img src="docs/Screenshots/reader-original-ja.jpg" width="240" alt="Raw Japanese manga page open in Panelglass reader, before translation"></td>
+    <td align="center"><img src="docs/Screenshots/reader-translated-en.jpg" width="240" alt="Japanese manga page with speech bubbles redrawn in English using on-device Gemma 4 AI"></td>
+    <td align="center"><img src="docs/Screenshots/reader-translated-hi.jpg" width="240" alt="Japanese manga page with speech bubbles redrawn in Hindi"></td>
   </tr>
   <tr>
     <td align="center"><sub>Before: the raw Japanese page</sub></td>
@@ -63,11 +66,11 @@ site does with its pages, Panelglass sees the same pixels you do.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/Screenshots/library.png" width="180" alt="Sites list with a pinned site and an add-site row"></td>
-    <td align="center"><img src="docs/Screenshots/settings-default.png" width="180" alt="Settings in the Default theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-panel-pop.png" width="180" alt="Settings in the Panel Pop theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-soft-bloom.png" width="180" alt="Settings in the Soft Bloom theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-paper-ink.png" width="180" alt="Settings in the Paper and Ink theme"></td>
+    <td align="center"><img src="docs/Screenshots/library.png" width="180" alt="Panelglass manga reader site management and custom sites"></td>
+    <td align="center"><img src="docs/Screenshots/settings-default.png" width="180" alt="Panelglass reader settings in the Default theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-panel-pop.png" width="180" alt="Panelglass reader settings in the Panel Pop theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-soft-bloom.png" width="180" alt="Panelglass reader settings in the Soft Bloom theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-paper-ink.png" width="180" alt="Panelglass reader settings in the Paper and Ink theme"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your sites</sub></td>
@@ -113,6 +116,13 @@ site does with its pages, Panelglass sees the same pixels you do.
 
 **Languages.** Source: Japanese, Korean, Chinese (Simplified and Traditional), English, Spanish, French, German,
 Italian, Portuguese, Russian, Indonesian, Vietnamese. Target: all of those, plus Thai, Arabic and Hindi.
+
+### Why Panelglass?
+
+- **In-place bubble replacement (No floating overlays):** Unlike traditional screen translators that draw clunky floating boxes over the screen, Panelglass erases the original comic lettering and re-typesets the translation directly inside speech balloons, preserving the comic's original layout and artwork.
+- **Scroll-anchored translations:** Translated patches are pinned to comic page elements in the DOM. As you scroll, pan, or rotate your device, translations remain locked to their artwork.
+- **100% Offline AI translation:** Run on-device LLMs (Gemma 4 E2B, Qwen 2.5 1.5B via LiteRT-LM), manga-ocr, and ML Kit locally. Read raw comics anywhere with zero network requests and complete privacy.
+- **Built-in ad and pop-up blocking:** Enjoy uninterrupted reading with integrated AdGuard and HaGeZi filters that eliminate mobile tap-hijacking, redirect loops, and pop-up ads.
 
 ## How it works
 
@@ -268,6 +278,27 @@ model list if the provider hosts several (see `GeminiEngine.listModels`).
 - [ ] Opt-in backup of sites and settings (never API keys).
 - [ ] Native-speaker review of the UI translations (`core/ui/src/main/res/values-*`). **good first issue**
 - [ ] Accessibility pass: content descriptions, touch targets, contrast in every theme. **good first issue**
+
+
+## Frequently Asked Questions (FAQ)
+
+### How does Panelglass translate manga and manhwa in real time?
+Panelglass captures the web reader viewport and uses an RT-DETR-v2 detector to locate speech balloons and text boxes. It cleans the original Japanese, Korean, or Chinese lettering and fits the translated text into the balloon, pinning lightweight WebP patches directly to the comic page as you scroll.
+
+### Can I translate manga completely offline without an internet connection?
+Yes. Panelglass supports fully offline translation using on-device models including **Gemma 4 E2B**, **Qwen 2.5 1.5B** (via LiteRT-LM), **manga-ocr**, and **Google ML Kit**. Once model packs are downloaded, no data leaves your device.
+
+### How does in-place translation differ from standard screen translators?
+Standard screen translators typically place opaque floating popups or subtitle banners over the screen, blocking the artwork. Panelglass erases the original lettering inside the bubble and re-renders translated text formatted to fit the speech balloon, preserving the original panel art.
+
+### Which comic languages and scripts are supported?
+Panelglass translates from **Japanese** (including vertical text), **Korean**, **Chinese** (Simplified and Traditional), **English**, **Spanish**, **French**, **German**, **Italian**, **Portuguese**, **Russian**, **Indonesian**, and **Vietnamese** into all of those languages plus **Thai**, **Arabic** (with RTL text support), and **Hindi**.
+
+### Does Panelglass require an API key?
+An API key is only required if you choose the cloud-based **Gemini** engine (which uses free-tier keys from Google AI Studio). If you choose Google Translate (ML Kit), Qwen 2.5, or Gemma 4, no API key is required.
+
+### Where can I download the Panelglass APK?
+Panelglass is an open-source project distributed directly via [GitHub Releases](../../releases). It is not hosted on Google Play.
 
 
 ## Acknowledgements
