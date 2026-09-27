@@ -18,3 +18,4 @@
 - [ ] Rendering changes bump `PIPELINE_VERSION`; schema changes bump `PanelglassDb.version`.
 - [ ] Changes to on-device model loading or backends were re-measured on a phone (`docs/MEMORY_USAGE.md`).
 - [ ] No keys, page URLs or page text in logs; no machine paths in the repository.
+- [ ] User-visible changes have a line under `## [Unreleased]` in `CHANGELOG.md`.

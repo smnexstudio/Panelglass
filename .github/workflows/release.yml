@@ -70,13 +70,25 @@ jobs:
           cp "$APK" "dist/panelglass-$VERSION.apk"
           (cd dist && sha256sum "panelglass-$VERSION.apk" > "panelglass-$VERSION.apk.sha256")
 
+      # The notes are the version's section of CHANGELOG.md ("## [1.2.0] - date" up to the next "## ["); a version
+      # without one gets GitHub's generated list of merged pull requests instead.
       - name: Publish the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          awk -v head="## [$VERSION]" '
+            /^## \[/ { p = (index($0, head) == 1); next }
+            p
+          ' CHANGELOG.md > dist/notes.md
+          if grep -q '[^[:space:]]' dist/notes.md; then
+            NOTES=(--notes-file dist/notes.md)
+          else
+            echo "::warning::CHANGELOG.md has no section for $VERSION; using generated notes."
+            NOTES=(--generate-notes)
+          fi
           gh release create "$GITHUB_REF_NAME" \
             "dist/panelglass-$VERSION.apk" "dist/panelglass-$VERSION.apk.sha256" \
-            --title "Panelglass $VERSION" --generate-notes --verify-tag
+            --title "Panelglass $VERSION" "${NOTES[@]}" --verify-tag
 
       - name: Remove the signing key
         if: always()

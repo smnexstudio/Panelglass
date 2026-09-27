@@ -40,9 +40,18 @@ flowchart LR
 
 ## Releases
 
-A maintainer tags a commit on `main` with its version (`git tag v1.2.0 && git push origin v1.2.0`). The tag starts
-`.github/workflows/release.yml`, which builds, signs and publishes the APK as a GitHub Release; a tag that is not on
-`main` is refused. Nothing else publishes an APK.
+Every pull request with a user-visible change adds a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md)
+(`Added`, `Changed`, `Fixed` or `Removed`).
+
+To release, a maintainer:
+
+1. Renames `## [Unreleased]` to the version and date (`## [1.2.0] - 2026-10-01`), adds a fresh empty
+   `## [Unreleased]` above it, and merges that into `main`.
+2. Tags that commit with the version (`git tag v1.2.0 && git push origin v1.2.0`).
+
+The tag starts `.github/workflows/release.yml`, which builds, signs and publishes the APK as a GitHub Release, with
+the version's changelog section as its notes (GitHub's generated list if the section is missing); a tag that is not
+on `main` is refused. Nothing else publishes an APK.
 
 ## Building
 
@@ -85,6 +94,7 @@ uninstall first (this clears the app's data).
 - [ ] Changes to model loading, backends or release timing were re-measured on a phone
   ([docs/MEMORY_USAGE.md › Reproducing](docs/MEMORY_USAGE.md#reproducing)).
 - [ ] Docs in `docs/` still describe what the code does.
+- [ ] User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
 
 ## Rules that are easy to break
 
