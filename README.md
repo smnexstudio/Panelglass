@@ -29,9 +29,11 @@
 
 ---
 
-Panelglass is a browser for the comic sites you already read. Press **Start** and it translates the screen: every
-speech balloon, caption and sound effect is erased and redrawn in your language, right where it was. Scroll, and the
-next screen is translated as soon as the page settles; translations stay pinned to the art as it moves.
+Panelglass is an open-source **manga translator for Android**: a browser for the manga, manhwa, manhua and webtoon
+sites you already read. It reads Japanese, Korean and Chinese comics and translates them on your phone or with
+Gemini. Press **Start** and it translates the screen: every speech balloon, caption and sound effect is erased and
+redrawn in your language, right where it was. Scroll, and the next screen is translated as soon as the page settles;
+translations stay pinned to the art as it moves.
 
 It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
 site does with its pages, Panelglass sees the same pixels you do.
