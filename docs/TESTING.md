@@ -3,7 +3,7 @@
 What the automated tests cover, how to run them, and the checks that still need a phone. The architecture under test
 is in [ARCHITECTURE.md](ARCHITECTURE.md); the translation flow in [FLOW.md](FLOW.md).
 
-Counts as of 2026-09-27: **157 unit tests** in 26 classes, **2 instrumented tests**, all passing.
+Counts as of 2026-09-28: **167 unit tests** in 27 classes, **2 instrumented tests**, all passing.
 
 ## Contents
 
@@ -48,18 +48,19 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 
 ## Unit tests by module
 
-### core:model (8)
+### core:model (14)
 
 | Class | Tests | Covers |
 |---|---|---|
 | `BubbleFontTest` | 3 | Saved font names round-trip; retired fonts map to their successor; unknown names are null |
 | `SiteMatchTest` | 5 | Which saved site owns a URL: subdomains, segment-boundary prefixes, several sites on one host |
+| `WebUrlTest` | 6 | https only: https kept, http upgraded, a bare host gets `https://`, whitespace trimmed; `javascript:`/`file:`/`content:`/`intent:`/`data:` and non-URLs are null |
 
-### core:data (8)
+### core:data (9)
 
 | Class | Tests | Covers |
 |---|---|---|
-| `PatchCacheTest` | 4 | Round-trip of patch geometry and bytes; LRU eviction over budget; a corrupt file is dropped, not thrown; the key includes everything that changes rendering |
+| `PatchCacheTest` | 5 | Round-trip of patch geometry and bytes; LRU eviction over budget; a corrupt file is dropped, not thrown; an out-of-range length is refused before allocating and the file deleted; the key includes everything that changes rendering |
 | `SystemDownloadsIntegrityTest` | 4 | A download matching its SHA-256 is moved into place and remembered; a mismatch is deleted, never placed; a file already on disk is checked once; a file changed after its check is checked again |
 
 ### core:engine (72)
@@ -95,12 +96,12 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 | `LongestRunTest` | 5 | The unbreakable run the text fitter tests: an English word with its punctuation; hyphens break; ellipses and quotes do not join words; CJK breaks between any two characters |
 | `PanelInkTest` | 3 | Ink on a mask: contrasting ink kept, otherwise black on a light mask and white on a dark one |
 
-### feature:browser (23)
+### feature:browser (26)
 
 | Class | Tests | Covers |
 |---|---|---|
 | `BlockListTest` | 11 | Hosts and AdBlock formats parsed; exact hosts and their subdomains blocked, parents and unrelated hosts not; `@@` exceptions win; wildcard and context-scoped rules skipped; localhost ignored; cached form round-trips |
-| `PatchAnchorTest` | 5 | A patch is anchored to the image under its centre; it follows a reader moving its page in its own layer and scroll anchoring; no key, no anchor; an image off screen leaves the patch in place |
+| `PatchAnchorTest` | 8 | A patch is anchored to the image under its centre; it follows a reader moving its page in its own layer and scroll anchoring; no key, no anchor; an image off screen leaves the patch in place; the anchor is the same place on the art at any zoom; a patch's CSS rect scales with the zoom; one bubble captured at two zooms is a duplicate |
 | `ContentChangeTest` | 4 | Page turn without a scroll: another page is a change; our own patches and a fading control are not; all-patched cannot tell |
 | `SameSiteTest` | 3 | Same-site test for pop-ups: subdomains share a site, public suffixes do not; case and trailing dot ignored |
 

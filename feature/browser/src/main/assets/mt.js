@@ -9,6 +9,8 @@
 (function () {
   if (window.__mt) return;
   var started = false;
+  // Taken before the page's own scripts run (document-start injection), so a page cannot swap the serialiser.
+  var stringify = JSON.stringify;
 
   // Popunders and redirect ads live on window.open; comic sites need neither.
   // Locked, so a script cannot put it back; a new window that still gets through (target=_blank, a fresh iframe's
@@ -93,7 +95,8 @@
     setTimeout(function () { mo.disconnect(); }, 60000);
   }
 
-  window.__mt = {
+  // Read-only and frozen: a page script cannot replace the bridge or its methods to feed the app its own answers.
+  Object.defineProperty(window, '__mt', { writable: false, configurable: false, enumerable: false, value: Object.freeze({
     start: function () {
       if (started) return; started = true;
       hideOverlays();
@@ -101,23 +104,34 @@
     },
     // The parts of the viewport that are page images, and the DOM controls floating over them.
     // Nothing outside an image rect is comic art, and nothing under an overlay rect is either.
+    // Rects are relative to what is on screen, the visual viewport: getBoundingClientRect is relative to the layout
+    // viewport, which a pinch zoom leaves behind (zoomed in, the layout viewport stays at 0,0 while the part shown
+    // and the WebView's scroll offset move). Unzoomed the two are the same.
     viewportMap: function () {
-      var vw = window.innerWidth, vh = window.innerHeight;
+      var vv = window.visualViewport;
+      var ox = vv ? vv.offsetLeft : 0, oy = vv ? vv.offsetTop : 0;
+      var vw = vv ? vv.width : window.innerWidth, vh = vv ? vv.height : window.innerHeight;
       var images = [], overlays = [], artEls = [], pending = 0;
       function rect(r, key) {
-        var o = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+        var o = { x: Math.round(r.left - ox), y: Math.round(r.top - oy), w: Math.round(r.width), h: Math.round(r.height) };
         if (key) o.k = key;
         return o;
       }
       // What a page image is, whatever the layout does around it: its URL (a canvas: its place among canvases).
+      // A data: URL can be megabytes, and the app caps the reply: a long one is kept as its ends and its length.
       function keyOf(el, n) {
-        return el.tagName === 'IMG' ? (el.currentSrc || el.src || '') : 'canvas#' + n;
+        var k = el.tagName === 'IMG' ? (el.currentSrc || el.src || '') : 'canvas#' + n;
+        return k.length > 512 ? k.slice(0, 128) + '#' + k.length + '#' + k.slice(-256) : k;
       }
-      function visible(r) { return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh; }
+      // r: a layout-viewport rect (getBoundingClientRect).
+      function visible(r) {
+        return r.width > 0 && r.height > 0 && r.right > ox && r.bottom > oy && r.left < ox + vw && r.top < oy + vh;
+      }
       function overArt(r) {
+        var left = r.left - ox, right = r.right - ox, top = r.top - oy, bottom = r.bottom - oy;
         for (var a = 0; a < images.length; a++) {
           var q = images[a];
-          if (r.left < q.x + q.w && r.right > q.x && r.top < q.y + q.h && r.bottom > q.y) return true;
+          if (left < q.x + q.w && right > q.x && top < q.y + q.h && bottom > q.y) return true;
         }
         return false;
       }
@@ -134,9 +148,10 @@
         for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 && n.nodeValue.trim().length > 0) return true;
         return false;
       }
-      // Whether el is what the user sees at its own centre, i.e. it is drawn on top of the art there.
+      // Whether el is what the user sees at its own centre, i.e. it is drawn on top of the art there. The point is
+      // clamped to the part on screen; elementFromPoint takes layout-viewport coordinates, like r.
       function onTop(el, r) {
-        var x = Math.min(vw - 1, Math.max(0, r.left + r.width / 2)), y = Math.min(vh - 1, Math.max(0, r.top + r.height / 2));
+        var x = Math.min(ox + vw - 1, Math.max(ox, r.left + r.width / 2)), y = Math.min(oy + vh - 1, Math.max(oy, r.top + r.height / 2));
         var hit = document.elementFromPoint(x, y);
         return !!hit && (hit === el || el.contains(hit));
       }
@@ -174,7 +189,7 @@
           }
         }
       } catch (e) {}
-      return JSON.stringify({ images: images, overlays: overlays, pending: pending });
+      return stringify({ images: images, overlays: overlays, pending: pending });
     }
-  };
+  }) });
 })();

@@ -40,11 +40,14 @@ class PatchCache(
                 val h = input.readInt()
                 val regionCount = input.readInt()
                 val n = input.readInt()
+                // A damaged file must not size an allocation: out-of-range counts drop the record (deleted below).
+                require(n in 0..MAX_PATCHES)
                 val patches = ArrayList<Patch>(n)
                 repeat(n) {
                     val x = input.readFloat(); val y = input.readFloat()
                     val pw = input.readFloat(); val ph = input.readFloat()
                     val len = input.readInt()
+                    require(len in 0..MAX_PATCH_BYTES)
                     val bytes = ByteArray(len)
                     input.readFully(bytes)
                     patches += Patch(x, y, pw, ph, bytes)
@@ -113,6 +116,8 @@ class PatchCache(
 
     companion object {
         private const val MAGIC = 0x50474331 // "PGC1"
+        private const val MAX_PATCHES = 10_000
+        private const val MAX_PATCH_BYTES = 20 shl 20
 
         fun sha256Hex(bytes: ByteArray): String {
             val d = MessageDigest.getInstance("SHA-256").digest(bytes)

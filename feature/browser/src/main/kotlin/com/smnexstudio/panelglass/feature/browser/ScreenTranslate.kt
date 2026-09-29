@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.smnexstudio.panelglass.core.ui.R as UiR
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntOffset
@@ -42,7 +43,6 @@ import org.json.JSONTokener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
-import kotlin.math.abs
 
 /**
  * Snapshot of the WebView's on-screen pixels together with the scroll offset and zoom they were taken at.
@@ -65,10 +65,12 @@ suspend fun captureViewport(webView: WebView): ViewportCapture? {
     if (map.pending > 0) android.util.Log.d("ScreenCapture", "capturing with ${map.pending} image(s) still loading")
     val scrollX = webView.scrollX; val scrollY = webView.scrollY; val scale = webView.scale
     val images = map.images; val overlays = map.overlays
-    // Asked again later (main thread, as here): where each page image is by then, so patches can follow it.
+    // Asked again later (main thread, as here): where each page image is by then, at the zoom by then, so patches
+    // can follow it.
     val layoutNow: suspend () -> ImageLayout? = {
-        if (webView.width <= 0 || abs(webView.scale - scale) > 0.01f) null
-        else viewportMap(webView, scale).let { ImageLayout(it.images, it.keys, webView.scrollX, webView.scrollY) }
+        val s = webView.scale
+        if (webView.width <= 0) null
+        else viewportMap(webView, s).let { ImageLayout(it.images, it.keys, webView.scrollX, webView.scrollY, s) }
     }
     val pendingNow: suspend () -> Int = { viewportMap(webView, webView.scale).pending }
     // What the viewport looks like now, small (patches included: the comparison masks them).
@@ -101,6 +103,12 @@ private suspend fun pixelCopy(webView: WebView, dest: Bitmap): Boolean {
  * view pixels. Detections outside the images or under the controls are not comic text. Empty when the bridge is
  * not there (page still loading): then nothing is excluded.
  */
+/**
+ * Longest reply taken from the page bridge (`__mt`/`__pt`), in characters. Real replies are a few KB (mt.js shortens
+ * data: image keys); a larger one is a page feeding the app junk and is dropped before it is parsed.
+ */
+internal const val MAX_BRIDGE_REPLY = 1_000_000
+
 private class ViewportMap(val images: List<IntRect>, val keys: List<String>, val overlays: List<IntRect>, val pending: Int)
 
 private suspend fun viewportMap(webView: WebView, scale: Float): ViewportMap {
@@ -108,7 +116,7 @@ private suspend fun viewportMap(webView: WebView, scale: Float): ViewportMap {
     val raw = suspendCancellableCoroutine<String?> { cont ->
         try { webView.evaluateJavascript("window.__mt ? __mt.viewportMap() : null") { v -> if (cont.isActive) cont.resume(v) } }
         catch (_: Exception) { if (cont.isActive) cont.resume(null) }
-    } ?: return none
+    }?.takeIf { it.length <= MAX_BRIDGE_REPLY } ?: return none
     // evaluateJavascript returns a JSON string literal of the JSON text.
     val text = runCatching { JSONTokener(raw).nextValue() as? String }.getOrNull() ?: return none
     val obj = runCatching { JSONObject(text) }.getOrNull() ?: return none
@@ -137,21 +145,27 @@ private fun Context.activity(): Activity? {
 }
 
 /**
- * Patches over the viewport, positioned in page space minus the live scroll offset so they ride with the
- * content. The layer takes no touches. A small status disc in the corner shows working / done / failed.
+ * Patches over the viewport: their CSS rects times the live zoom, minus the live scroll offset, so they ride with
+ * the content and grow or shrink with it when the page is zoomed. The layer takes no touches. A small status disc
+ * in the corner shows working / done / failed.
  */
 @Composable
-fun ScreenOverlayLayer(state: ScreenSession, scroll: Pair<Int, Int>, modifier: Modifier = Modifier) {
+fun ScreenOverlayLayer(state: ScreenSession, scroll: Pair<Int, Int>, zoom: Float, modifier: Modifier = Modifier) {
     if (!state.active) return
     Box(modifier.fillMaxSize()) {
-        // Patches arrive already decoded (off the main thread); this only reads the scroll offset, so a scroll
-        // step costs one redraw and no recomposition.
+        // Patches arrive already decoded (off the main thread); this only reads the scroll offset and zoom, so a
+        // scroll or zoom step costs one redraw and no recomposition.
         DrawCanvas(Modifier.fillMaxSize().clipToBounds()) {
             val (sx, sy) = scroll
             for (p in state.patches) {
-                val x = p.left - sx; val y = p.top - sy
-                if (x + p.width < 0 || y + p.height < 0 || x > size.width || y > size.height) continue
-                drawImage(p.image, dstOffset = IntOffset(x, y), dstSize = IntSize(p.width, p.height))
+                val r = p.rectAt(zoom)
+                val x = r.left - sx; val y = r.top - sy
+                if (x + r.width < 0 || y + r.height < 0 || x > size.width || y > size.height) continue
+                // Bilinear filtering: a patch drawn at another zoom than it was made at is scaled, not re-rendered.
+                drawImage(
+                    p.image, dstOffset = IntOffset(x, y), dstSize = IntSize(r.width.coerceAtLeast(1), r.height.coerceAtLeast(1)),
+                    filterQuality = FilterQuality.Medium,
+                )
             }
         }
         StatusDisc(state, Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp))

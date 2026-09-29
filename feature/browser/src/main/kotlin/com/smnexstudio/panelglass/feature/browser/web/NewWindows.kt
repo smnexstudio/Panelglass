@@ -4,8 +4,10 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Message
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.smnexstudio.panelglass.core.model.WebUrl
 
 /**
  * Answers `WebChromeClient.onCreateWindow`. The reader has one window, so every `window.open` and `target=_blank`
@@ -24,12 +26,20 @@ object NewWindows {
         val msg = resultMsg ?: return false
         if (!isUserGesture) { client.allowsNewWindow(Uri.EMPTY, false); return false }
         val transport = msg.obj as? WebView.WebViewTransport ?: return false
-        val probe = WebView(parent.context)
+        val probe = WebView(parent.context).apply {
+            // It only has to see the first URL: no scripts and no local files.
+            settings.javaScriptEnabled = false
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+        }
         var done = false
         fun finish() { if (!done) { done = true; probe.post { probe.stopLoading(); probe.destroy() } } }
         fun decide(url: String?) {
             if (done || url.isNullOrBlank() || url == "about:blank") return
-            if (client.allowsNewWindow(Uri.parse(url), userGesture = true)) parent.loadUrl(url)
+            // https only: an http target is judged, and opened, as its https upgrade.
+            val target = WebUrl.https(url) ?: url
+            if (client.allowsNewWindow(Uri.parse(target), userGesture = true)) parent.loadUrl(target)
             finish()
         }
         probe.webViewClient = object : WebViewClient() {

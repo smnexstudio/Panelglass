@@ -52,9 +52,9 @@ class ModelStore(
 ) {
     private val legacyFile: File get() = File(File(context.filesDir, "models"), model.fileName)
     private val relativePath: String get() = "models/" + model.fileName
-    /** Where DownloadManager itself writes (shared storage on Android 8–9, see [SystemDownloads.finalFile]). */
-    private val externalFile: File? get() = downloads.root()?.let { File(it, relativePath) }
-    private val downloadedFile: File get() = downloads.finalFile(relativePath) ?: legacyFile
+    /** Where DownloadManager writes and the checked file stays ([SystemDownloads.finalFile]). */
+    private val externalFile: File? get() = downloads.finalFile(relativePath)
+    private val downloadedFile: File get() = externalFile ?: legacyFile
 
     /** The model on disk: the older internal copy when there is one, else the downloaded one. */
     val modelFile: File get() = if (legacyFile.isFile) legacyFile else downloadedFile
@@ -73,10 +73,10 @@ class ModelStore(
 
     /** Ready only once the file's SHA-256 has been checked where it will be loaded from. */
     private fun isReadyOnDisk() = modelFile.let {
-        it.length() >= model.minValidBytes && downloads.isPrivate(it) && downloads.isVerified(it, model.sha256)
+        it.length() >= model.minValidBytes && downloads.isVerified(it, model.sha256)
     }
 
-    /** A complete-looking file that has not been checked yet: an earlier install's, a side-load, or one on shared storage. */
+    /** A complete-looking file that has not been checked yet: an earlier install's or a side-load. */
     private fun unchecked(): File? = if (isReadyOnDisk()) null
         else listOfNotNull(legacyFile, externalFile).firstOrNull { it.length() >= model.minValidBytes }
 
@@ -97,7 +97,7 @@ class ModelStore(
         val file = unchecked() ?: return
         _state.value = ModelState.Downloading(file.length(), file.length(), SystemDownloads.CHECKING)
         job = scope.launch {
-            val ok = downloads.adopt(file, relativePath, model.sha256)
+            val ok = downloads.adopt(file, model.sha256)
             _state.value = if (ok != null) ModelState.Ready(ok.length()) else ModelState.Failed(SystemDownloads.CORRUPT)
         }
     }

@@ -119,13 +119,17 @@ private object Routes {
     const val HISTORY = "history"
     /** `key` names a provider whose key dialog should open on arrival (the reader's "set API key" hand-off). */
     const val SETTINGS = "settings?key={key}"
-    const val READER = "reader?url={url}&engine={engine}&src={src}&tgt={tgt}&start={start}&site={site}"
+    const val READER = "reader?url={url}&engine={engine}&src={src}&tgt={tgt}&start={start}&site={site}&ext={ext}"
     fun settings(keyFor: String? = null) = "settings" + (if (!keyFor.isNullOrBlank()) "?key=" + Uri.encode(keyFor) else "")
-    /** [siteId]: the library site that was tapped; the reader keeps its settings while it stays on that host. */
-    fun reader(url: String, engine: String? = null, launch: LaunchExtras? = null, siteId: Long? = null) =
+    /**
+     * [siteId]: the library site that was tapped; the reader keeps its settings while it stays on that host.
+     * [external]: the URL came from another app's intent, so the reader never translates it on open.
+     */
+    fun reader(url: String, engine: String? = null, launch: LaunchExtras? = null, siteId: Long? = null, external: Boolean = false) =
         "reader?url=" + Uri.encode(url) + (if (!engine.isNullOrBlank()) "&engine=" + Uri.encode(engine) else "") +
             (launch?.src?.let { "&src=" + Uri.encode(it) } ?: "") + (launch?.tgt?.let { "&tgt=" + Uri.encode(it) } ?: "") +
-            (if (launch?.start == true) "&start=true" else "") + (if (siteId != null) "&site=$siteId" else "")
+            (if (launch?.start == true) "&start=true" else "") + (if (siteId != null) "&site=$siteId" else "") +
+            (if (external) "&ext=true" else "")
 }
 
 /** Scripted-run extras on the launch intent: `src`/`tgt` (`Lang` names) and `start` (auto-Start). Session only. */
@@ -142,7 +146,8 @@ private fun PanelglassMain(startUrl: String? = null, startEngine: String? = null
     val nav = rememberNavController()
     LaunchedEffect(startUrl, startEngine, startExtras) {
         if (!startUrl.isNullOrBlank()) {
-            nav.navigate(Routes.reader(startUrl, startEngine, startExtras)) {
+            // Every start URL comes from an intent, which any installed app can send.
+            nav.navigate(Routes.reader(startUrl, startEngine, startExtras, external = true)) {
                 launchSingleTop = true
             }
         }
@@ -207,6 +212,7 @@ private fun PanelglassMain(startUrl: String? = null, startEngine: String? = null
                     navArgument("tgt") { type = NavType.StringType; defaultValue = "" },
                     navArgument("start") { type = NavType.StringType; defaultValue = "" },
                     navArgument("site") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("ext") { type = NavType.StringType; defaultValue = "" },
                 ),
                 enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(240)) },
                 exitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(200)) },
@@ -223,6 +229,7 @@ private fun PanelglassMain(startUrl: String? = null, startEngine: String? = null
                     initialTgt = entry.arguments?.getString("tgt").orEmpty().ifBlank { null },
                     startNow = entry.arguments?.getString("start") == "true",
                     initialSiteId = entry.arguments?.getString("site")?.toLongOrNull(),
+                    initialExternal = entry.arguments?.getString("ext") == "true",
                     onBack = { nav.popBackStack() },
                     onOpenSettings = { nav.navigate(Routes.settings()) },
                     onOpenKeySheet = { engine -> nav.navigate(Routes.settings(engine)) },

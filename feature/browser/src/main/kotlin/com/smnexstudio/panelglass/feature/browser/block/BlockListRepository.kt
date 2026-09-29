@@ -120,9 +120,13 @@ class BlockListRepository @Inject constructor(
         return true
     }
 
+    /** The list's text, or null. A body over [MAX_BYTES] is refused rather than read whole into memory. */
     private fun fetch(url: String): String? = try {
         fetchOkHttp.newCall(Request.Builder().url(url).build()).execute().use { r ->
-            if (r.isSuccessful) r.body?.string() else null
+            val body = r.body?.takeIf { r.isSuccessful && it.contentLength() <= MAX_BYTES } ?: return null
+            val source = body.source()
+            // request() buffers until it has that many bytes or the body ends: true means the body is too large.
+            if (source.request(MAX_BYTES + 1)) null else source.buffer.readUtf8()
         }
     } catch (_: Exception) { null }
 
@@ -131,6 +135,8 @@ class BlockListRepository @Inject constructor(
 
     companion object {
         const val REFRESH_MS = 24L * 60 * 60 * 1000
+        /** Far above any real list (AdGuard's DNS filter is a few MB). */
+        const val MAX_BYTES = 32L * 1024 * 1024
         val SOURCES = listOf(
             Source(
                 "ads",

@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="../../releases/latest"><img alt="Download Latest APK" src="https://img.shields.io/badge/Download-Latest%20APK-brightgreen?logo=android"></a>
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84">
+  <a href="https://github.com/smnexstudio/Panelglass/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/smnexstudio/Panelglass?label=latest&color=brightgreen&logo=android"></a>
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%2012%2B-3DDC84">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF">
   <img alt="UI" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4">
   <img alt="On-device AI" src="https://img.shields.io/badge/on--device-ONNX%20·%20ML%20Kit%20·%20LiteRT--LM-555">
@@ -40,6 +40,7 @@ and the next screen is translated as soon as the page settles; translations stay
 
 It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
 site does with its pages, Panelglass sees the same pixels you do.
+
 
 ## Screenshots
 
@@ -117,6 +118,12 @@ site does with its pages, Panelglass sees the same pixels you do.
 **Languages.** Source: Japanese, Korean, Chinese (Simplified and Traditional), English, Spanish, French, German,
 Italian, Portuguese, Russian, Indonesian, Vietnamese. Target: all of those, plus Thai, Arabic and Hindi.
 
+### Download
+
+<p align="center">
+  <a href="https://github.com/smnexstudio/Panelglass/releases/latest"><img alt="Get it on GitHub" src="docs/assets/get-it-on-github.svg" height="56"></a>
+</p>
+
 ### Why Panelglass?
 
 - **In-place bubble replacement (No floating overlays):** Unlike traditional screen translators that draw clunky floating boxes over the screen, Panelglass erases the original comic lettering and re-typesets the translation directly inside speech balloons, preserving the comic's original layout and artwork.
@@ -158,7 +165,7 @@ about 17 s and the next about 11 s; a dense page fills in four bubbles at a time
 Panelglass is not on Google Play. Each release is published on GitHub:
 
 1. Open the [Releases](../../releases) page and download `panelglass-<version>.apk` from the latest release
-   (Android 8.0 / API 26 or later; about 250 MB).
+   (Android 12 / API 31 or later; about 250 MB).
 2. Optional but recommended: check the download against the `.sha256` file next to it
    (`sha256sum -c panelglass-<version>.apk.sha256`, or compare with `certutil -hashfile <apk> SHA256` on Windows).
 3. Open the APK on your phone and allow your browser or file manager to install unknown apps when Android asks.
@@ -202,6 +209,10 @@ signed with a different key from the published releases, so uninstall one before
   anywhere.
 - **With Gemini**, crops of the text on your screen are sent to Google to be read and translated. With Google
   Translate, Qwen or Gemma 4, translation happens on the device.
+- **https only**: the app sends nothing in clear text. An `http://` address or link is opened as `https://`, and a
+  site that only serves plain http will not load.
+- **Links from other apps** open in the reader but are never translated automatically, even with
+  translate-on-open on: you tap Start yourself.
 - **Logs** contain timings and failure types only: no keys, page URLs or page text.
 - **Other network use**: the block lists ([AdGuard DNS filter](https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt),
   [HaGeZi pop-up ads](https://github.com/hagezi/dns-blocklists), [StevenBlack hosts](https://github.com/StevenBlack/hosts)
@@ -270,7 +281,8 @@ model list if the provider hosts several (see `GeminiEngine.listModels`).
 ### Quality and performance
 
 - [ ] Gemini mode: recover text the detector misses (a cheap backstop or a second-pass prompt).
-- [ ] Keep translations across zoom changes instead of clearing them.
+- [x] Keep translations across zoom changes instead of clearing them.
+- [ ] Re-render patches sharply after a large zoom-in (today the bitmap made at the old zoom is scaled).
 - [ ] Use panel boundaries (`PanelCutter`) when placing free text, not just the image bounds.
 
 ### App

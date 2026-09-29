@@ -67,7 +67,8 @@ app comes back first; the next translation then reloads it (see
    capture longer; the follow-up capture described above covers it.
 2. **Pixels.** `PixelCopy` reads the composited surface, which is exactly what the user sees, including
    hardware-accelerated and canvas content. A software `draw()` is the fallback.
-3. **Scroll and zoom** at the moment of capture (read after the wait), so patches can be pinned to page coordinates.
+3. **Scroll and zoom** at the moment of capture (read after the wait), so patches can be pinned to the page in CSS
+   pixels.
 4. **The page map.** `mt.js` `viewportMap()` returns, in CSS pixels relative to the viewport:
    - `images`: visible `<img>` and `<canvas>` elements at least 96 px on a side, each with a key `k` (the image's URL;
      `canvas#n` for the n-th canvas) so a patch can find its image again when the layout moves;
@@ -161,9 +162,15 @@ Key points:
 
 ## Showing patches while scrolling
 
-- `ReaderViewModel` converts each patch to page coordinates: capture scroll + position in the snapshot.
-- The Compose overlay draws patches at page position minus the live scroll, so they move with the content. It takes
-  no touches.
+- `ReaderViewModel` converts each patch to CSS pixels of the page: (capture scroll + position in the snapshot) ÷
+  capture zoom, so the position does not depend on the zoom.
+- The Compose overlay draws patches at CSS rect × live zoom minus the live scroll, so they move with the content and
+  grow or shrink with it when the page is pinch-zoomed or double-tap-zoomed (the bitmap is scaled, not re-rendered).
+  The live zoom comes from every scroll step and `WebViewClient.onScaleChanged`. It takes no touches.
+- **Zoom.** A zoom keeps every patch on its art. Once it settles the viewport is captured again; bubbles already
+  patched are skipped, so only text the zoom brought into view is read. `viewportMap()` reports rects relative to the
+  visual viewport (`visualViewport.offsetLeft/Top`): zoomed in, `getBoundingClientRect` stays relative to the layout
+  viewport, which does not follow the part on screen, and anchors computed from it misplaced every patch.
 - **Duplicates across captures:** a new patch that mostly overlaps (≥50%) an existing one of similar size is dropped.
   An older fragment mostly covered by a fuller new patch gives way to it.
 - **Anchored to their images.** Each patch remembers the page image under its centre (the image's key) and its offset
@@ -180,7 +187,7 @@ Key points:
 - **A steady bottom bar.** The bar keeps one height (64 dp) whether idle or translating: a bar that changed height
   resized the WebView, and a reader that centres its page then moved the art under patches already made.
 - **Memory bound:** patches more than three screens above or below the viewport are pruned and re-made on return.
-- A new page load or a zoom change clears the patches; the next settled viewport translates again.
+- A new page load clears the patches; the next settled viewport translates again.
 
 ## Failures
 

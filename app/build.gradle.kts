@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.smnexstudio.panelglass"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 35
         // Release builds pass the version from the git tag (-PversionName=1.2.3); versionCode is derived from it so
         // every release installs over the previous one. Local builds keep the defaults.

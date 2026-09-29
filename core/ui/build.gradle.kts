@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.smnexstudio.panelglass.core.ui"
     compileSdk = 35
-    defaultConfig { minSdk = 26 }
+    defaultConfig { minSdk = 31 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

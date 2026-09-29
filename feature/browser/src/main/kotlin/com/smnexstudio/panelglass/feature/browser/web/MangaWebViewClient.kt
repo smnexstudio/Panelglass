@@ -8,6 +8,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.smnexstudio.panelglass.core.model.WebUrl
 import com.smnexstudio.panelglass.feature.browser.block.BlockList
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.ByteArrayInputStream
@@ -29,6 +30,8 @@ class MangaWebViewClient(
         fun onPageFinished(url: String, title: String?)
         fun onBlockedCountChanged(count: Int)
         fun onProgressUrl(url: String)
+        /** The page zoom changed (`WebView.scale` units). */
+        fun onScaleChanged(scale: Float) {}
     }
 
     @Volatile var adBlockEnabled: Boolean = true
@@ -58,6 +61,9 @@ class MangaWebViewClient(
         if (crossSite && adBlockEnabled && blockList.blocks(url)) { countBlocked(); return true }
         // Script-driven cross-site navigation without a tap is a popup or redirect ad.
         if (crossSite && !request.hasGesture() && !request.isRedirect) { countBlocked(); return true }
+        // https only: an http link is followed as its https upgrade (cleartext is off app-wide, so it would only fail).
+        // A server redirect down to http is left to fail: upgrading it would loop against that redirect.
+        if (scheme == "http" && !request.isRedirect) { WebUrl.https(url.toString())?.let { view.loadUrl(it) }; return true }
         return false
     }
 
@@ -68,7 +74,7 @@ class MangaWebViewClient(
      */
     fun allowsNewWindow(url: Uri, userGesture: Boolean): Boolean {
         val scheme = url.scheme?.lowercase()
-        val ok = userGesture && (scheme == "http" || scheme == "https") && sameSite(url.host, pageHost) &&
+        val ok = userGesture && scheme == "https" && sameSite(url.host, pageHost) &&
             !(adBlockEnabled && blockList.blocks(url))
         if (!ok) countBlocked()
         return ok
@@ -125,6 +131,10 @@ class MangaWebViewClient(
 
     override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
         listener.onProgressUrl(url)
+    }
+
+    override fun onScaleChanged(view: WebView, oldScale: Float, newScale: Float) {
+        listener.onScaleChanged(newScale)
     }
 
     companion object {

@@ -46,6 +46,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.Site
+import com.smnexstudio.panelglass.core.model.WebUrl
 import com.smnexstudio.panelglass.core.ui.CardDivider
 import com.smnexstudio.panelglass.core.ui.ChoiceSheet
 import com.smnexstudio.panelglass.core.ui.DashedRow
@@ -201,7 +202,7 @@ fun LibraryScreen(
     }
 }
 
-internal fun looksLikeUrl(s: String) = s.contains('.') && !s.contains(' ')
+internal fun looksLikeUrl(s: String) = WebUrl.https(s) != null
 
 /** Theme-styled site row/card. */
 @Composable
@@ -385,7 +386,7 @@ fun SiteConfigSheet(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
             TextAction(stringResource(UiR.string.action_delete), Tokens.Error, onDelete)
             Spacer(Modifier.width(8.dp))
-            PrimaryPill(stringResource(UiR.string.action_save).uppercase(), letterSpaced = true, onClick = { onSave(draft.copy(name = name.trim().ifEmpty { site.name }, url = url.trim().ifEmpty { site.url })) })
+            PrimaryPill(stringResource(UiR.string.action_save).uppercase(), letterSpaced = true, onClick = { onSave(draft.copy(name = name.trim().ifEmpty { site.name }, url = WebUrl.https(url) ?: site.url)) })
         }
     }
 

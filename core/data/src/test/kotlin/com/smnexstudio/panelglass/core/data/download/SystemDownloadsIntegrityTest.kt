@@ -52,7 +52,7 @@ class SystemDownloadsIntegrityTest {
         placed.writeBytes(ByteArray(4096))
         placed.setLastModified(placed.lastModified() + 5_000)
         assertFalse(downloads.isVerified(placed, sha))
-        assertNull(downloads.adopt(placed, "models/swap.bin", sha))
+        assertNull(downloads.adopt(placed, sha))
         assertFalse(placed.exists())
     }
 
@@ -60,7 +60,7 @@ class SystemDownloadsIntegrityTest {
     fun uncheckedFileOnDiskIsAdoptedOnce() {
         val f = File(downloads.root(), "models/side.bin").apply { parentFile?.mkdirs(); writeBytes(bytes) }
         assertFalse(downloads.isVerified(f, sha))
-        assertNotNull(downloads.adopt(f, "models/side.bin", sha))
+        assertNotNull(downloads.adopt(f, sha))
         assertTrue(downloads.isVerified(f, sha))
     }
 }
