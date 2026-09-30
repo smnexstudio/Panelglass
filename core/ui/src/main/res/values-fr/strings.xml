@@ -174,12 +174,17 @@
     <string name="download_failed">Échec du téléchargement</string>
 
     <string name="packs_title">Packs de langue Google Traduction</string>
-    <string name="packs_downloading">Téléchargement : %1$s · %2$d sur %3$d</string>
-    <string name="packs_failed">%1$s · %2$d sur %3$d téléchargés</string>
-    <string name="packs_complete">Les %1$d langues sont prêtes · fonctionne hors connexion</string>
-    <string name="packs_none">Aucun téléchargé · chaque langue est récupérée à sa première utilisation · environ 30 Mo chacune</string>
-    <string name="packs_some">%1$d sur %2$d téléchargés</string>
-    <string name="packs_download_all">Tout télécharger</string>
+    <string name="packs_count">%1$d langues sur %2$d sur ce téléphone</string>
+    <string name="packs_downloading_one">Téléchargement de %1$s…</string>
+    <string name="packs_manage">Gérer</string>
+    <string name="packs_note">L\'anglais est intégré. Le japonais, le coréen et le chinois se téléchargent automatiquement. Téléchargez les autres langues seulement si vous en avez besoin, environ 30 Mo chacune.</string>
+    <string name="pack_built_in">Intégré</string>
+    <string name="pack_ready">Sur ce téléphone · fonctionne hors ligne</string>
+    <string name="pack_auto">Téléchargement automatique · environ 30 Mo</string>
+    <string name="pack_missing">Non téléchargé · environ 30 Mo</string>
+    <string name="pack_downloading">Téléchargement…</string>
+    <string name="pack_failed">Échec du téléchargement</string>
+    <string name="error_pack_missing">Pas encore téléchargé : %1$s (environ 30 Mo chacun)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">Langue de l\'application</string>

@@ -174,12 +174,17 @@
     <string name="download_failed">La descarga falló</string>
 
     <string name="packs_title">Paquetes de idioma de Google Traductor</string>
-    <string name="packs_downloading">Descargando %1$s · %2$d de %3$d</string>
-    <string name="packs_failed">%1$s · %2$d de %3$d descargados</string>
-    <string name="packs_complete">Los %1$d idiomas están listos · funciona sin conexión</string>
-    <string name="packs_none">Nada descargado · se obtiene cada idioma al usarlo por primera vez · unos 30 MB cada uno</string>
-    <string name="packs_some">%1$d de %2$d descargados</string>
-    <string name="packs_download_all">Descargar todo</string>
+    <string name="packs_count">%1$d de %2$d idiomas en este teléfono</string>
+    <string name="packs_downloading_one">Descargando %1$s…</string>
+    <string name="packs_manage">Gestionar</string>
+    <string name="packs_note">El inglés viene incluido. El japonés, el coreano y el chino se descargan automáticamente. Descarga otros idiomas solo cuando los necesites, unos 30 MB cada uno.</string>
+    <string name="pack_built_in">Incluido</string>
+    <string name="pack_ready">En este teléfono · funciona sin conexión</string>
+    <string name="pack_auto">Se descarga automáticamente · unos 30 MB</string>
+    <string name="pack_missing">No descargado · unos 30 MB</string>
+    <string name="pack_downloading">Descargando…</string>
+    <string name="pack_failed">Error de descarga</string>
+    <string name="error_pack_missing">Aún no descargado: %1$s (unos 30 MB cada uno)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">Idioma de la aplicación</string>

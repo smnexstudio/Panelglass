@@ -238,7 +238,7 @@ fun ReaderScreen(
                 pageText,
                 onSource = { vm.pageText.pickSource(it) }, onTarget = { vm.pageText.pickTarget(it) },
                 onTranslate = { vm.pageText.translate() }, onShowOriginal = { vm.pageText.showOriginal() },
-                onClose = { vm.pageText.close() },
+                onClose = { vm.pageText.close() }, onDownloadPacks = { vm.pageText.downloadPacks() },
             )
             HorizontalDivider(thickness = 1.dp, color = Tokens.InkRaised)
         }
@@ -276,6 +276,10 @@ fun ReaderScreen(
             val failure = screen.failure
             when (failure) {
                 is EngineFailure.MissingKey -> ErrorRow(stringResource(UiR.string.error_needs_key, failure.engine.uiName()), stringResource(UiR.string.action_add_key)) { onOpenKeySheet(failure.engine.name) }
+                // Only Japanese, Korean and Chinese download by themselves: any other language waits for this tap.
+                is EngineFailure.PackMissing -> ErrorRow(
+                    stringResource(UiR.string.error_pack_missing, vm.packNames(failure.tags)), stringResource(UiR.string.action_download),
+                ) { vm.downloadPacksAndRetry(failure.tags) { captureViewport(webView) } }
                 // The escape hatch is Google Translate (ML Kit, on-device, no key) — named as such, since the failing
                 // engine may itself be the on-device model — and only offered while it is not the one that failed.
                 is EngineFailure.QuotaExceeded -> ErrorRow(stringResource(UiR.string.error_quota, failure.engine.uiName()), stringResource(UiR.string.action_use_google_translate)) { vm.switchToOnDevice { captureViewport(webView) } }

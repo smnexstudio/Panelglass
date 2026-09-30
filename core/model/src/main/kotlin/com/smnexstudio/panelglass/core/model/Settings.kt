@@ -10,8 +10,11 @@ enum class QwenBackend { AUTO, GPU, CPU }
 data class Settings(
     val defaultSourceLang: Lang = Lang.JA,
     val defaultTargetLang: Lang = Lang.EN,
-    /** Explicit provider choice; the on-device model unless the user picks something else. */
-    val engineId: EngineId = EngineId.QWEN15_LOCAL,
+    /**
+     * Explicit provider choice; Google Translate (ML Kit, on-device, no key, no large download) unless the user picks
+     * something else.
+     */
+    val engineId: EngineId = EngineId.GOOGLE,
     /** User-chosen model ids per provider (e.g. `claude-sonnet-4-5`, `openai/gpt-4o-mini`). Not secrets. */
     val models: Map<EngineId, String> = emptyMap(),
     /** BATCHED (default) sends one call per image; SEQUENTIAL does strict 2-back per region. */

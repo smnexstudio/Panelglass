@@ -174,12 +174,17 @@
     <string name="download_failed">डाउनलोड नहीं हो सका</string>
 
     <string name="packs_title">Google अनुवाद के भाषा पैक</string>
-    <string name="packs_downloading">%1$s डाउनलोड हो रहा है · %3$d में से %2$d</string>
-    <string name="packs_failed">%1$s · %3$d में से %2$d डाउनलोड हुए</string>
-    <string name="packs_complete">सभी %1$d भाषाएं तैयार हैं · ऑफ़लाइन काम करता है</string>
-    <string name="packs_none">कुछ भी डाउनलोड नहीं हुआ · हर भाषा पहली बार इस्तेमाल पर मिलती है · हर एक करीब 30 एमबी</string>
-    <string name="packs_some">%2$d में से %1$d डाउनलोड हुए</string>
-    <string name="packs_download_all">सभी डाउनलोड करें</string>
+    <string name="packs_count">इस फ़ोन पर %2$d में से %1$d भाषाएँ</string>
+    <string name="packs_downloading_one">%1$s डाउनलोड हो रही है…</string>
+    <string name="packs_manage">प्रबंधित करें</string>
+    <string name="packs_note">अंग्रेज़ी पहले से शामिल है। जापानी, कोरियाई और चीनी अपने आप डाउनलोड होती हैं। दूसरी भाषाएँ तभी डाउनलोड करें जब ज़रूरत हो, हर एक लगभग 30 MB।</string>
+    <string name="pack_built_in">पहले से शामिल</string>
+    <string name="pack_ready">इस फ़ोन पर · ऑफ़लाइन काम करती है</string>
+    <string name="pack_auto">अपने आप डाउनलोड होती है · लगभग 30 MB</string>
+    <string name="pack_missing">डाउनलोड नहीं हुई · लगभग 30 MB</string>
+    <string name="pack_downloading">डाउनलोड हो रहा है…</string>
+    <string name="pack_failed">डाउनलोड नहीं हो सका</string>
+    <string name="error_pack_missing">अभी डाउनलोड नहीं हुई: %1$s (हर एक लगभग 30 MB)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">ऐप की भाषा</string>

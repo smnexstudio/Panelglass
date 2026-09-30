@@ -170,12 +170,17 @@
     <string name="download_failed">下载失败</string>
 
     <string name="packs_title">Google 翻译语言包</string>
-    <string name="packs_downloading">正在下载%1$s · %2$d/%3$d</string>
-    <string name="packs_failed">%1$s · 已下载 %2$d/%3$d</string>
-    <string name="packs_complete">全部 %1$d 种语言已就绪 · 可离线使用</string>
-    <string name="packs_none">尚未下载 · 每种语言首次使用时获取 · 每种约 30 MB</string>
-    <string name="packs_some">已下载 %1$d/%2$d</string>
-    <string name="packs_download_all">全部下载</string>
+    <string name="packs_count">本机已有 %1$d / %2$d 种语言</string>
+    <string name="packs_downloading_one">正在下载%1$s…</string>
+    <string name="packs_manage">管理</string>
+    <string name="packs_note">英语已内置。日语、韩语和中文会自动下载。其他语言只在需要时下载，每种约 30 MB。</string>
+    <string name="pack_built_in">内置</string>
+    <string name="pack_ready">已在本机 · 可离线使用</string>
+    <string name="pack_auto">自动下载 · 约 30 MB</string>
+    <string name="pack_missing">未下载 · 约 30 MB</string>
+    <string name="pack_downloading">正在下载…</string>
+    <string name="pack_failed">下载失败</string>
+    <string name="error_pack_missing">尚未下载：%1$s（每种约 30 MB）</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">应用语言</string>

@@ -201,12 +201,17 @@
 
     <!-- Google Translate language packs -->
     <string name="packs_title">Google Translate language packs</string>
-    <string name="packs_downloading">Downloading %1$s · %2$d of %3$d</string>
-    <string name="packs_failed">%1$s · %2$d of %3$d downloaded</string>
-    <string name="packs_complete">All %1$d languages ready · works offline</string>
-    <string name="packs_none">None downloaded · fetched per language on first use · ~30 MB each</string>
-    <string name="packs_some">%1$d of %2$d downloaded</string>
-    <string name="packs_download_all">Download all</string>
+    <string name="packs_count">%1$d of %2$d languages on this phone</string>
+    <string name="packs_downloading_one">Downloading %1$s…</string>
+    <string name="packs_manage">Manage</string>
+    <string name="packs_note">English is built in. Japanese, Korean and Chinese download automatically. Download other languages only when you need them, about 30 MB each.</string>
+    <string name="pack_built_in">Built in</string>
+    <string name="pack_ready">On this phone · works offline</string>
+    <string name="pack_auto">Downloads automatically · about 30 MB</string>
+    <string name="pack_missing">Not downloaded · about 30 MB</string>
+    <string name="pack_downloading">Downloading…</string>
+    <string name="pack_failed">Download failed</string>
+    <string name="error_pack_missing">Not downloaded yet: %1$s (about 30 MB each)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">App language</string>

@@ -182,12 +182,17 @@
     <string name="download_failed">Не удалось скачать</string>
 
     <string name="packs_title">Языковые пакеты Google Переводчика</string>
-    <string name="packs_downloading">Скачивание: %1$s · %2$d из %3$d</string>
-    <string name="packs_failed">%1$s · скачано %2$d из %3$d</string>
-    <string name="packs_complete">Все языки (%1$d) готовы · работает офлайн</string>
-    <string name="packs_none">Ничего не скачано · каждый язык скачивается при первом использовании · около 30 МБ</string>
-    <string name="packs_some">Скачано %1$d из %2$d</string>
-    <string name="packs_download_all">Скачать все</string>
+    <string name="packs_count">На телефоне %1$d из %2$d языков</string>
+    <string name="packs_downloading_one">Загрузка: %1$s…</string>
+    <string name="packs_manage">Управление</string>
+    <string name="packs_note">Английский встроен. Японский, корейский и китайский загружаются автоматически. Остальные языки загружайте только когда они нужны, около 30 МБ каждый.</string>
+    <string name="pack_built_in">Встроен</string>
+    <string name="pack_ready">На этом телефоне · работает офлайн</string>
+    <string name="pack_auto">Загружается автоматически · около 30 МБ</string>
+    <string name="pack_missing">Не загружен · около 30 МБ</string>
+    <string name="pack_downloading">Загрузка…</string>
+    <string name="pack_failed">Не удалось загрузить</string>
+    <string name="error_pack_missing">Ещё не загружено: %1$s (около 30 МБ каждый)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">Язык приложения</string>

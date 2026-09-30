@@ -199,9 +199,20 @@ class SettingsViewModel @Inject constructor(
     fun cancelMangaOcr() = mangaOcrStore.cancel()
     fun deleteMangaOcr() = mangaOcrStore.delete()
 
-    fun downloadPacks() = packStore.downloadAll()
-    fun cancelPacks() = packStore.cancel()
-    fun deletePacks() = packStore.deleteAll()
+    fun downloadPack(tag: String) = packStore.download(listOf(tag))
+    fun deletePack(tag: String) = packStore.delete(tag)
+
+    /** The Try box's "Download": fetch the missing packs, then run the same text again. */
+    fun downloadPacksAndTry(tags: List<String>) {
+        tryJob?.cancel()
+        tryJob = viewModelScope.launch {
+            _tryState.update { it.copy(running = true, failure = null) }
+            val ok = packStore.downloadNow(tags)
+            _tryState.update { it.copy(running = false) }
+            if (ok) tryTranslate()
+            else _tryState.update { it.copy(failure = EngineFailure.Unavailable(EngineId.GOOGLE, context.getString(UiR.string.pack_failed))) }
+        }
+    }
 
     fun setTryInput(s: String) = _tryState.update { it.copy(input = s) }
 

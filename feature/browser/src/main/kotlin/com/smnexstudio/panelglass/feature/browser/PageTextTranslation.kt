@@ -1,6 +1,8 @@
 package com.smnexstudio.panelglass.feature.browser
 
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
+import com.smnexstudio.panelglass.core.model.EngineException
+import com.smnexstudio.panelglass.core.model.EngineFailure
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -24,8 +26,10 @@ data class PageTextState(
     val detectedTag: String? = null,
     val tgtTag: String = "en",
     val status: Status = Status.IDLE,
+    /** ML Kit tags the user must download first ([Status.NEEDS_PACK]). */
+    val missingPacks: List<String> = emptyList(),
 ) {
-    enum class Status { IDLE, DETECTING, DOWNLOADING, TRANSLATING, DONE, SAME_LANGUAGE, UNDETECTED, FAILED }
+    enum class Status { IDLE, DETECTING, DOWNLOADING, TRANSLATING, DONE, SAME_LANGUAGE, UNDETECTED, NEEDS_PACK, FAILED }
 }
 
 /**
@@ -40,6 +44,8 @@ class PageTextTranslation(
     private val eval: suspend (String) -> String?,
     private val onTextChanged: () -> Unit,
     private val saveTarget: suspend (String) -> Unit,
+    /** Downloads the given ML Kit packs; true when all are on the phone afterwards. */
+    private val fetchPacks: suspend (List<String>) -> Boolean,
 ) {
     private val _state = MutableStateFlow(PageTextState())
     val state: StateFlow<PageTextState> = _state
@@ -95,7 +101,21 @@ class PageTextTranslation(
         job?.cancel()
         job = scope.launch {
             if (restore) eval("window.__pt && __pt.restore()")
-            try { translatePage() } catch (e: CancellationException) { throw e } catch (e: Exception) { status(PageTextState.Status.FAILED) }
+            try { translatePage() } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                val missing = ((e as? EngineException)?.failure as? EngineFailure.PackMissing)?.tags
+                if (missing != null) _state.update { it.copy(status = PageTextState.Status.NEEDS_PACK, missingPacks = missing) }
+                else status(PageTextState.Status.FAILED)
+            }
+        }
+    }
+
+    /** The bar's "Download" on [PageTextState.Status.NEEDS_PACK]: fetch the packs, then translate the page. */
+    fun downloadPacks() {
+        val tags = _state.value.missingPacks
+        job?.cancel()
+        job = scope.launch {
+            _state.update { it.copy(status = PageTextState.Status.DOWNLOADING, missingPacks = emptyList()) }
+            if (fetchPacks(tags)) restart(restore = false) else status(PageTextState.Status.FAILED)
         }
     }
 

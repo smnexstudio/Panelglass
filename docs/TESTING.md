@@ -3,7 +3,7 @@
 What the automated tests cover, how to run them, and the checks that still need a phone. The architecture under test
 is in [ARCHITECTURE.md](ARCHITECTURE.md); the translation flow in [FLOW.md](FLOW.md).
 
-Counts as of 2026-09-28: **167 unit tests** in 27 classes, **2 instrumented tests**, all passing.
+Counts as of 2026-09-30: **171 unit tests** in 27 classes, **2 instrumented tests**, all passing.
 
 ## Contents
 
@@ -67,14 +67,14 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 
 | Class | Tests | Covers |
 |---|---|---|
-| `RegistryAndQwenTest` | 28 | **Engine selection:** the default is the on-device model; only Gemini, Google Translate and the on-device models are offered; a planned engine never resolves; a keyed engine without its key is `MissingKey`, never a fallback; removing a key keeps the selection. **On-device prompts:** numbered-line payload with SFX marked; token-budget chunking; lenient line parser that drops echoes and stray numbers; streamed reply cut when complete; partial replies keep what parsed and retry only the rest; byte-level stand-ins repaired; system text and payload as separate turns. **Model lifecycle:** a missing model is a typed failure; loading one model releases the other; Gemma 4 only on 8 GB phones; *Qwen runs on* reloads Qwen on the other backend at its next call; Automatic picks the CPU under 6 GB; a model busy when the UI is hidden is released after its last call; coming back first keeps it |
+| `RegistryAndQwenTest` | 28 | **Engine selection:** the default is Google Translate; only Gemini, Google Translate and the on-device models are offered; a planned engine never resolves; a keyed engine without its key is `MissingKey`, never a fallback; removing a key keeps the selection. **On-device prompts:** numbered-line payload with SFX marked; token-budget chunking; lenient line parser that drops echoes and stray numbers; streamed reply cut when complete; partial replies keep what parsed and retry only the rest; byte-level stand-ins repaired; system text and payload as separate turns. **Model lifecycle:** a missing model is a typed failure; loading one model releases the other; Gemma 4 only on 8 GB phones; *Qwen runs on* reloads Qwen on the other backend at its next call; Automatic picks the CPU under 6 GB; a model busy when the UI is hidden is released after its last call; coming back first keeps it |
 | `ProviderEngineTest` | 9 | Against MockWebServer: 401 → `MissingKey`; a missing key never reaches the network; Gemini steps down past a request option a model refuses and remembers it; display names resolve to ids, Gemma models get no Gemini-only options; the model list keeps text models, Gemini first; OpenAI / OpenRouter send the user's model and key |
 | `LlmContractTest` | 8 | The cloud JSON contract: strict and tolerant parsing (prose, code fences), length mismatch and garbage are `Malformed`; HTTP status mapping, Gemini "high demand" is `Overloaded` with the provider's message; the retry policy is bounded and capped; glossary and montage mapping in the prompt |
-| `GoogleTranslateEngineTest` | 8 | ML Kit translation behind its seam: every item translated, pack downloaded once; glossary terms before and after; names learned in one request apply to the next; Japanese prepared first, Korean passed through; an echoed sound word romanised for Latin targets; a failed pack download is a typed `Unavailable` |
+| `GoogleTranslateEngineTest` | 9 | ML Kit translation behind its seam: every item translated, pack downloaded once; a pack the user has not downloaded is a typed `PackMissing` and nothing is fetched; glossary terms before and after; names learned in one request apply to the next; Japanese prepared first, Korean passed through; an echoed sound word romanised for Latin targets; a failed pack download is a typed `Unavailable` |
 | `JaPrepTest` | 7 | Japanese preparation for ML Kit: names found by honorific, whole-bubble and repetition (a loanword seen twice is not a name); names and honorifics swapped; casual negatives standardised; romaji for names and sound words |
 | `PageTranslatorTest` | 5 | *Translate page*: language detection falls back to the page language and rejects romanised text; same language returned unchanged; order kept, a failed text left as it was; all failing is an error; a language pair prepared once |
 | `BatchingTranslatorTest` | 4 | Gemini reads unread regions from their crops and returns what it read; an on-device model gets one image per call; a failure surfaces typed instead of switching provider; a cancelled caller cancels its generation |
-| `LanguagePackStoreTest` | 3 | Google Translate packs: every app language once (Chinese variants share a pack); download-all skips packs present; a failure keeps progress and reports typed |
+| `LanguagePackStoreTest` | 6 | Google Translate packs: every app language once (Chinese variants share a pack); only Japanese, Korean and Chinese download automatically; any other pack is missing until the user downloads it, and asking never downloads; English and packs already present are never fetched; a failure is reported for that language only; delete removes one pack, never English |
 
 ### core:ocr (32)
 

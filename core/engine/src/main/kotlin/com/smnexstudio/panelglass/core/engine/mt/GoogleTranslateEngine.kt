@@ -31,8 +31,9 @@ interface PairTranslator {
 }
 
 /**
- * "Google Translate" in the UI: Google's ML Kit on-device translation. Free, no key, works offline once the
- * ~30 MB language packs for the pair are downloaded (on first use, any network — same rule as the Qwen model).
+ * "Google Translate" in the UI: Google's ML Kit on-device translation, the default engine. Free, no key, works
+ * offline once the ~30 MB language packs for the pair are on the phone. Japanese, Korean and Chinese are fetched
+ * after install (or on first use); any other pack must be downloaded by the user first ([EngineFailure.PackMissing]).
  * Text only; ML Kit has a single Chinese model, so Traditional Chinese is translated as Chinese.
  */
 @Singleton
@@ -47,9 +48,20 @@ class GoogleTranslateEngine @Inject constructor() : TranslationEngine {
     /** Production builds ML Kit clients; tests swap in a scripted translator. */
     var translatorFactory: (src: Lang, tgt: Lang) -> PairTranslator = { src, tgt -> MlKitPairTranslator(tag(src), tag(tgt)) }
 
+    /** Which packs may be fetched on first use ([LanguagePackStore]); tests leave it open. */
+    var packGate: PackGate = PackGate.OPEN
+
+    /** Hilt method injection, as [com.smnexstudio.panelglass.core.engine.local.LocalEngines.bindSettings] does. */
+    @Inject fun bindPacks(store: LanguagePackStore) { packGate = store }
+
     private suspend fun translator(src: Lang, tgt: Lang): PairTranslator {
         val key = src.code + ">" + tgt.code
         return lock.withLock {
+            if (key !in ready) {
+                // Only Japanese, Korean and Chinese are fetched on the fly; any other pack is the user's to download.
+                val missing = packGate.missing(setOf(tag(src), tag(tgt)))
+                if (missing.isNotEmpty()) throw EngineException(EngineFailure.PackMissing(id, missing.sorted()))
+            }
             val t = translators.getOrPut(key) { translatorFactory(src, tgt) }
             if (key !in ready) {
                 try { t.prepare() } catch (e: Exception) {

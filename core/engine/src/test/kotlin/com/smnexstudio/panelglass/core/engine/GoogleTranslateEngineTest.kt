@@ -1,7 +1,9 @@
 package com.smnexstudio.panelglass.core.engine
 
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
+import com.smnexstudio.panelglass.core.engine.mt.PackGate
 import com.smnexstudio.panelglass.core.engine.mt.PairTranslator
+import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.Lang
@@ -37,6 +39,21 @@ class GoogleTranslateEngineTest {
 
         assertEquals(listOf("Hello", "Thanks"), a.sortedBy { it.i }.map { it.text })
         assertEquals("Hello", b.single().text)
+        assertEquals(1, scripted.prepared)
+    }
+
+    @Test
+    fun aPackTheUserHasNotDownloadedIsATypedFailureAndNothingIsFetched() = runBlocking {
+        val scripted = Scripted(mapOf("こんにちは" to "नमस्ते", "ありがとう" to "धन्यवाद"))
+        val engine = GoogleTranslateEngine().apply {
+            translatorFactory = { _, _ -> scripted }
+            packGate = PackGate { tags -> tags.filter { it == "hi" }.toSet() }
+        }
+        val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(TranslateRequest(items, Lang.JA, Lang.HI)) } }
+        assertEquals(EngineFailure.PackMissing(EngineId.GOOGLE, listOf("hi")), e.failure)
+        assertEquals(0, scripted.prepared) // no silent download
+        // Japanese → English is allowed through the same gate.
+        engine.translate(TranslateRequest(items, Lang.JA, Lang.EN))
         assertEquals(1, scripted.prepared)
     }
 

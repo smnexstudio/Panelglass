@@ -221,7 +221,8 @@ comments), not the art. It never touches the pipeline.
 1. `PageTextTranslation` (feature:browser) opens the translate bar and asks `pt.js` for a sample of the visible text
    and `<html lang>`. `PageTranslator.detect` (core:engine) names the language with ML Kit language identification,
    falling back to `<html lang>`; the user can pick the source instead.
-2. `PageTranslator.prepare` downloads the ML Kit language packs for the pair on first use.
+2. `PageTranslator.prepare` readies the pair. Japanese, Korean and Chinese packs are fetched if missing; any other
+   missing pack is `EngineFailure.PackMissing`, and the bar offers **Download** before translating.
 3. `pt.js` `collect` hands over untranslated text nodes, visible ones first, about 3,000 characters at a time. They
    are translated a few at a time and written back with `apply`, which keeps each original. Translating from a
    language written without spaces (Japanese, Chinese, Thai) adds a space where a link meets the words around it.

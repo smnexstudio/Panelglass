@@ -68,9 +68,9 @@ class RegistryAndQwenTest {
     // ---- selection rule ------------------------------------------------------------------------
 
     @Test
-    fun defaultSelectionIsTheOnDeviceModel() = runBlocking {
+    fun defaultSelectionIsGoogleTranslate() = runBlocking {
         val r = registry().resolveSelected()
-        assertTrue(r is EngineResolution.Ready && r.engine.id == EngineId.QWEN15_LOCAL)
+        assertTrue(r is EngineResolution.Ready && r.engine.id == EngineId.GOOGLE)
     }
 
     @Test

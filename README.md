@@ -174,10 +174,13 @@ Panelglass is not on Google Play. Each release is published on GitHub:
 ### Set up
 
 1. Open **Settings → Translation** and choose the source and target languages.
-2. Choose an engine under **Translation model**:
+2. Choose an engine under **Translation model**. **Google Translate** is selected on a new install:
+   - **Google Translate**: free and on the device. The Japanese, Korean and Chinese language packs (~30 MB each)
+     download by themselves when the app first starts; English is built in. Any other language is downloaded only
+     when you ask: tap **Download** when the reader says a pack is missing, or pick languages under **Models →
+     Google Translate language packs**, where each one can also be deleted.
    - **Gemini**: tap its name, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
      (a *flash* or *flash-lite* model is fastest) and save.
-   - **Google Translate**: download the language packs under **Models** for offline use.
    - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: download the model under **Models**. The engine picker then shows it as
      *downloaded*. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
      memory); **Settings → Models → Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).

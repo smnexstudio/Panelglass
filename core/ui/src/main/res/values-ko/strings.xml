@@ -170,12 +170,17 @@
     <string name="download_failed">다운로드하지 못했습니다</string>
 
     <string name="packs_title">Google 번역 언어 팩</string>
-    <string name="packs_downloading">%1$s 다운로드 중 · %2$d/%3$d</string>
-    <string name="packs_failed">%1$s · %2$d/%3$d 다운로드됨</string>
-    <string name="packs_complete">%1$d개 언어 모두 준비됨 · 오프라인으로 작동</string>
-    <string name="packs_none">다운로드된 항목 없음 · 언어별로 처음 사용할 때 다운로드 · 언어당 약 30 MB</string>
-    <string name="packs_some">%1$d/%2$d 다운로드됨</string>
-    <string name="packs_download_all">모두 다운로드</string>
+    <string name="packs_count">이 휴대폰에 있는 언어 %2$d개 중 %1$d개</string>
+    <string name="packs_downloading_one">%1$s 다운로드 중…</string>
+    <string name="packs_manage">관리</string>
+    <string name="packs_note">영어는 기본으로 들어 있습니다. 일본어, 한국어, 중국어는 자동으로 다운로드됩니다. 다른 언어는 필요할 때만 다운로드하세요(각 약 30MB).</string>
+    <string name="pack_built_in">기본 포함</string>
+    <string name="pack_ready">이 휴대폰에 있음 · 오프라인 사용 가능</string>
+    <string name="pack_auto">자동 다운로드 · 약 30MB</string>
+    <string name="pack_missing">다운로드 안 됨 · 약 30MB</string>
+    <string name="pack_downloading">다운로드 중…</string>
+    <string name="pack_failed">다운로드 실패</string>
+    <string name="error_pack_missing">아직 다운로드하지 않음: %1$s(각 약 30MB)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">앱 언어</string>

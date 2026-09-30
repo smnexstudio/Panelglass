@@ -27,7 +27,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -116,6 +121,7 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
     var tgtPicker by remember { mutableStateOf(false) }
     var appLangPicker by remember { mutableStateOf(false) }
     var backendPicker by remember { mutableStateOf(false) }
+    var packsSheet by remember { mutableStateOf(false) }
     val gpu = stringResource(UiR.string.qwen_backend_gpu); val cpu = stringResource(UiR.string.qwen_backend_cpu)
     // Automatic names what it picks on this phone ("Automatic · GPU").
     val backendNames = mapOf(
@@ -154,7 +160,10 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         // ---- try -------------------------------------------------------------------------------
         SectionLabel(stringResource(UiR.string.settings_try))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            TryBox(tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { keyDialogFor = it }, onUseOnDevice = { vm.selectEngine(EngineId.QWEN15_LOCAL) })
+            TryBox(
+                tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { keyDialogFor = it },
+                onUseOnDevice = { vm.selectEngine(EngineId.QWEN15_LOCAL) }, onDownloadPacks = { vm.downloadPacksAndTry(it) },
+            )
         }
 
         // ---- app language ----------------------------------------------------------------------
@@ -226,7 +235,7 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         }
         Spacer(Modifier.height(12.dp))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            PacksRow(packs, onDownload = { vm.downloadPacks() }, onCancel = { vm.cancelPacks() }, onDelete = { vm.deletePacks() })
+            PacksRow(packs, onManage = { packsSheet = true })
         }
         Text(
             stringResource(UiR.string.settings_keys_note),
@@ -244,6 +253,7 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         }
     }
 
+    if (packsSheet) PacksSheet(packs, onDownload = { vm.downloadPack(it) }, onDelete = { vm.deletePack(it) }, onDismiss = { packsSheet = false })
     if (backendPicker) ChoiceSheet(
         stringResource(UiR.string.qwen_backend), QwenBackend.entries, s.qwenBackend,
         render = { backendNames.getValue(it) },
@@ -363,32 +373,66 @@ private fun ModelRow(
     }) else null)
 }
 
-/** Google Translate (ML Kit) language packs for every supported language, ~30 MB each. */
+/** Google Translate (ML Kit) language packs: how many are on the phone; [onManage] opens the per-language list. */
 @Composable
-private fun PacksRow(p: PackState, onDownload: () -> Unit, onCancel: () -> Unit, onDelete: () -> Unit) {
-    val subtitle = when {
-        p.downloading -> stringResource(UiR.string.packs_downloading, p.current?.let { packName(it) } ?: "", p.downloaded.size, p.total)
-        p.failed != null -> stringResource(UiR.string.packs_failed, p.failed!!, p.downloaded.size, p.total)
-        p.complete -> stringResource(UiR.string.packs_complete, p.total)
-        p.downloaded.isEmpty() -> stringResource(UiR.string.packs_none)
-        else -> stringResource(UiR.string.packs_some, p.downloaded.size, p.total)
+private fun PacksRow(p: PackState, onManage: () -> Unit) {
+    val all = LanguagePackStore.ALL_TAGS
+    val subtitle = p.current?.let { stringResource(UiR.string.packs_downloading_one, packName(it)) }
+        ?: stringResource(UiR.string.packs_count, all.count { p.has(it) }, all.size)
+    ActionRow(stringResource(UiR.string.packs_title), subtitle, stringResource(UiR.string.packs_manage), Tokens.SkyDeep, onAction = onManage,
+        below = if (p.current != null) ({
+            LinearProgressIndicator(color = Tokens.Yellow, trackColor = Tokens.Border, modifier = Modifier.fillMaxWidth().padding(top = 10.dp, end = 8.dp))
+        }) else null)
+}
+
+/**
+ * One row per language: English is built in; Japanese, Korean and Chinese download by themselves; every other
+ * language is downloaded here when the user wants it, and any pack can be deleted to free its ~30 MB.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (String) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tokens.Card) {
+        LazyColumn(Modifier.padding(horizontal = 16.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+            item {
+                Text(stringResource(UiR.string.packs_title), style = MaterialTheme.typography.titleLarge, color = Tokens.Ink, modifier = Modifier.padding(start = 4.dp))
+                Text(stringResource(UiR.string.packs_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp))
+            }
+            items(LanguagePackStore.ALL_TAGS) { tag ->
+                val busy = tag == p.current || tag in p.pending
+                val status = when {
+                    tag == LanguagePackStore.BUILT_IN -> stringResource(UiR.string.pack_built_in)
+                    p.has(tag) -> stringResource(UiR.string.pack_ready)
+                    busy -> stringResource(UiR.string.pack_downloading)
+                    p.failed == tag -> stringResource(UiR.string.pack_failed)
+                    tag in LanguagePackStore.AUTOMATIC -> stringResource(UiR.string.pack_auto)
+                    else -> stringResource(UiR.string.pack_missing)
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(packName(tag), style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink)
+                        Text(status, style = MaterialTheme.typography.bodySmall, color = if (p.failed == tag && !busy) Tokens.Error else Tokens.InkSoft)
+                    }
+                    when {
+                        tag == LanguagePackStore.BUILT_IN -> Unit
+                        busy -> CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Tokens.Ink)
+                        p.has(tag) -> TextAction(stringResource(UiR.string.action_delete), Tokens.Error) { onDelete(tag) }
+                        p.failed == tag -> TextAction(stringResource(UiR.string.action_retry), Tokens.SkyDeep) { onDownload(tag) }
+                        else -> TextAction(stringResource(UiR.string.action_download), Tokens.SkyDeep) { onDownload(tag) }
+                    }
+                }
+            }
+        }
     }
-    val (action, color, handler) = when {
-        p.downloading -> Triple(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onCancel)
-        p.complete -> Triple(stringResource(UiR.string.action_delete), Tokens.Error, onDelete)
-        p.failed != null -> Triple(stringResource(UiR.string.action_retry), Tokens.SkyDeep, onDownload)
-        else -> Triple(stringResource(UiR.string.packs_download_all), Tokens.SkyDeep, onDownload)
-    }
-    ActionRow(stringResource(UiR.string.packs_title), subtitle, action, color, onAction = handler, below = if (p.downloading) ({
-        val fraction = if (p.total > 0) p.downloaded.size.toFloat() / p.total else 0f
-        LinearProgressIndicator(progress = { fraction }, color = Tokens.Yellow, trackColor = Tokens.Border, modifier = Modifier.fillMaxWidth().padding(top = 10.dp, end = 8.dp))
-    }) else null)
 }
 
 // ---- try box ---------------------------------------------------------------------------------
 
 @Composable
-private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit) {
+private fun TryBox(
+    t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit,
+    onDownloadPacks: (List<String>) -> Unit,
+) {
     Column(Modifier.fillMaxWidth().padding(14.dp)) {
         OutlinedTextField(
             value = t.input, onValueChange = onInput, minLines = 2, maxLines = 5,
@@ -416,6 +460,9 @@ private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, on
                 when (action) {
                     Action.ADD_KEY -> TextAction(stringResource(UiR.string.action_add_key), Tokens.SkyDeep) { onAddKey(f.engine) }
                     Action.USE_ON_DEVICE -> TextAction(stringResource(UiR.string.action_use_on_device), Tokens.SkyDeep, onUseOnDevice)
+                    Action.DOWNLOAD_PACK -> (f as? EngineFailure.PackMissing)?.let { m ->
+                        TextAction(stringResource(UiR.string.action_download), Tokens.SkyDeep) { onDownloadPacks(m.tags) }
+                    }
                     Action.NONE -> Unit
                 }
             }
@@ -423,7 +470,7 @@ private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, on
     }
 }
 
-private enum class Action { ADD_KEY, USE_ON_DEVICE, NONE }
+private enum class Action { ADD_KEY, USE_ON_DEVICE, DOWNLOAD_PACK, NONE }
 
 /** A Google Translate pack's language, named in the UI's language. */
 private fun packName(tag: String): String =
@@ -438,6 +485,7 @@ private fun failureText(f: EngineFailure): Pair<String, Action> {
     return when (f) {
         is EngineFailure.MissingKey -> stringResource(UiR.string.error_needs_key, name) to Action.ADD_KEY
         is EngineFailure.ModelMissing -> stringResource(UiR.string.error_model_missing) to Action.NONE
+        is EngineFailure.PackMissing -> stringResource(UiR.string.error_pack_missing, f.tags.joinToString(", ") { packName(it) }) to Action.DOWNLOAD_PACK
         is EngineFailure.QuotaExceeded -> stringResource(UiR.string.error_quota, name) to Action.USE_ON_DEVICE
         is EngineFailure.RateLimited -> stringResource(UiR.string.error_rate_limited, name) to Action.NONE
         is EngineFailure.Overloaded -> withReason(UiR.string.error_overloaded, f.reason) to Action.USE_ON_DEVICE

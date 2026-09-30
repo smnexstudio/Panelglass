@@ -9,6 +9,14 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ### Changed
 
+- **Google Translate is now the default engine** on a new install: free, on the device, and no large download.
+  If you already use Qwen and never picked an engine, you stay on Qwen.
+- **Language packs download only when you need them.** Japanese, Korean and Chinese (about 30 MB each) download by
+  themselves when the app first starts; English is built in. Any other language is downloaded only when you ask:
+  the reader, Translate page and Try a translation show **Download** when a pack is missing, and **Settings →
+  Models → Google Translate language packs** lists every language to download or delete one by one. Previously a
+  pack was downloaded silently the first time a language was used.
+
 - Panelglass now needs Android 12 or later (it ran on Android 8.0 before).
 - Panelglass now browses over https only. `http://` addresses and links open as `https://`, and a site that only
   serves plain http no longer loads.

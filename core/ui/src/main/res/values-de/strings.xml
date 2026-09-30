@@ -174,12 +174,17 @@
     <string name="download_failed">Download fehlgeschlagen</string>
 
     <string name="packs_title">Sprachpakete für Google Übersetzer</string>
-    <string name="packs_downloading">%1$s wird heruntergeladen · %2$d von %3$d</string>
-    <string name="packs_failed">%1$s · %2$d von %3$d heruntergeladen</string>
-    <string name="packs_complete">Alle %1$d Sprachen bereit · funktioniert offline</string>
-    <string name="packs_none">Nichts heruntergeladen · jede Sprache wird bei der ersten Nutzung geladen · je etwa 30 MB</string>
-    <string name="packs_some">%1$d von %2$d heruntergeladen</string>
-    <string name="packs_download_all">Alle herunterladen</string>
+    <string name="packs_count">%1$d von %2$d Sprachen auf diesem Telefon</string>
+    <string name="packs_downloading_one">%1$s wird heruntergeladen…</string>
+    <string name="packs_manage">Verwalten</string>
+    <string name="packs_note">Englisch ist integriert. Japanisch, Koreanisch und Chinesisch werden automatisch geladen. Andere Sprachen lädst du nur bei Bedarf herunter, je etwa 30 MB.</string>
+    <string name="pack_built_in">Integriert</string>
+    <string name="pack_ready">Auf diesem Telefon · funktioniert offline</string>
+    <string name="pack_auto">Wird automatisch geladen · etwa 30 MB</string>
+    <string name="pack_missing">Nicht heruntergeladen · etwa 30 MB</string>
+    <string name="pack_downloading">Wird heruntergeladen…</string>
+    <string name="pack_failed">Download fehlgeschlagen</string>
+    <string name="error_pack_missing">Noch nicht heruntergeladen: %1$s (je etwa 30 MB)</string>
 
     <!-- App language, and the reader's Translate page bar -->
     <string name="settings_app_language">App-Sprache</string>

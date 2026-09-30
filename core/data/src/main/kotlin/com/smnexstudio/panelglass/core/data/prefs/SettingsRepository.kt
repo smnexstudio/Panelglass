@@ -41,6 +41,7 @@ class SettingsRepository @Inject constructor(
         val theme = stringPreferencesKey("appTheme")
         val pageTarget = stringPreferencesKey("pageTranslateTarget")
         val qwenBackend = stringPreferencesKey("qwenBackend")
+        val automaticPacks = booleanPreferencesKey("automaticPacksDone")
         fun model(id: EngineId) = stringPreferencesKey("model_" + id.name)
         fun profile(id: EngineId, model: String) = stringPreferencesKey("profile_" + id.name + "_" + model)
     }
@@ -79,6 +80,16 @@ class SettingsRepository @Inject constructor(
     /** The reader's "Translate page" target, an ML Kit language tag; English until the user picks another. */
     suspend fun pageTranslateTarget(): String = dataStore.data.first()[K.pageTarget] ?: "en"
     suspend fun setPageTranslateTarget(tag: String) { dataStore.edit { it[K.pageTarget] = tag } }
+
+    /** Whether the user (or a launch intent) ever chose an engine; without one the default in [Settings] applies. */
+    suspend fun hasEngineChoice(): Boolean = dataStore.data.first()[K.engine] != null
+
+    /**
+     * Whether the Japanese, Korean and Chinese Google Translate packs were fetched after install. Set once they are,
+     * so a pack the user deletes afterwards is not downloaded again at the next start.
+     */
+    suspend fun automaticPacksDone(): Boolean = dataStore.data.first()[K.automaticPacks] == true
+    suspend fun setAutomaticPacksDone() { dataStore.edit { it[K.automaticPacks] = true } }
 
     /**
      * What a provider learned about one of its models (for Gemini, the request options it accepts), kept across runs so

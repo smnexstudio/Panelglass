@@ -13,6 +13,8 @@ import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
+import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
+import com.smnexstudio.panelglass.core.ui.languageName
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -175,6 +177,7 @@ class ReaderViewModel @Inject constructor(
     private val history: HistoryRepository,
     private val registry: EngineRegistry,
     pageTranslator: PageTranslator,
+    private val packs: LanguagePackStore,
     val warmup: ReaderWarmup,
 ) : ViewModel(), MangaWebViewClient.Listener {
 
@@ -189,6 +192,7 @@ class ReaderViewModel @Inject constructor(
         eval = { js -> evalInPage(js) },
         onTextChanged = { if (_screen.value.active) { clearScreenPatches(); translateViewport() } },
         saveTarget = { settingsRepo.setPageTranslateTarget(it) },
+        fetchPacks = { packs.downloadNow(it) },
     )
 
     /** Runs [js] in the page; its JSON result, or null without a page or when the reply is over [MAX_BRIDGE_REPLY]. */
@@ -438,6 +442,7 @@ class ReaderViewModel @Inject constructor(
     /** The status line for a failed viewport: say what went wrong, not just which engine. */
     private fun screenError(f: EngineFailure?): String {
         val name = f?.engine?.uiName(context) ?: return context.getString(UiR.string.error_translation_failed)
+        if (f is EngineFailure.PackMissing) return context.getString(UiR.string.error_pack_missing, packNames(f.tags))
         val res = when (f) {
             is EngineFailure.Overloaded -> UiR.string.error_overloaded_scroll
             is EngineFailure.MissingKey -> UiR.string.error_needs_key
@@ -448,6 +453,9 @@ class ReaderViewModel @Inject constructor(
         }
         return context.getString(res, name)
     }
+
+    /** ML Kit tags named in the UI's language ("Hindi, Arabic"). */
+    fun packNames(tags: List<String>): String = tags.joinToString(", ") { languageName(it) }
 
     /** Keep memory bounded: patches further than a few screens from the viewport are dropped (they are re-made on return). */
     private fun prune(patches: List<ScreenPatch>, scrollY: Int, viewportH: Int, scale: Float): List<ScreenPatch> {
@@ -616,6 +624,21 @@ class ReaderViewModel @Inject constructor(
 
 
     /** Error-row action: keep reading with Google Translate (ML Kit, on-device, no key). Explicit user choice, never automatic. */
+    /**
+     * The bar's "Download" on [EngineFailure.PackMissing]: fetch the language packs the user just agreed to, then
+     * translate the screen again. A failed download says so in the bar; nothing switches engines.
+     */
+    fun downloadPacksAndRetry(tags: List<String>, capture: suspend () -> ViewportCapture?) {
+        viewModelScope.launch {
+            _screen.update { it.copy(working = true, failure = null, error = context.getString(UiR.string.pack_downloading)) }
+            if (packs.downloadNow(tags)) startScreen(capture)
+            else _screen.update {
+                it.copy(working = false, error = context.getString(UiR.string.pack_failed),
+                    failure = EngineFailure.Unavailable(EngineId.GOOGLE, context.getString(UiR.string.pack_failed)))
+            }
+        }
+    }
+
     fun switchToOnDevice(capture: suspend () -> ViewportCapture?) {
         val cfg = _ui.value.config?.copy(engineId = EngineId.GOOGLE) ?: return
         _ui.update { it.copy(config = cfg) }
