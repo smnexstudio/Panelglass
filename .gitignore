@@ -71,6 +71,10 @@ debug-dump/
 # --- Raw screen recordings (too large for GitHub; edited versions are committed) ---
 docs/ScreenRecordings/raw/
 
+# --- Test material ---------------------------------------------------------------
+# Commercial manga used to test on this machine: copyrighted, never published.
+docs/TestAssests/
+
 # JVM crash logs
 hs_err_pid*.log
 

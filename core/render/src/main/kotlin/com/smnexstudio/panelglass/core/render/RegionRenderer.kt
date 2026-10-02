@@ -9,7 +9,6 @@ import android.graphics.Typeface
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
-import com.smnexstudio.panelglass.core.model.BubbleFont
 import com.smnexstudio.panelglass.core.model.FreeTextMode
 import com.smnexstudio.panelglass.core.model.GlyphMask
 import com.smnexstudio.panelglass.core.model.IntRect
@@ -168,14 +167,14 @@ class RegionRenderer @Inject constructor(
     private fun drawFitted(canvas: Canvas, box: IntRect, text: String, region: TextRegion, cfg: TranslateConfig, outline: Boolean, onPanel: Boolean = false, debug: ((String) -> Unit)? = null) {
         val p = paints.get()!!
         val tp = p.text
-        tp.typeface = Fonts.bubble(cfg.bubbleFont)
+        tp.typeface = StudioFonts.typeface(cfg.fontId, cfg.tgt, bold = false, italic = false)
         tp.color = when { onPanel -> panelInk(region); outline -> darkOrLight(region.fgColor); else -> region.fgColor }
         val inset = max(1, (min(box.width, box.height) * 0.04f).toInt())
         val inner = box.inflate(-inset)
         // Latin lettering reads smaller than kanji of the same em; allow the fit to grow past the source size.
         val maxSize = max(10f, region.fontSizePx * (if (region.container != null) 1.3f else 1.2f))
         val why = if (debug != null) StringBuilder() else null
-        val layout = fit(text, inner.width.coerceAtLeast(8), inner.height.coerceAtLeast(8), tp, maxSize, min(MIN_LEGIBLE_PX, maxSize), why)
+        val layout = TextFit.fit(text, inner.width.coerceAtLeast(8), inner.height.coerceAtLeast(8), tp, maxSize, min(MIN_LEGIBLE_PX, maxSize), why)
         debug?.invoke("fit box=${inner.width}x${inner.height} max=${maxSize.toInt()} size=${tp.textSize.toInt()} lines=${layout.lineCount} tried:$why")
         val x = inner.left + (inner.width - layout.width) / 2f
         val y = inner.top + (inner.height - layout.height) / 2f
@@ -200,18 +199,18 @@ class RegionRenderer @Inject constructor(
     private fun legibleBox(region: TextRegion, text: String, cfg: TranslateConfig, pageW: Int, pageH: Int, avoid: List<IntRect>): IntRect? {
         val box = region.bbox
         val tp = paints.get()!!.text
-        tp.typeface = Fonts.bubble(cfg.bubbleFont)
+        tp.typeface = StudioFonts.typeface(cfg.fontId, cfg.tgt, bold = false, italic = false)
         val inset = max(1, (min(box.width, box.height) * 0.04f).toInt())
         val minLegible = max(MIN_LEGIBLE_PX, region.fontSizePx * MIN_LEGIBLE_OF_SOURCE)
         val w0 = box.width - 2 * inset; val h0 = box.height - 2 * inset
         tp.textSize = minLegible
-        if (fitsAt(text, w0, h0, tp)) return null
+        if (TextFit.fitsAt(text, w0, h0, tp)) return null
         val maxW = (box.width * MAX_WIDEN).toInt().coerceAtMost(pageW)
         var w = box.width
         val step = max(4, box.width / 8)
         while (w < maxW) {
             w = min(maxW, w + step)
-            if (fitsAt(text, w - 2 * inset, h0, tp)) break
+            if (TextFit.fitsAt(text, w - 2 * inset, h0, tp)) break
         }
         var left = box.centerX.toInt() - w / 2
         left = left.coerceIn(0, max(0, pageW - w))
@@ -225,44 +224,7 @@ class RegionRenderer @Inject constructor(
         return if (out.width > box.width) out else null
     }
 
-    /**
-     * Largest text size whose wrapped layout fits [w]×[h] with every word whole on its line; falls back to [minSize].
-     *
-     * Both tests only get harder as the size grows, so the binary search is sound. (Reading line widths and break
-     * positions back from the layout was not: `getLineWidth` over-reported after wrapping and a break beside "..." or
-     * a quote looked like a split word, so sizes failed at random and the search settled near the minimum.)
-     */
-    private fun fit(text: String, w: Int, h: Int, tp: TextPaint, maxSize: Float, minSize: Float, why: StringBuilder? = null): StaticLayout {
-        var lo = minSize; var hi = maxSize
-        var best: StaticLayout? = null
-        repeat(8) {
-            val mid = (lo + hi) / 2f
-            tp.textSize = mid
-            val l = layout(text, w, tp)
-            val tall = l.height > h
-            val wide = longestWord(text, tp) > w
-            val fits = !tall && !wide
-            why?.append(" ")?.append(mid.toInt())?.append(if (fits) "ok" else (if (tall) "T" else "") + (if (wide) "W" else ""))
-            if (fits) { best = l; lo = mid } else hi = mid
-        }
-        if (best == null) { tp.textSize = minSize; best = layout(text, w, tp) } else tp.textSize = lo
-        return best!!
-    }
-
-    /** Whether [text] at the paint's size lays out in [w]×[h] with no word split across lines. */
-    private fun fitsAt(text: String, w: Int, h: Int, tp: TextPaint): Boolean =
-        longestWord(text, tp) <= w && layout(text, w, tp).height <= h
-
-    /** Width of the widest unbreakable run of [text] at the paint's current size. */
-    private fun longestWord(text: String, tp: TextPaint): Float = longestRun(text) { s, e -> tp.measureText(text, s, e) }
-
-    private fun layout(text: String, w: Int, tp: TextPaint): StaticLayout =
-        StaticLayout.Builder.obtain(text, 0, text.length, tp, w)
-            .setAlignment(Layout.Alignment.ALIGN_CENTER)
-            .setLineSpacing(0f, LINE_SPACING)
-            .setIncludePad(false)
-            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
-            .build()
+    // Fitting (`fit`, `fitsAt`, `layout`) lives in [TextFit], shared with the Studio's renderer.
 
     // ---- sound effects ---------------------------------------------------------------------
 
@@ -374,7 +336,7 @@ class RegionRenderer @Inject constructor(
         }
 
         const val ENERGY_SCALE = 8
-        const val LINE_SPACING = 0.95f
+        const val LINE_SPACING = TextFit.LINE_SPACING
         /** Pixels the mask extends past the source text box, to cover anti-aliased edges. */
         const val MASK_PAD = 2
         /** Fraction of a balloon's short side kept clear inside its box: balloons are round, boxes are not. */
@@ -391,28 +353,10 @@ class RegionRenderer @Inject constructor(
     }
 }
 
+/** The reader's sound-effect face; its lettering comes from [StudioFonts] (Settings › Fonts). */
 object Fonts {
-    private val cache = HashMap<String, Typeface>()
-    private var ctx: android.content.Context? = null
+    private val sfx: Typeface by lazy { Typeface.create("sans-serif-black", Typeface.BOLD) }
 
-    /** Call once from the Application or renderer constructor so resource fonts are available. */
-    fun init(context: android.content.Context) { ctx = context.applicationContext }
-
-    fun bubble(font: BubbleFont): Typeface = synchronized(cache) {
-        cache.getOrPut(font.name) {
-            when (font) {
-                BubbleFont.PLUS_JAKARTA_SANS -> loadFont(com.smnexstudio.panelglass.core.render.R.font.plus_jakarta_sans)
-                    ?: Typeface.create("sans-serif", Typeface.BOLD)
-                BubbleFont.COMING_SOON -> loadFont(com.smnexstudio.panelglass.core.render.R.font.coming_soon)
-                    ?: Typeface.create("casual", Typeface.BOLD)
-                BubbleFont.LUCKIEST_GUY -> loadFont(com.smnexstudio.panelglass.core.render.R.font.luckiest_guy)
-                    ?: Typeface.create("sans-serif-black", Typeface.BOLD)
-            }
-        }
-    }
-    fun sfx(): Typeface = synchronized(cache) { cache.getOrPut("sfx") { Typeface.create("sans-serif-black", Typeface.BOLD) } }
-
-    private fun loadFont(resId: Int): Typeface? =
-        ctx?.let { runCatching { androidx.core.content.res.ResourcesCompat.getFont(it, resId) }.getOrNull() }
+    fun sfx(): Typeface = sfx
 }
 

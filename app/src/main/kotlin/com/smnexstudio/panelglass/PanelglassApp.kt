@@ -19,7 +19,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import com.smnexstudio.panelglass.core.ocr.MangaOcrRecognizer
-import com.smnexstudio.panelglass.core.render.Fonts
+import com.smnexstudio.panelglass.core.render.StudioFonts
+import com.smnexstudio.panelglass.feature.studio.fonts.UserFontStore
+import com.smnexstudio.panelglass.core.ocr.LamaInpainter
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -30,6 +32,8 @@ class PanelglassApp : Application() {
     @Inject lateinit var modelStores: ModelStores
     @Inject lateinit var packs: LanguagePackStore
     @Inject lateinit var settingsRepo: SettingsRepository
+    @Inject lateinit var userFonts: UserFontStore
+    @Inject lateinit var lama: LamaInpainter
 
     /** The UI language picked in Settings (English by default), before Android 13; [AppLocale]. */
     override fun attachBaseContext(base: Context) = super.attachBaseContext(AppLocale.wrap(base))
@@ -37,7 +41,8 @@ class PanelglassApp : Application() {
     override fun onCreate() {
         super.onCreate()
         AppLocale.init(this)
-        Fonts.init(this)
+        StudioFonts.init(this)
+        userFonts.start()
         // Debug: `files/debug-llm-compare` present -> translate fixed lines with every installed on-device model.
         if (LlmCompare.trigger(this) != null) {
             CoroutineScope(SupervisorJob() + Dispatchers.Default).launch { LlmCompare.run(this@PanelglassApp, locals, modelStores) }
@@ -83,6 +88,7 @@ class PanelglassApp : Application() {
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             android.util.Log.i("PanelglassApp", "onTrimMemory $level: releasing idle models")
             mangaOcr.releaseIfIdle()
+            lama.releaseIfIdle()
             if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) locals.onHidden() else locals.releaseIfIdle()
         }
     }

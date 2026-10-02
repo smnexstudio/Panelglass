@@ -26,6 +26,7 @@ object DataModule {
     @Provides @Singleton
     fun db(@ApplicationContext ctx: Context): PanelglassDb =
         Room.databaseBuilder(ctx, PanelglassDb::class.java, "panelglass.db")
+            .addMigrations(*PanelglassDb.MIGRATIONS)
             .fallbackToDestructiveMigration(true)
             .build()
 
@@ -53,6 +54,10 @@ object DataModule {
         .writeTimeout(30, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
+
+    @Provides @Singleton
+    fun studioFiles(@ApplicationContext ctx: Context): com.smnexstudio.panelglass.core.data.studio.StudioFiles =
+        com.smnexstudio.panelglass.core.data.studio.StudioFiles(java.io.File(ctx.filesDir, "studio"))
 
     @Provides @Singleton
     fun patchCache(@ApplicationContext ctx: Context): com.smnexstudio.panelglass.core.data.cache.PatchCache =

@@ -26,12 +26,18 @@ import javax.inject.Singleton
 class SettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
+    /** Font ids never contain a space; one separates them in the stored list. */
+    private val FAV_SEP = " "
+
     private object K {
         val src = stringPreferencesKey("defaultSourceLang")
         val tgt = stringPreferencesKey("defaultTargetLang")
         val engine = stringPreferencesKey("engineId")
         val adBlock = booleanPreferencesKey("adBlockDefault")
+        /** Before the Studio's fonts: a [BubbleFont] name, read only while [readerFont] is unset. */
         val font = stringPreferencesKey("bubbleFont")
+        /** A Studio font id; "" is Auto. */
+        val readerFont = stringPreferencesKey("readerFont")
         val sfx = stringPreferencesKey("sfxMode")
         val free = stringPreferencesKey("freeTextMode")
         val quality = intPreferencesKey("patchQuality")
@@ -40,6 +46,9 @@ class SettingsRepository @Inject constructor(
         val contextMode = stringPreferencesKey("contextMode")
         val theme = stringPreferencesKey("appTheme")
         val pageTarget = stringPreferencesKey("pageTranslateTarget")
+        val studioExportFormat = stringPreferencesKey("studioExportFormat")
+        val studioExportQuality = stringPreferencesKey("studioExportQuality")
+        val fontFavourites = stringPreferencesKey("fontFavourites")
         val qwenBackend = stringPreferencesKey("qwenBackend")
         val automaticPacks = booleanPreferencesKey("automaticPacksDone")
         fun model(id: EngineId) = stringPreferencesKey("model_" + id.name)
@@ -55,7 +64,7 @@ class SettingsRepository @Inject constructor(
             models = EngineId.entries.mapNotNull { id -> p[K.model(id)]?.let { id to it } }.toMap(),
             contextMode = p[K.contextMode]?.let { enumOrNull<ContextMode>(it) } ?: d.contextMode,
             adBlockDefault = p[K.adBlock] ?: d.adBlockDefault,
-            bubbleFont = p[K.font]?.let { BubbleFont.fromName(it) } ?: d.bubbleFont,
+            readerFontId = p[K.readerFont]?.ifEmpty { null } ?: p[K.font]?.let { BubbleFont.fromName(it)?.fontId } ?: d.readerFontId,
             sfxMode = p[K.sfx]?.let { enumOrNull<SfxMode>(it) } ?: d.sfxMode,
             freeTextMode = p[K.free]?.let { enumOrNull<FreeTextMode>(it) } ?: d.freeTextMode,
             patchQuality = p[K.quality] ?: d.patchQuality,
@@ -72,7 +81,8 @@ class SettingsRepository @Inject constructor(
     suspend fun setDefaultTargetLang(v: Lang) { dataStore.edit { it[K.tgt] = v.name } }
     suspend fun setEngine(v: EngineId) { dataStore.edit { it[K.engine] = v.name } }
     suspend fun setAdBlockDefault(v: Boolean) { dataStore.edit { it[K.adBlock] = v } }
-    suspend fun setBubbleFont(v: BubbleFont) { dataStore.edit { it[K.font] = v.name } }
+    /** The reader's font, a Studio font id; null for Auto. */
+    suspend fun setReaderFont(id: String?) { dataStore.edit { it[K.readerFont] = id.orEmpty() } }
     suspend fun setBlockListUpdatedAt(v: Long) { dataStore.edit { it[K.blockListUpdatedAt] = v } }
     suspend fun setAppTheme(v: AppTheme) { dataStore.edit { it[K.theme] = v.id } }
     suspend fun setQwenBackend(v: QwenBackend) { dataStore.edit { it[K.qwenBackend] = v.name } }
@@ -80,6 +90,26 @@ class SettingsRepository @Inject constructor(
     /** The reader's "Translate page" target, an ML Kit language tag; English until the user picks another. */
     suspend fun pageTranslateTarget(): String = dataStore.data.first()[K.pageTarget] ?: "en"
     suspend fun setPageTranslateTarget(tag: String) { dataStore.edit { it[K.pageTarget] = tag } }
+
+    /** The Studio's last export format (an enum name the Studio owns); null until the first choice. */
+    suspend fun studioExportFormat(): String? = dataStore.data.first()[K.studioExportFormat]
+    suspend fun setStudioExportFormat(name: String) { dataStore.edit { it[K.studioExportFormat] = name } }
+
+    suspend fun studioExportQuality(): String? = dataStore.data.first()[K.studioExportQuality]
+    suspend fun setStudioExportQuality(name: String) { dataStore.edit { it[K.studioExportQuality] = name } }
+
+    /** The Studio's favourite fonts, in the order they were starred (ids shared by bundled and user fonts). */
+    val fontFavourites: Flow<List<String>> = dataStore.data.map { p -> favourites(p[K.fontFavourites]) }
+
+    /** Stars [id], or unstars it when it is a favourite already. */
+    suspend fun toggleFontFavourite(id: String) {
+        dataStore.edit { p ->
+            val list = favourites(p[K.fontFavourites])
+            p[K.fontFavourites] = (if (id in list) list - id else list + id).joinToString(FAV_SEP)
+        }
+    }
+
+    private fun favourites(raw: String?): List<String> = raw?.split(FAV_SEP)?.filter { it.isNotBlank() }.orEmpty()
 
     /** Whether the user (or a launch intent) ever chose an engine; without one the default in [Settings] applies. */
     suspend fun hasEngineChoice(): Boolean = dataStore.data.first()[K.engine] != null

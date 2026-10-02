@@ -13,4 +13,10 @@ class BubbleFontTest {
     @Test fun currentNamesRoundTrip() = BubbleFont.entries.forEach { assertEquals(it, BubbleFont.fromName(it.name)) }
 
     @Test fun unknownNameIsNull() = assertNull(BubbleFont.fromName("COMIC_SANS"))
+
+    @Test fun everyFontNamesItsCatalogueEntry() {
+        assertEquals("cat:plus_jakarta_sans", BubbleFont.PLUS_JAKARTA_SANS.fontId)
+        assertEquals("cat:coming_soon", BubbleFont.COMING_SOON.fontId)
+        assertEquals("cat:luckiest_guy", BubbleFont.LUCKIEST_GUY.fontId)
+    }
 }

@@ -20,7 +20,11 @@ data class Settings(
     /** BATCHED (default) sends one call per image; SEQUENTIAL does strict 2-back per region. */
     val contextMode: ContextMode = ContextMode.BATCHED,
     val adBlockDefault: Boolean = true,
-    val bubbleFont: BubbleFont = BubbleFont.PLUS_JAKARTA_SANS,
+    /**
+     * The reader's lettering font, a Studio font id (`cat:…` bundled, `user:…` the user's own, `sys:…` the phone's);
+     * null is Auto, the comic font for the target language (`StudioFonts.defaultFor`).
+     */
+    val readerFontId: String? = null,
     val sfxMode: SfxMode = SfxMode.OVERLAY,
     val freeTextMode: FreeTextMode = FreeTextMode.ERASE,
     val patchQuality: Int = 100,
@@ -52,7 +56,7 @@ data class Settings(
         engineId = site?.engineId ?: engineId,
         sfxMode = sfxMode,
         freeTextMode = freeTextMode,
-        bubbleFont = bubbleFont,
+        fontId = readerFontId,
         patchQuality = patchQuality,
         contextMode = contextMode,
     )

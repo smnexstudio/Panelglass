@@ -37,6 +37,8 @@ class PatchCacheTest {
         assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 2))
         assertTrue(a != cache.key("h", Lang.JA, Lang.ES, EngineId.GEMINI, 1))
         assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GOOGLE, 1))
+        assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:bangers"), "another font draws the page again")
+        assertTrue(cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:bangers") != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:kalam"))
         assertNull(cache.get(cache.key("h", Lang.KO, Lang.EN, EngineId.GEMINI, 1)))
     }
 

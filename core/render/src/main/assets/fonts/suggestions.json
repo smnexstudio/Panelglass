@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "fonts": [
+  {"name": "Patrick Hand", "role": "dialogue", "scripts": ["latin", "vietnamese"], "tags": ["handwritten", "comic"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Patrick+Hand"},
+  {"name": "Pangolin", "role": "dialogue", "scripts": ["latin", "vietnamese", "cyrillic"], "tags": ["handwritten", "comic"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Pangolin"},
+  {"name": "Comic Relief", "role": "dialogue", "scripts": ["latin", "cyrillic"], "tags": ["comic"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Comic+Relief"},
+  {"name": "Architects Daughter", "role": "dialogue", "scripts": ["latin"], "tags": ["handwritten"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Architects+Daughter"},
+  {"name": "Permanent Marker", "role": "sfx", "scripts": ["latin"], "tags": ["marker", "brush", "bold"], "licence": "Apache-2.0", "url": "https://fonts.google.com/specimen/Permanent+Marker"},
+  {"name": "Bungee", "role": "sfx", "scripts": ["latin", "vietnamese"], "tags": ["bold", "impact", "sign"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Bungee"},
+  {"name": "Creepster", "role": "sfx", "scripts": ["latin"], "tags": ["horror", "drip"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Creepster"},
+  {"name": "Barlow Condensed", "role": "caption", "scripts": ["latin", "vietnamese"], "tags": ["condensed", "clean"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Barlow+Condensed"},
+  {"name": "Special Elite", "role": "caption", "scripts": ["latin"], "tags": ["typewriter"], "licence": "Apache-2.0", "url": "https://fonts.google.com/specimen/Special+Elite"},
+  {"name": "Balsamiq Sans", "role": "dialogue", "scripts": ["latin", "cyrillic"], "tags": ["handwritten", "comic"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Balsamiq+Sans"},
+  {"name": "Neucha", "role": "dialogue", "scripts": ["latin", "cyrillic"], "tags": ["handwritten"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Neucha"},
+  {"name": "M PLUS Rounded 1c", "role": "dialogue", "scripts": ["latin", "vietnamese", "cyrillic", "ja"], "tags": ["rounded"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/M+PLUS+Rounded+1c"},
+  {"name": "Zen Maru Gothic", "role": "dialogue", "scripts": ["latin", "cyrillic", "ja"], "tags": ["rounded"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Zen+Maru+Gothic"},
+  {"name": "Rampart One", "role": "sfx", "scripts": ["latin", "cyrillic", "ja"], "tags": ["outline", "bold"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Rampart+One"},
+  {"name": "Mochiy Pop One", "role": "sfx", "scripts": ["latin", "ja"], "tags": ["bold", "rounded", "pop"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Mochiy+Pop+One"},
+  {"name": "Nanum Pen Script", "role": "dialogue", "scripts": ["latin", "ko"], "tags": ["handwritten"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Nanum+Pen+Script"},
+  {"name": "Jua", "role": "dialogue", "scripts": ["latin", "ko"], "tags": ["rounded"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Jua"},
+  {"name": "Do Hyeon", "role": "sfx", "scripts": ["latin", "ko"], "tags": ["bold"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Do+Hyeon"},
+  {"name": "LXGW WenKai", "role": "dialogue", "scripts": ["latin", "zh-hans", "zh-hant", "ja"], "tags": ["handwritten", "brush"], "licence": "OFL-1.1", "url": "https://github.com/lxgw/LxgwWenKai"},
+  {"name": "LXGW WenKai TC", "role": "dialogue", "scripts": ["latin", "zh-hant"], "tags": ["handwritten", "brush"], "licence": "OFL-1.1", "url": "https://github.com/lxgw/LxgwWenkaiTC"},
+  {"name": "ZCOOL QingKe HuangYou", "role": "sfx", "scripts": ["latin", "zh-hans"], "tags": ["bold", "pop"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/ZCOOL+QingKe+HuangYou"},
+  {"name": "Sriracha", "role": "dialogue", "scripts": ["latin", "vietnamese", "thai"], "tags": ["handwritten"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Sriracha"},
+  {"name": "Chonburi", "role": "sfx", "scripts": ["latin", "vietnamese", "thai"], "tags": ["bold", "display"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Chonburi"},
+  {"name": "Cairo", "role": "dialogue", "scripts": ["latin", "arabic"], "tags": ["clean", "sans"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Cairo"},
+  {"name": "Lemonada", "role": "sfx", "scripts": ["latin", "vietnamese", "arabic"], "tags": ["bold", "rounded"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Lemonada"},
+  {"name": "Baloo 2", "role": "dialogue", "scripts": ["latin", "vietnamese", "devanagari"], "tags": ["rounded"], "licence": "OFL-1.1", "url": "https://fonts.google.com/specimen/Baloo+2"}
+ ]
+}

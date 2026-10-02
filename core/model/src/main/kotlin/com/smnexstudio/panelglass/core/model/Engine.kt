@@ -113,6 +113,12 @@ enum class BubbleFont(val label: String) {
     LUCKIEST_GUY("Luckiest Guy"),
     ;
 
+    /**
+     * The same font in the Studio's catalogue (`cat:coming_soon`, …), where the reader now takes its fonts from: a
+     * choice saved before the catalogue reads back as this id.
+     */
+    val fontId: String get() = "cat:" + name.lowercase()
+
     companion object {
         /**
          * The saved name read back: fonts that were replaced map to their successor so the user keeps the same style

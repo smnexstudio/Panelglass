@@ -7,34 +7,45 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Added
+
+- **Studio**, a new tab that translates chapters you already have into image files:
+  - **Import** images, a PDF or a `.cbz`. ComicInfo.xml fills in the details, and a CBZ with a folder per chapter
+    becomes several chapters. Manga get covers, details and a searchable library.
+  - **Translate** a whole chapter with the engine chosen in Settings; stop and **Continue** at any time.
+  - **Review** bubble by bubble: correct the original or the translation, re-translate, add missed text, mark false
+    detections *Not text* or delete them, and mark pages reviewed. Zoom up to 8×; undo and redo every step.
+  - **Clean and restyle**: the original text is removed and the translation lettered inside each balloon's traced
+    shape. Set font, size, colour, outline, fill, border and rounded corners per bubble or page; reshape bubbles and
+    brush out leftovers. Optional **LaMa** cleanup (208 MB) rebuilds artwork under text.
+  - **Sound effects**: keep, gloss, overlay or replace, with presets, and move, turn, stretch or bend them.
+  - **Fonts**: 21 bundled fonts with a default for every target language, plus your own `.ttf` / `.otf` / `.ttc`.
+  - **Export** a chapter or a whole manga as images, CBZ or ZIP (with ComicInfo.xml) to Download/Panelglass or a
+    folder you pick.
+- **Reader fonts**: Settings › Fonts offers every Studio font and your own. **Auto**, the new default, picks a comic
+  font made for the target language.
+- **Tablets and Chromebooks**: a navigation rail and side-by-side layouts on wide windows, and keyboard shortcuts in
+  the editor.
+- **Settings › Storage** lists each Studio manga's size and deletes it.
+
 ### Changed
 
-- **Google Translate is now the default engine** on a new install: free, on the device, and no large download.
-  If you already use Qwen and never picked an engine, you stay on Qwen.
-- **Language packs download only when you need them.** Japanese, Korean and Chinese (about 30 MB each) download by
-  themselves when the app first starts; English is built in. Any other language is downloaded only when you ask:
-  the reader, Translate page and Try a translation show **Download** when a pack is missing, and **Settings →
-  Models → Google Translate language packs** lists every language to download or delete one by one. Previously a
-  pack was downloaded silently the first time a language was used.
-
-- Panelglass now needs Android 12 or later (it ran on Android 8.0 before).
-- Panelglass now browses over https only. `http://` addresses and links open as `https://`, and a site that only
-  serves plain http no longer loads.
-- A link opened from another app is no longer translated automatically, even with translate-on-open on. Tap
-  **Start** to translate it.
-- Translations now stay on the page when you zoom in or out, growing and shrinking with the art, instead of
-  disappearing and being translated again.
-- Moving to a new phone no longer copies Panelglass's data (site logins, history, sites, settings). Set it up again
-  on the new phone.
+- **Google Translate is the default engine** on a new install. If you use Qwen and never picked an engine, you stay
+  on Qwen.
+- **Language packs download only when needed**: Japanese, Korean and Chinese at first start; any other when you tap
+  **Download** or pick it in Settings › Models.
+- Panelglass now needs **Android 12** or later.
+- **https only**: `http://` addresses and links open as `https://`; a site that only serves http no longer loads.
+- Links opened from another app are no longer translated automatically; tap **Start**.
+- Translations stay on the page while you zoom.
+- Moving to a new phone no longer copies Panelglass's data.
 
 ### Fixed
 
-- A very large block-list download can no longer exhaust memory, and a damaged translation cache file is discarded
-  safely.
-- A web page can no longer impersonate Panelglass's in-page helper to read "Translate page" results or disturb
-  screen translation, and an oversized reply from a page is ignored instead of slowing the reader down.
-- A pop-up window is now checked without running its scripts or reading local files, before Panelglass decides
-  whether to open it.
+- Changing the reader font now redraws pages translated earlier.
+- A very large block list can no longer exhaust memory, and a damaged cache file is discarded safely.
+- A web page can no longer impersonate Panelglass's in-page helper, and an oversized reply from a page is ignored.
+- Pop-up windows are checked without running their scripts or reading local files.
 
 ## [0.1.0] - 2026-09-27
 

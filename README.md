@@ -22,6 +22,7 @@
   <a href="#screenshots">Screenshots</a> ·
   <a href="#features">Features</a> ·
   <a href="#why-panelglass">Why Panelglass</a> ·
+  <a href="#studio-translate-your-own-chapters">Studio</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#getting-started">Getting started</a> ·
   <a href="#documentation">Documentation</a> ·
@@ -40,6 +41,10 @@ and the next screen is translated as soon as the page settles; translations stay
 
 It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
 site does with its pages, Panelglass sees the same pixels you do.
+
+For files you already have there is the **Studio**: import a chapter (images, PDF or CBZ), translate it on the
+phone, check and restyle every bubble, and export the lettered pages as images, CBZ or ZIP for Kavita, Komga or any
+comic reader. See [Studio](#studio-translate-your-own-chapters).
 
 
 ## Screenshots
@@ -84,6 +89,41 @@ site does with its pages, Panelglass sees the same pixels you do.
 
 <sub>Site addresses are blurred. Artwork belongs to its creators and is shown only to demonstrate the translation.</sub>
 
+### Studio
+
+Import a chapter (images, PDF or CBZ), translate it on the phone, check and restyle every bubble, then export the
+lettered pages.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/Screenshots/studio-original.jpg" width="240" alt="Panelglass Studio review editor showing the original Japanese page with every detected speech bubble outlined and numbered"></td>
+    <td align="center"><img src="docs/Screenshots/studio-review.jpg" width="240" alt="Panelglass Studio review editor showing the translated English page with a selected bubble's original and translation"></td>
+    <td align="center"><img src="docs/Screenshots/studio-style.jpg" width="240" alt="Panelglass Studio text style panel with font, size, bold, italic, colour and outline options"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Every bubble found and numbered</sub></td>
+    <td align="center"><sub>Check each translation, bubble by bubble</sub></td>
+    <td align="center"><sub>Restyle the lettering</sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/Screenshots/studio-library.jpg" width="180" alt="Panelglass Studio manga library with covers"></td>
+    <td align="center"><img src="docs/Screenshots/studio-manga.jpg" width="180" alt="Panelglass Studio manga details with author, artist, status, languages and chapters"></td>
+    <td align="center"><img src="docs/Screenshots/studio-chapter.jpg" width="180" alt="Panelglass Studio chapter with its translation progress and cleaned pages"></td>
+    <td align="center"><img src="docs/Screenshots/studio-export.png" width="180" alt="Panelglass Studio export as ZIP, images or CBZ"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Your manga</sub></td>
+    <td align="center"><sub>Details and chapters</sub></td>
+    <td align="center"><sub>Translated on device</sub></td>
+    <td align="center"><sub>Export as images, ZIP or CBZ</sub></td>
+  </tr>
+</table>
+
+<sub>Artwork belongs to its creators and is shown only to demonstrate the translation.</sub>
+
 ## Features
 
 - **In-place translation.** The original lettering is removed and the translation is fitted into the same balloon or
@@ -111,7 +151,10 @@ site does with its pages, Panelglass sees the same pixels you do.
 - **Translate the page itself.** ⋮ › *Translate page* translates the site's own text (titles, chapter lists,
   comments) in place, like Chrome's translate bar: the language is detected, English is the default target, and
   both can be changed. On-device with ML Kit; *Show original* puts the page back.
-- **Four themes and three lettering fonts**, and a *Try a translation* box to check an engine before reading.
+- **Studio for your own files.** Import images, a PDF or a CBZ, translate the whole chapter, review and restyle
+  every bubble, and export images, CBZ or ZIP ([more](#studio-translate-your-own-chapters)).
+- **Four themes and 21 lettering fonts** (a comic font for every target language, or your own), and a
+  *Try a translation* box to check an engine before reading.
 - **The app speaks your language.** The interface is in English by default and can be switched to any of the 15
   languages below (Arabic right to left) in Settings › App language.
 
@@ -130,6 +173,36 @@ Italian, Portuguese, Russian, Indonesian, Vietnamese. Target: all of those, plus
 - **Scroll-anchored translations:** Translated patches are pinned to comic page elements in the DOM. As you scroll, pan, or rotate your device, translations remain locked to their artwork.
 - **100% Offline AI translation:** Run on-device LLMs (Gemma 4 E2B, Qwen 2.5 1.5B via LiteRT-LM), manga-ocr, and ML Kit locally. Read raw comics anywhere with zero network requests and complete privacy.
 - **Built-in ad and pop-up blocking:** Enjoy uninterrupted reading with integrated AdGuard and HaGeZi filters that eliminate mobile tap-hijacking, redirect loops, and pop-up ads.
+
+## Studio: translate your own chapters
+
+The **Studio** tab works on files you already have instead of a website. It uses the reader's detector, OCR and
+engines, so it runs fully offline too.
+
+1. **Import** a chapter: images (drag them into order), a PDF or a `.cbz`. A ComicInfo.xml fills in the title,
+   number and credits, and a CBZ with a folder per chapter imports as several chapters. Each manga gets a cover,
+   its details and a chapter list.
+2. **Translate** the whole chapter with the engine chosen in Settings. Every page is read, translated and cleaned;
+   stop at any time and tap **Continue** later.
+3. **Review** bubble by bubble: the page with every bubble numbered, the original and the translation to correct,
+   **Re-translate**, a **Proofread** list, and **Original / Clean / Final** to compare. Add text the detector
+   missed, mark a false detection *Not text*, or delete it.
+4. **Restyle** one bubble or the whole page: font, size, bold, italic, colour, outline, fill, border and rounded
+   corners. Speech balloons are traced to their real shape, so fills and text follow the balloon. Brush out what the
+   cleanup missed; every step can be undone.
+5. **Export** a chapter or the whole manga as images, CBZ or ZIP, each with a ComicInfo.xml, to Download/Panelglass
+   or a folder you pick.
+
+Also in the Studio:
+
+- **Fonts:** 21 bundled fonts with a dialogue and a sound-effect default for every target language, plus your own
+  `.ttf` / `.otf` / `.ttc`. The reader letters with the same fonts (Settings › Fonts).
+- **Sound effects:** keep, gloss, overlay or replace each one, start from a preset, then move, turn, stretch or
+  bend it.
+- **Better cleanup:** LaMa, an optional 208 MB model, rebuilds the artwork under text (phones with 4 GB of RAM or
+  more).
+- **Phones, tablets and Chromebooks:** on a wide window the editor shows its tools, the page, the bubble editor and
+  the chapter's pages side by side, with keyboard shortcuts.
 
 ## How it works
 
@@ -187,6 +260,7 @@ Panelglass is not on Google Play. Each release is published on GitHub:
 3. For Japanese with an offline engine, also download **Japanese manga OCR** (140 MB).
 4. Check the setup with **Try a translation**, then add a site under **Sites**, open a chapter and press **Start**.
    **Stop** ends translation; **⋮ → Re-translate** reads the current screen again from scratch.
+5. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
 
 ### Build from source
 
@@ -221,6 +295,8 @@ signed with a different key from the published releases, so uninstall one before
   [HaGeZi pop-up ads](https://github.com/hagezi/dns-blocklists), [StevenBlack hosts](https://github.com/StevenBlack/hosts)
   as a fallback), and the model downloads you start (Hugging Face; Google for ML Kit language packs). Every model
   file is verified against a pinned SHA-256.
+- **Studio files** (imported pages, edits, your own fonts) stay in the app's private storage. An export is written
+  only where you choose, and Settings › Storage deletes a manga with everything it took.
 - **Uninstalling** removes everything the app stored; nothing is backed up.
 
 ## Documentation
@@ -242,12 +318,13 @@ core/model/           Pure Kotlin types: languages, engines, failures, regions, 
 core/data/            Room, DataStore settings, encrypted key store, patch cache, verified downloads
 core/engine/          Engine registry and retry policy; Gemini, ML Kit translation, on-device LLMs
 core/ocr/             Comic text/bubble detector (ONNX), manga-ocr and ML Kit recognizers, region building
-core/render/          Text erasing and fitting; each region becomes a WEBP patch
+core/render/          Text erasing and fitting, WEBP patches; the Studio's cleaning, lettering and fonts
 core/pipeline/        TranslationPipeline: detect → read → translate → render, with per-stage watchdogs
 core/ui/              Shared Compose components, themes, engine picker, key sheet, all UI strings (16 languages)
 feature/browser/      Reader: WebView, capture, patch overlay, ad and pop-up blocking
 feature/library/      Sites and history
 feature/settings/     Languages, engines, models, fonts, themes, storage
+feature/studio/       Studio: library, import (images, PDF, CBZ), translate, review editor, fonts, export
 docs/                 Architecture, flow and detection/OCR documentation
 ```
 
@@ -284,7 +361,6 @@ model list if the provider hosts several (see `GeminiEngine.listModels`).
 ### Quality and performance
 
 - [ ] Gemini mode: recover text the detector misses (a cheap backstop or a second-pass prompt).
-- [x] Keep translations across zoom changes instead of clearing them.
 - [ ] Re-render patches sharply after a large zoom-in (today the bitmap made at the old zoom is scaled).
 - [ ] Use panel boundaries (`PanelCutter`) when placing free text, not just the image bounds.
 
@@ -324,12 +400,19 @@ Panelglass is an open-source project distributed directly via [GitHub Releases](
 - [Qwen2.5-1.5B-Instruct](https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct) (Alibaba, Apache-2.0) and
   [Gemma 4 E2B](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm) (Google), LiteRT-LM builds by
   litert-community, run with [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM).
+- [LaMa](https://github.com/advimman/lama) inpainting for the Studio's cleanup, via the
+  [Carve/LaMa-ONNX](https://huggingface.co/Carve/LaMa-ONNX) export (Apache-2.0).
 - [ONNX Runtime](https://onnxruntime.ai) and [ML Kit](https://developers.google.com/ml-kit) text recognition and
   translation.
 - Block lists by [AdGuard](https://github.com/AdguardTeam/AdGuardSDNSFilter), [HaGeZi](https://github.com/hagezi/dns-blocklists)
   and [StevenBlack](https://github.com/StevenBlack/hosts).
-- Lettering fonts: Plus Jakarta Sans (SIL Open Font License, `core/ui/PlusJakartaSans-OFL.txt`), and from Google
-  Fonts, Coming Soon by Open Window and Luckiest Guy by Astigmatic (both Apache-2.0).
+- Lettering fonts, bundled with their licences (full copyright statements in [NOTICE](NOTICE)):
+  - SIL Open Font License 1.1: Plus Jakarta Sans (Tokotype), Comic Neue (Craig Rozynski), Bangers,
+    Shantell Sans (Arrow Type), Rubik Mono One (Hubert & Fischer), Zen Antique, Dela Gothic One, Gaegu,
+    Black Han Sans (Zess Type), ZCOOL KuaiLe, Smiley Sans 得意黑 (atelierAnchor), jf open 粉圓 (justfont),
+    Itim and Kanit (Cadson Demak), Reem Kufi Fun (Aliftype), Lalezar (Borna Izadpanah), Kalam (Indian Type
+    Foundry) and Baloo 2 (Ek Type).
+  - Apache-2.0: Coming Soon (Open Window) and Luckiest Guy (Astigmatic).
 
 Model files keep their own licences; check each model card before redistributing them.
 

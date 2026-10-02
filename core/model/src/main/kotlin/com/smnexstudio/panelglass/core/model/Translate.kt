@@ -12,7 +12,8 @@ data class TranslateConfig(
     val engineId: EngineId,
     val sfxMode: SfxMode = SfxMode.OVERLAY,
     val freeTextMode: FreeTextMode = FreeTextMode.OVERLAY,
-    val bubbleFont: BubbleFont = BubbleFont.PLUS_JAKARTA_SANS,
+    /** The lettering font, a Studio font id; null is the target language's default ([Settings.readerFontId]). */
+    val fontId: String? = null,
     /** 0..100; 100 means lossless WEBP patches. */
     val patchQuality: Int = 100,
     val seriesKey: String = "",

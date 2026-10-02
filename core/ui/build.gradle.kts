@@ -26,4 +26,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     api(project(":core:model"))
+    // The Studio's fonts, for the font picker Settings and the Studio share (fonts/FontBrowser.kt).
+    implementation(project(":core:render"))
 }
