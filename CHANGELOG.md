@@ -7,6 +7,8 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-02
+
 ### Added
 
 - **Studio**, a new tab that translates chapters you already have into image files:
