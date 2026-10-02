@@ -167,7 +167,7 @@ class TranslationPipeline @Inject constructor(
         // Always a viewport snapshot: the reader's PixelCopy of the WebView, never a downloaded page.
         val native = (source as? ImageSource.Native)?.handle as? Bitmap ?: throw IllegalArgumentException("Unreadable image source")
         val hash = nativeHash(native)
-        val cacheKey = patchCache.key(hash, cfg.src, cfg.tgt, cfg.engineId, PIPELINE_VERSION)
+        val cacheKey = patchCache.key(hash, cfg.src, cfg.tgt, cfg.engineId, PIPELINE_VERSION, cfg.fontId)
         (if (bypassCache) null else patchCache.get(cacheKey))?.let { hit ->
             hit.patches.forEach(onPatch)
             onStage(Stage.DONE)
@@ -218,38 +218,9 @@ class TranslationPipeline @Inject constructor(
             }
 
             // ---- translate + render --------------------------------------------------------------
-            // One engine call per image, except the on-device model on a viewport: there a screen of bubbles is one
-            // long generation, so it runs in reading-order groups and each group is drawn the moment it returns. The
-            // first bubbles appear after a fraction of the wait, each group has its own watchdog, and each carries the
-            // previous group's last lines as continuity context.
-            val groups = if (cfg.engineId.isLocalLlm && regions.size > LOCAL_GROUP)
-                regions.indices.chunked(LOCAL_GROUP) else listOf(regions.indices.toList())
-            val seriesGlossary = if (cfg.seriesKey.isNotEmpty()) glossary.forSeries(cfg.seriesKey) else emptyMap()
-            val jobCfg = cfg.copy(glossary = cfg.glossary + seriesGlossary)
-            val translated = arrayOfNulls<String>(regions.size)
             val patches = ArrayList<Patch>()
-            var context = priorContext
-            var translateStart = -1L; var translateMs = 0L; var renderMs = 0L
-            for (group in groups) {
-                val groupCrops = group.withIndex().mapNotNull { (k, idx) -> crops[idx]?.let { k to it } }.toMap()
-                val job = TranslateJob(imageId, jobCfg, group.map { regions[it] }, groupCrops, context)
-                // The stage flips, and the clock starts, only once this image holds a permit and the warm-up is over:
-                // an image still queued has spent nothing, so Stop and engine changes may still cancel it.
-                var groupStart = 0L
-                val out = gates.translate(cfg.engineId).withPermit {
-                    awaitWarm(cfg)
-                    groupStart = elapsed(started)
-                    if (translateStart < 0) translateStart = groupStart
-                    onStage(Stage.TRANSLATE)
-                    watchdog(Stage.TRANSLATE, cfg.engineId) { translator.translateReading(job) }
-                }
-                translateMs += elapsed(started) - groupStart
-                group.forEachIndexed { k, idx ->
-                    translated[idx] = out[k]?.text?.takeIf { it.isNotBlank() }
-                    // What the engine read replaces the placeholder: continuity context, the dump, and the glyph size.
-                    if (regions[idx].unread) regions[idx] = withReading(regions[idx], out[k]?.source, cfg.src)
-                }
-
+            var renderMs = 0L
+            val outcome = translateGroups(regions, crops, cfg, priorContext, started, onStage) { group, translated ->
                 // ---- render + encode: the engine call is spent, so this group is finished even if cancelled --
                 val renderStart = elapsed(started)
                 withContext(NonCancellable) {
@@ -270,8 +241,11 @@ class TranslationPipeline @Inject constructor(
                     }
                 }
                 renderMs += elapsed(started) - renderStart
-                context = (context + group.mapNotNull { idx -> translated[idx]?.takeIf { it.isNotBlank() }?.let { ContextPair(regions[idx].text, it) } }).takeLast(2)
             }
+            val translated = outcome.translated
+            val translateStart = outcome.translateStart
+            val translateMs = outcome.translateMs
+            val groups = outcome.groups
 
             return withContext(NonCancellable) {
                 patchCache.put(cacheKey, CachedPage(width, height, regions.size, patches))
@@ -279,7 +253,7 @@ class TranslationPipeline @Inject constructor(
                 // Durations only (no text, no URLs): where a slow page spent its time.
                 android.util.Log.i(
                     TAG, "timing ${cfg.engineId.name}: decode+detect+ocr=${detectedAt}ms wait=${translateStart - detectedAt}ms " +
-                        "translate=${translateMs}ms render=${renderMs}ms total=${elapsed(started)}ms regions=${regions.size} groups=${groups.size}",
+                        "translate=${translateMs}ms render=${renderMs}ms total=${elapsed(started)}ms regions=${regions.size} groups=$groups",
                 )
                 val contextPairs = regions.mapIndexedNotNull { idx, region ->
                     val text = translated[idx]
@@ -291,6 +265,167 @@ class TranslationPipeline @Inject constructor(
             dump?.close()
             crops.values.forEach { it.recycle() }
         }
+    }
+
+    /** What [translateGroups] did: one translation per region (null = none) and where the time went. */
+    private class GroupsOutcome(val translated: Array<String?>, val translateStart: Long, val translateMs: Long, val groups: Int, val context: List<ContextPair>)
+
+    /**
+     * The translate stage both entry points share. One engine call per image, except the on-device model: there a page
+     * of bubbles is one long generation, so it runs in reading-order groups of [LOCAL_GROUP], each with its own
+     * watchdog and the previous group's last lines as continuity context. [onGroup] runs as each group returns (the
+     * reader renders it at once). Unread regions are swapped in [regions] for what the engine read.
+     */
+    private suspend fun translateGroups(
+        regions: MutableList<TextRegion>, crops: Map<Int, Bitmap>, cfg: TranslateConfig, priorContext: List<ContextPair>,
+        started: Long, onStage: (Stage) -> Unit, timeoutMs: Long = STAGE_TIMEOUT_MS,
+        onGroup: suspend (group: List<Int>, translated: Array<String?>) -> Unit,
+    ): GroupsOutcome {
+        val groups = if (cfg.engineId.isLocalLlm && regions.size > LOCAL_GROUP)
+            regions.indices.chunked(LOCAL_GROUP) else listOf(regions.indices.toList())
+        val seriesGlossary = if (cfg.seriesKey.isNotEmpty()) glossary.forSeries(cfg.seriesKey) else emptyMap()
+        val jobCfg = cfg.copy(glossary = cfg.glossary + seriesGlossary)
+        val translated = arrayOfNulls<String>(regions.size)
+        var context = priorContext
+        var translateStart = -1L; var translateMs = 0L
+        for (group in groups) {
+            val groupCrops = group.withIndex().mapNotNull { (k, idx) -> crops[idx]?.let { k to it } }.toMap()
+            val job = TranslateJob("", jobCfg, group.map { regions[it] }, groupCrops, context)
+            // The stage flips, and the clock starts, only once this image holds a permit and the warm-up is over:
+            // an image still queued has spent nothing, so Stop and engine changes may still cancel it.
+            var groupStart = 0L
+            val out = gates.translate(cfg.engineId).withPermit {
+                awaitWarm(cfg)
+                groupStart = elapsed(started)
+                if (translateStart < 0) translateStart = groupStart
+                onStage(Stage.TRANSLATE)
+                watchdog(Stage.TRANSLATE, cfg.engineId, timeoutMs) { translator.translateReading(job) }
+            }
+            translateMs += elapsed(started) - groupStart
+            group.forEachIndexed { k, idx ->
+                translated[idx] = out[k]?.text?.takeIf { it.isNotBlank() }
+                // What the engine read replaces the placeholder: continuity context, the dump, and the glyph size.
+                if (regions[idx].unread) regions[idx] = withReading(regions[idx], out[k]?.source, cfg.src)
+            }
+            onGroup(group, translated)
+            context = (context + group.mapNotNull { idx -> translated[idx]?.takeIf { it.isNotBlank() }?.let { ContextPair(regions[idx].text, it) } }).takeLast(2)
+        }
+        return GroupsOutcome(translated, translateStart, translateMs, groups.size, context)
+    }
+
+    // ---- the Studio: whole pages, no viewport, no rendering, no patch cache ------------------------------------
+
+    /**
+     * Detects and reads a whole Studio page: nothing is dropped for touching an edge (a page is whole) and there is no
+     * region of interest. An engine that reads the crops gets unread regions. A page taller than
+     * [TileDetection.TALL_ASPECT] widths is detected in overlapping tiles. Regions come in reading order.
+     */
+    suspend fun detectStudioPage(bitmap: Bitmap, cfg: TranslateConfig): List<TextRegion> = withContext(Dispatchers.Default) {
+        val src = PageSource.of(bitmap)
+        if (src.width < MIN_EDGE || src.height < MIN_EDGE) return@withContext emptyList()
+        val read = !cfg.engineId.readsCrops
+        // The detector and recognizers only: reading a chapter should not load a translation model.
+        runCatching { detector.warmUp(cfg.src, recognizers = read) }
+        gates.detect.withPermit {
+            coroutineContext.ensureActive()
+            if (TileDetection.isTall(src.width, src.height)) detectTiled(src, cfg.src, read) else detectAll(src, cfg.src, read = read)
+        }.filter { it.text.isNotBlank() && it.bbox.area >= 16 }
+    }
+
+    /** The Studio's translation of one page's regions (what [detectStudioPage] returned, maybe edited since). */
+    class StudioTranslation(val regions: List<TextRegion>, val translations: List<String?>, val contextPairs: List<ContextPair>)
+
+    /**
+     * Translates a page's regions with [cfg]'s engine: the same grouped calls, watchdog and gates as the reader, crops
+     * cut from [bitmap] for unread regions and sound effects. [priorContext] is the end of the previous page; the
+     * result's [StudioTranslation.contextPairs] is this page's end, for the next one. Throws [EngineException] on an
+     * engine failure (never switches engines).
+     */
+    suspend fun translateRegions(
+        bitmap: Bitmap, regions: List<TextRegion>, cfg: TranslateConfig, priorContext: List<ContextPair> = emptyList(),
+    ): StudioTranslation = withContext(Dispatchers.Default) {
+        if (regions.isEmpty()) return@withContext StudioTranslation(emptyList(), emptyList(), priorContext)
+        val src = PageSource.of(bitmap)
+        val work = regions.toMutableList()
+        val crops = HashMap<Int, Bitmap>()
+        try {
+            for ((i, r) in work.withIndex()) {
+                if (r.unread) crops[i] = readCrop(src, r.bbox)
+                else if (r.kind == RegionKind.SFX) crops[i] = sfxCrop(src, r.bbox)
+            }
+            val started = System.currentTimeMillis()
+            // A Studio run is a batch nobody watches page by page: a slow on-device model (the CPU on a small phone) may
+            // take minutes for a group, which is still progress. The reader keeps its tight cap.
+            val out = translateGroups(work, crops, cfg, priorContext, started, onStage = {}, timeoutMs = STUDIO_TIMEOUT_MS) { _, _ -> }
+            // Durations only (no text).
+            android.util.Log.i(TAG, "studio ${cfg.engineId.name}: translate=${out.translateMs}ms regions=${work.size} groups=${out.groups}")
+            StudioTranslation(work, out.translated.toList(), out.context)
+        } finally {
+            crops.values.forEach { it.recycle() }
+        }
+    }
+
+    /**
+     * The text inside [rect] (page pixels) as one region: what the user boxed on a page because detection missed it.
+     * The crop is read like a page and everything found joins in reading order; an engine that reads the crops gets an
+     * unread region instead. [kind] is what the user drew (a bubble, a sound effect).
+     */
+    suspend fun readStudioRegion(bitmap: Bitmap, rect: IntRect, cfg: TranslateConfig, kind: RegionKind): TextRegion = withContext(Dispatchers.Default) {
+        val r = rect.clamp(bitmap.width, bitmap.height)
+        if (cfg.engineId.readsCrops || r.width < 8 || r.height < 8) {
+            return@withContext TextRegion(bbox = r, kind = kind, text = TextLine.UNREAD, lines = listOf(TextLine(r, TextLine.UNREAD)), container = r)
+        }
+        runCatching { detector.warmUp(cfg.src, recognizers = true) }
+        val crop = Bitmap.createBitmap(bitmap, r.left, r.top, r.width, r.height)
+        val found = try {
+            gates.detect.withPermit { detectAll(PageSource.of(crop), cfg.src) }
+        } finally {
+            if (crop !== bitmap) crop.recycle()
+        }
+        val lines = found.flatMap { it.lines }.map { it.copy(bbox = it.bbox.offset(r.left, r.top)) }
+        val text = found.joinToString(if (cfg.src.isCjk) "" else " ") { it.text }.trim()
+        TextRegion(
+            bbox = r, kind = kind, text = text, lines = lines, container = r,
+            vertical = found.any { it.vertical },
+            bgColor = found.firstOrNull()?.bgColor ?: 0xFFFFFFFF.toInt(),
+            fgColor = found.firstOrNull()?.fgColor ?: 0xFF000000.toInt(),
+        )
+    }
+
+    /** A whole page read and translated in one go: [detectStudioPage] then [translateRegions]. */
+    suspend fun analyze(bitmap: Bitmap, cfg: TranslateConfig, priorContext: List<ContextPair> = emptyList()): StudioTranslation =
+        translateRegions(bitmap, detectStudioPage(bitmap, cfg), cfg, priorContext)
+
+    /**
+     * A tall page in overlapping tiles ([TileDetection]): each tile detected on its own (barely scaled), boxes and
+     * lines mapped to page pixels and their overlap copies merged, then built, classified and ordered as one page.
+     * A box cut by a tile's inner edge is not read there; the tile that holds it whole reads it.
+     */
+    private suspend fun detectTiled(src: PageSource, lang: Lang, read: Boolean): List<TextRegion> {
+        val results = ArrayList<TileDetection.TileResult>()
+        for (tile in TileDetection.tiles(src.width, src.height)) {
+            coroutineContext.ensureActive()
+            val tileBmp = Bitmap.createBitmap(src.bitmap, tile.left, tile.top, tile.width, tile.height)
+            val (small, scale) = ImageDecoder.forDetection(tileBmp)
+            val inv = 1f / scale
+            fun toPage(r: IntRect) = r.scale(inv).offset(tile.left, tile.top).clamp(src.width, src.height)
+            val skipRead: (TextBox) -> Boolean = { b -> TileDetection.cutByTile(toPage(b.bbox), tile, src.height) }
+            val detection = try {
+                detector.detectPage(small, lang, skipRead, read = read)
+            } finally {
+                if (small !== tileBmp) small.recycle()
+                if (tileBmp !== src.bitmap) tileBmp.recycle()
+            }
+            results += TileDetection.TileResult(
+                tile,
+                detection.boxes.map { it.copy(bbox = toPage(it.bbox)) },
+                detection.lines.map { it.copy(bbox = toPage(it.bbox)) },
+            )
+        }
+        val boxes = TileDetection.mergeBoxes(results, src.height)
+        val lines = TileDetection.mergeLines(results, src.height)
+        android.util.Log.d(TAG, "detect tiled: tiles=${results.size} boxes=${boxes.size} lines=${lines.size}")
+        return buildRegions(src, lang, lines, boxes)
     }
 
     /**
@@ -346,6 +481,11 @@ class TranslationPipeline @Inject constructor(
             }
         }
         android.util.Log.d(TAG, "detect: boxes=$found kept=${boxes.size} lines=${lines.size} deferred=${deferred?.size ?: 0}")
+        return buildRegions(src, lang, lines, boxes)
+    }
+
+    /** Regions from lines and boxes in page pixels: one per detector box, clustered, classified, in reading order. */
+    private fun buildRegions(src: PageSource, lang: Lang, lines: List<TextLine>, boxes: List<TextBox>): List<TextRegion> {
         val built = regionBuilder.build(PageDetection(lines, boxes), lang)
         val seeds = java.util.IdentityHashMap<TextRegion, com.smnexstudio.panelglass.core.ocr.BoxKind?>()
         for (b in built) seeds[b.region] = b.seed
@@ -387,11 +527,11 @@ class TranslationPipeline @Inject constructor(
      * queued behind it. A timeout surfaces as a typed failure for this image only; the stage's work is
      * cancelled, which the engines honour.
      */
-    private suspend fun <T> watchdog(stage: Stage, engineId: EngineId, block: suspend () -> T): T =
-        try { withTimeout(STAGE_TIMEOUT_MS) { block() } }
+    private suspend fun <T> watchdog(stage: Stage, engineId: EngineId, timeoutMs: Long = STAGE_TIMEOUT_MS, block: suspend () -> T): T =
+        try { withTimeout(timeoutMs) { block() } }
         catch (e: TimeoutCancellationException) {
-            android.util.Log.w(TAG, "Watchdog: ${stage.name.lowercase()} exceeded ${STAGE_TIMEOUT_MS} ms")
-            throw EngineException(EngineFailure.Unavailable(engineId, "Watchdog: ${stage.name.lowercase()} ${STAGE_TIMEOUT_MS / 1000}s"), e)
+            android.util.Log.w(TAG, "Watchdog: ${stage.name.lowercase()} exceeded ${timeoutMs} ms")
+            throw EngineException(EngineFailure.Unavailable(engineId, "Watchdog: ${stage.name.lowercase()} ${timeoutMs / 1000}s"), e)
         }
 
     companion object {
@@ -410,12 +550,14 @@ class TranslationPipeline @Inject constructor(
         }
 
         /** Bump whenever rendering changes so stale patches are not served from the disk cache. */
-        const val PIPELINE_VERSION = 8
+        const val PIPELINE_VERSION = 9
         const val MIN_EDGE = 96
         /** Bubbles per on-device generation on a viewport: small enough that the first patches come early. */
         const val LOCAL_GROUP = 4
         private const val TAG = "TranslationPipeline"
         const val STAGE_TIMEOUT_MS = 50_000L
+        /** A Studio group's cap: generous, so only a hung engine fails a page (Qwen on a phone's CPU takes minutes). */
+        const val STUDIO_TIMEOUT_MS = 240_000L
         /** A detector box this close to a viewport edge is assumed cut off. */
         private const val EDGE_PX = 2
 

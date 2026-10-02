@@ -50,6 +50,7 @@ internal fun PageTranslateBar(
     onTranslate: () -> Unit,
     onShowOriginal: () -> Unit,
     onClose: () -> Unit,
+    onDownloadPacks: () -> Unit,
 ) {
     var srcSheet by remember { mutableStateOf(false) }
     var tgtSheet by remember { mutableStateOf(false) }
@@ -74,10 +75,11 @@ internal fun PageTranslateBar(
             Text(
                 statusText(s),
                 style = MaterialTheme.typography.labelSmall,
-                color = if (s.status == Status.FAILED || s.status == Status.UNDETECTED) Tokens.Error else Tokens.InkFaint,
+                color = if (s.status == Status.FAILED || s.status == Status.UNDETECTED || s.status == Status.NEEDS_PACK) Tokens.Error else Tokens.InkFaint,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
-            if (s.on) TextAction(stringResource(UiR.string.pt_show_original), Tokens.Yellow, onShowOriginal)
+            if (s.on && s.status == Status.NEEDS_PACK) TextAction(stringResource(UiR.string.action_download), Tokens.Yellow, onDownloadPacks)
+            else if (s.on) TextAction(stringResource(UiR.string.pt_show_original), Tokens.Yellow, onShowOriginal)
             else TextAction(stringResource(UiR.string.pt_translate), Tokens.Yellow, onTranslate)
         }
     }
@@ -104,6 +106,7 @@ private fun statusText(s: PageTextState): String = when {
         Status.DONE -> stringResource(UiR.string.pt_done)
         Status.SAME_LANGUAGE -> stringResource(UiR.string.pt_same, languageName(s.tgtTag))
         Status.UNDETECTED -> stringResource(UiR.string.pt_undetected)
+        Status.NEEDS_PACK -> stringResource(UiR.string.error_pack_missing, s.missingPacks.joinToString(", ") { languageName(it) })
         Status.FAILED -> stringResource(UiR.string.pt_failed)
     }
 }

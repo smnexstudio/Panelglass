@@ -1,5 +1,9 @@
 package com.smnexstudio.panelglass.feature.settings
 
+import com.smnexstudio.panelglass.core.model.FontRole
+import com.smnexstudio.panelglass.core.ui.fonts.FontChoices
+import com.smnexstudio.panelglass.core.ui.fonts.FontBrowserSheet
+import com.smnexstudio.panelglass.core.ui.fonts.FontField
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -27,7 +31,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -54,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
+import com.smnexstudio.panelglass.core.data.repo.MangaStorage
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
@@ -63,11 +73,9 @@ import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.ModelState
 import com.smnexstudio.panelglass.core.model.QwenBackend
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.smnexstudio.panelglass.core.model.BubbleFont
 import com.smnexstudio.panelglass.core.ui.ActionRow
 import com.smnexstudio.panelglass.core.ui.ApiKeyDialog
 import com.smnexstudio.panelglass.core.ui.CardDivider
@@ -79,6 +87,7 @@ import com.smnexstudio.panelglass.core.ui.KeyedEngineState
 import com.smnexstudio.panelglass.core.ui.PrimaryPill
 import com.smnexstudio.panelglass.core.ui.SectionLabel
 import com.smnexstudio.panelglass.core.ui.SparkleIcon
+import com.smnexstudio.panelglass.core.ui.StickerDialog
 import com.smnexstudio.panelglass.core.ui.TextAction
 import com.smnexstudio.panelglass.core.ui.ToggleCardRow
 import com.smnexstudio.panelglass.core.ui.TokenCard
@@ -100,22 +109,32 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.offset
 
-/** @param openKeyFor an `EngineId` name whose key dialog opens on arrival (the reader hands off here). */
+/**
+ * @param openKeyFor an `EngineId` name whose key dialog opens on arrival (the reader hands off here).
+ * @param onManageFonts the Studio's My fonts screen, where the user adds their own (the font picker's Add).
+ */
 @Composable
-fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, vm: SettingsViewModel = hiltViewModel()) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val keys by vm.keys.collectAsStateWithLifecycle()
     val mangaOcr by vm.mangaOcrState.collectAsStateWithLifecycle()
+    val lama by vm.lamaState.collectAsStateWithLifecycle()
     val packs by vm.packState.collectAsStateWithLifecycle()
     val tryState by vm.tryState.collectAsStateWithLifecycle()
     val needsKey by vm.needsKey.collectAsStateWithLifecycle()
 
     var keyDialogFor by remember { mutableStateOf<EngineId?>(null) }
     var enginePicker by remember { mutableStateOf(false) }
+    var fontPicker by remember { mutableStateOf(false) }
+    val favourites by vm.fontFavourites.collectAsStateWithLifecycle()
     var srcPicker by remember { mutableStateOf(false) }
     var tgtPicker by remember { mutableStateOf(false) }
     var appLangPicker by remember { mutableStateOf(false) }
     var backendPicker by remember { mutableStateOf(false) }
+    var packsSheet by remember { mutableStateOf(false) }
+    val studioStorage by vm.studioStorage.collectAsStateWithLifecycle()
+    var deletingManga by remember { mutableStateOf<MangaStorage?>(null) }
+    LaunchedEffect(Unit) { vm.loadStudioStorage() }
     val gpu = stringResource(UiR.string.qwen_backend_gpu); val cpu = stringResource(UiR.string.qwen_backend_cpu)
     // Automatic names what it picks on this phone ("Automatic · GPU").
     val backendNames = mapOf(
@@ -154,7 +173,10 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         // ---- try -------------------------------------------------------------------------------
         SectionLabel(stringResource(UiR.string.settings_try))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            TryBox(tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { keyDialogFor = it }, onUseOnDevice = { vm.selectEngine(EngineId.QWEN15_LOCAL) })
+            TryBox(
+                tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { keyDialogFor = it },
+                onUseOnDevice = { vm.selectEngine(EngineId.QWEN15_LOCAL) }, onDownloadPacks = { vm.downloadPacksAndTry(it) },
+            )
         }
 
         // ---- app language ----------------------------------------------------------------------
@@ -175,12 +197,25 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
 
         // ---- fonts -----------------------------------------------------------------------------
         SectionLabel(stringResource(UiR.string.settings_fonts))
+        // The Studio's fonts and font picker: every bundled font, the user's own and the phone's, previewed in the
+        // default target language. Auto follows the language a page is translated into.
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            BubbleFont.entries.forEachIndexed { i, f ->
-                if (i > 0) CardDivider()
-                FontRow(f, selected = s.bubbleFont == f) { vm.setFont(f) }
+            Column(Modifier.padding(16.dp)) {
+                FontField(s.readerFontId, s.defaultTargetLang, FontRole.DIALOGUE) { fontPicker = true }
+                Text(
+                    stringResource(UiR.string.settings_font_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
         }
+        if (fontPicker) FontBrowserSheet(
+            s.readerFontId, s.defaultTargetLang, FontRole.DIALOGUE,
+            FontChoices(
+                favourites = favourites, userFontsKey = null, onFavourite = vm::toggleFontFavourite,
+                onManage = { fontPicker = false; onManageFonts() },
+            ),
+            onFont = vm::setReaderFont, onDismiss = { fontPicker = false },
+        )
 
         // ---- models ----------------------------------------------------------------------------
         SectionLabel(stringResource(UiR.string.settings_models))
@@ -226,7 +261,16 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         }
         Spacer(Modifier.height(12.dp))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            PacksRow(packs, onDownload = { vm.downloadPacks() }, onCancel = { vm.cancelPacks() }, onDelete = { vm.deletePacks() })
+            // LaMa needs 4 GB of RAM: on a smaller phone the row says so instead of offering the download.
+            if (vm.lamaFits) ModelRow(
+                stringResource(UiR.string.model_lama), "LaMa", 208, lama,
+                readyNote = stringResource(UiR.string.model_lama_ready), missingNote = stringResource(UiR.string.model_lama_missing),
+                onDownload = { vm.downloadLama() }, onCancel = { vm.cancelLama() }, onDelete = { vm.deleteLama() },
+            ) else ActionRow(stringResource(UiR.string.model_lama), stringResource(UiR.string.model_lama_needs_ram, 4), null)
+        }
+        Spacer(Modifier.height(12.dp))
+        TokenCard(Modifier.padding(horizontal = 16.dp)) {
+            PacksRow(packs, onManage = { packsSheet = true })
         }
         Text(
             stringResource(UiR.string.settings_keys_note),
@@ -242,8 +286,14 @@ fun SettingsScreen(openKeyFor: String? = null, vm: SettingsViewModel = hiltViewM
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
             ActionRow(stringResource(UiR.string.settings_history), stringResource(UiR.string.settings_history_clear), stringResource(UiR.string.action_clear), Tokens.Error, onAction = { vm.clearHistory() })
         }
+        StudioStorage(studioStorage, onDelete = { deletingManga = it })
     }
 
+    deletingManga?.let { m ->
+        DeleteMangaDialog(m, onDismiss = { deletingManga = null }) { vm.deleteStudioManga(m.manga); deletingManga = null }
+    }
+
+    if (packsSheet) PacksSheet(packs, onDownload = { vm.downloadPack(it) }, onDelete = { vm.deletePack(it) }, onDismiss = { packsSheet = false })
     if (backendPicker) ChoiceSheet(
         stringResource(UiR.string.qwen_backend), QwenBackend.entries, s.qwenBackend,
         render = { backendNames.getValue(it) },
@@ -363,32 +413,66 @@ private fun ModelRow(
     }) else null)
 }
 
-/** Google Translate (ML Kit) language packs for every supported language, ~30 MB each. */
+/** Google Translate (ML Kit) language packs: how many are on the phone; [onManage] opens the per-language list. */
 @Composable
-private fun PacksRow(p: PackState, onDownload: () -> Unit, onCancel: () -> Unit, onDelete: () -> Unit) {
-    val subtitle = when {
-        p.downloading -> stringResource(UiR.string.packs_downloading, p.current?.let { packName(it) } ?: "", p.downloaded.size, p.total)
-        p.failed != null -> stringResource(UiR.string.packs_failed, p.failed!!, p.downloaded.size, p.total)
-        p.complete -> stringResource(UiR.string.packs_complete, p.total)
-        p.downloaded.isEmpty() -> stringResource(UiR.string.packs_none)
-        else -> stringResource(UiR.string.packs_some, p.downloaded.size, p.total)
+private fun PacksRow(p: PackState, onManage: () -> Unit) {
+    val all = LanguagePackStore.ALL_TAGS
+    val subtitle = p.current?.let { stringResource(UiR.string.packs_downloading_one, packName(it)) }
+        ?: stringResource(UiR.string.packs_count, all.count { p.has(it) }, all.size)
+    ActionRow(stringResource(UiR.string.packs_title), subtitle, stringResource(UiR.string.packs_manage), Tokens.SkyDeep, onAction = onManage,
+        below = if (p.current != null) ({
+            LinearProgressIndicator(color = Tokens.Yellow, trackColor = Tokens.Border, modifier = Modifier.fillMaxWidth().padding(top = 10.dp, end = 8.dp))
+        }) else null)
+}
+
+/**
+ * One row per language: English is built in; Japanese, Korean and Chinese download by themselves; every other
+ * language is downloaded here when the user wants it, and any pack can be deleted to free its ~30 MB.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (String) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tokens.Card) {
+        LazyColumn(Modifier.padding(horizontal = 16.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+            item {
+                Text(stringResource(UiR.string.packs_title), style = MaterialTheme.typography.titleLarge, color = Tokens.Ink, modifier = Modifier.padding(start = 4.dp))
+                Text(stringResource(UiR.string.packs_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp))
+            }
+            items(LanguagePackStore.ALL_TAGS) { tag ->
+                val busy = tag == p.current || tag in p.pending
+                val status = when {
+                    tag == LanguagePackStore.BUILT_IN -> stringResource(UiR.string.pack_built_in)
+                    p.has(tag) -> stringResource(UiR.string.pack_ready)
+                    busy -> stringResource(UiR.string.pack_downloading)
+                    p.failed == tag -> stringResource(UiR.string.pack_failed)
+                    tag in LanguagePackStore.AUTOMATIC -> stringResource(UiR.string.pack_auto)
+                    else -> stringResource(UiR.string.pack_missing)
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(packName(tag), style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink)
+                        Text(status, style = MaterialTheme.typography.bodySmall, color = if (p.failed == tag && !busy) Tokens.Error else Tokens.InkSoft)
+                    }
+                    when {
+                        tag == LanguagePackStore.BUILT_IN -> Unit
+                        busy -> CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Tokens.Ink)
+                        p.has(tag) -> TextAction(stringResource(UiR.string.action_delete), Tokens.Error) { onDelete(tag) }
+                        p.failed == tag -> TextAction(stringResource(UiR.string.action_retry), Tokens.SkyDeep) { onDownload(tag) }
+                        else -> TextAction(stringResource(UiR.string.action_download), Tokens.SkyDeep) { onDownload(tag) }
+                    }
+                }
+            }
+        }
     }
-    val (action, color, handler) = when {
-        p.downloading -> Triple(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onCancel)
-        p.complete -> Triple(stringResource(UiR.string.action_delete), Tokens.Error, onDelete)
-        p.failed != null -> Triple(stringResource(UiR.string.action_retry), Tokens.SkyDeep, onDownload)
-        else -> Triple(stringResource(UiR.string.packs_download_all), Tokens.SkyDeep, onDownload)
-    }
-    ActionRow(stringResource(UiR.string.packs_title), subtitle, action, color, onAction = handler, below = if (p.downloading) ({
-        val fraction = if (p.total > 0) p.downloaded.size.toFloat() / p.total else 0f
-        LinearProgressIndicator(progress = { fraction }, color = Tokens.Yellow, trackColor = Tokens.Border, modifier = Modifier.fillMaxWidth().padding(top = 10.dp, end = 8.dp))
-    }) else null)
 }
 
 // ---- try box ---------------------------------------------------------------------------------
 
 @Composable
-private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit) {
+private fun TryBox(
+    t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit,
+    onDownloadPacks: (List<String>) -> Unit,
+) {
     Column(Modifier.fillMaxWidth().padding(14.dp)) {
         OutlinedTextField(
             value = t.input, onValueChange = onInput, minLines = 2, maxLines = 5,
@@ -416,6 +500,9 @@ private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, on
                 when (action) {
                     Action.ADD_KEY -> TextAction(stringResource(UiR.string.action_add_key), Tokens.SkyDeep) { onAddKey(f.engine) }
                     Action.USE_ON_DEVICE -> TextAction(stringResource(UiR.string.action_use_on_device), Tokens.SkyDeep, onUseOnDevice)
+                    Action.DOWNLOAD_PACK -> (f as? EngineFailure.PackMissing)?.let { m ->
+                        TextAction(stringResource(UiR.string.action_download), Tokens.SkyDeep) { onDownloadPacks(m.tags) }
+                    }
                     Action.NONE -> Unit
                 }
             }
@@ -423,7 +510,7 @@ private fun TryBox(t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, on
     }
 }
 
-private enum class Action { ADD_KEY, USE_ON_DEVICE, NONE }
+private enum class Action { ADD_KEY, USE_ON_DEVICE, DOWNLOAD_PACK, NONE }
 
 /** A Google Translate pack's language, named in the UI's language. */
 private fun packName(tag: String): String =
@@ -438,40 +525,13 @@ private fun failureText(f: EngineFailure): Pair<String, Action> {
     return when (f) {
         is EngineFailure.MissingKey -> stringResource(UiR.string.error_needs_key, name) to Action.ADD_KEY
         is EngineFailure.ModelMissing -> stringResource(UiR.string.error_model_missing) to Action.NONE
+        is EngineFailure.PackMissing -> stringResource(UiR.string.error_pack_missing, f.tags.joinToString(", ") { packName(it) }) to Action.DOWNLOAD_PACK
         is EngineFailure.QuotaExceeded -> stringResource(UiR.string.error_quota, name) to Action.USE_ON_DEVICE
         is EngineFailure.RateLimited -> stringResource(UiR.string.error_rate_limited, name) to Action.NONE
         is EngineFailure.Overloaded -> withReason(UiR.string.error_overloaded, f.reason) to Action.USE_ON_DEVICE
         is EngineFailure.Malformed -> stringResource(UiR.string.error_malformed, name) to Action.USE_ON_DEVICE
         is EngineFailure.Network -> stringResource(UiR.string.error_network, name) to Action.USE_ON_DEVICE
         is EngineFailure.Unavailable -> withReason(UiR.string.error_unavailable, f.reason) to Action.USE_ON_DEVICE
-    }
-}
-
-@Composable
-private fun FontRow(font: BubbleFont, selected: Boolean, onClick: () -> Unit) {
-    val family = when (font) {
-        BubbleFont.PLUS_JAKARTA_SANS -> Jakarta
-        BubbleFont.COMING_SOON -> FontFamily(Font(com.smnexstudio.panelglass.core.ui.R.font.coming_soon))
-        BubbleFont.LUCKIEST_GUY -> FontFamily(Font(com.smnexstudio.panelglass.core.ui.R.font.luckiest_guy))
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .background(if (selected) Tokens.YellowTint else Tokens.Card)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = font.label,
-            fontFamily = family,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Tokens.Ink,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(12.dp))
-        CheckDisc(selected)
     }
 }
 
@@ -914,4 +974,61 @@ private fun MiniThemeScreen(theme: AppTheme) {
     }
 }
 
+/**
+ * The Studio's own storage: every manga with what its pages take (originals, cleaned pages, edits), each with Delete.
+ * Only the Studio is listed here; models have their own rows under Models.
+ */
+@Composable
+private fun StudioStorage(list: List<MangaStorage>?, onDelete: (MangaStorage) -> Unit) {
+    val context = LocalContext.current
+    SectionLabel(stringResource(UiR.string.settings_studio_storage))
+    TokenCard(Modifier.padding(horizontal = 16.dp)) {
+        when {
+            list == null -> Unit
+            list.isEmpty() -> Text(
+                stringResource(UiR.string.settings_studio_empty), style = MaterialTheme.typography.bodyMedium, color = Tokens.InkSoft,
+                modifier = Modifier.padding(16.dp),
+            )
+            else -> {
+                Text(
+                    stringResource(UiR.string.settings_studio_total, android.text.format.Formatter.formatShortFileSize(context, list.sumOf { it.bytes })),
+                    style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                )
+                list.forEachIndexed { i, m ->
+                    if (i > 0) CardDivider()
+                    ActionRow(
+                        m.manga.title,
+                        pluralStringResource(UiR.plurals.studio_chapters, m.chapters, m.chapters) + " · " +
+                            android.text.format.Formatter.formatShortFileSize(context, m.bytes),
+                        stringResource(UiR.string.action_delete), Tokens.Error, onAction = { onDelete(m) },
+                    )
+                }
+            }
+        }
+    }
+}
 
+/** Says exactly what a delete removes, and what it keeps, before anything is deleted. */
+@Composable
+private fun DeleteMangaDialog(m: MangaStorage, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val context = LocalContext.current
+    StickerDialog(onDismiss) {
+        Text(stringResource(UiR.string.settings_studio_delete_title, m.manga.title), fontFamily = Jakarta, fontWeight = FontWeight.W800, fontSize = 20.sp, color = Tokens.Ink)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            stringResource(
+                UiR.string.settings_studio_delete_message,
+                pluralStringResource(UiR.plurals.studio_chapters, m.chapters, m.chapters),
+                pluralStringResource(UiR.plurals.studio_pages, m.pages, m.pages),
+                android.text.format.Formatter.formatShortFileSize(context, m.bytes),
+            ),
+            style = MaterialTheme.typography.bodyMedium, color = Tokens.InkSoft,
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onDismiss)
+            Spacer(Modifier.width(8.dp))
+            PrimaryPill(stringResource(UiR.string.action_delete).uppercase(), letterSpaced = true, onClick = onConfirm)
+        }
+    }
+}

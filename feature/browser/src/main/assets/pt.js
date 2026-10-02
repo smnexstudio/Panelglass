@@ -75,7 +75,8 @@
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
-  window.__pt = {
+  // Read-only and frozen: a page script cannot replace the bridge to receive the translations or feed it text.
+  Object.defineProperty(window, '__pt', { writable: false, configurable: false, enumerable: false, value: Object.freeze({
     sample: function () {
       var text = '', w = document.body ? document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null) : null;
       var n;
@@ -126,5 +127,5 @@
       }
       records = []; queue = null; dirty = true;
     }
-  };
+  }) });
 })();

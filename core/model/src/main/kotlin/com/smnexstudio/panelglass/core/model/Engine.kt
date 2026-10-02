@@ -78,6 +78,11 @@ sealed class EngineFailure {
     @Serializable data class Network(override val engine: EngineId) : EngineFailure()
     /** The on-device model file is not present yet. */
     @Serializable data class ModelMissing(override val engine: EngineId) : EngineFailure()
+    /**
+     * A Google Translate (ML Kit) language pack the pair needs is not on the phone, and it is not one fetched
+     * automatically: the user downloads it (one tap) before it is used. [tags] are ML Kit language tags.
+     */
+    @Serializable data class PackMissing(override val engine: EngineId, val tags: List<String>) : EngineFailure()
     @Serializable data class Unavailable(override val engine: EngineId, val reason: String = "") : EngineFailure()
 }
 
@@ -107,6 +112,12 @@ enum class BubbleFont(val label: String) {
     /** Bold comic capitals for loud text (Apache-2.0). */
     LUCKIEST_GUY("Luckiest Guy"),
     ;
+
+    /**
+     * The same font in the Studio's catalogue (`cat:coming_soon`, …), where the reader now takes its fonts from: a
+     * choice saved before the catalogue reads back as this id.
+     */
+    val fontId: String get() = "cat:" + name.lowercase()
 
     companion object {
         /**

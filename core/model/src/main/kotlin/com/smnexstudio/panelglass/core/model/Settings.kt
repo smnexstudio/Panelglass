@@ -10,14 +10,21 @@ enum class QwenBackend { AUTO, GPU, CPU }
 data class Settings(
     val defaultSourceLang: Lang = Lang.JA,
     val defaultTargetLang: Lang = Lang.EN,
-    /** Explicit provider choice; the on-device model unless the user picks something else. */
-    val engineId: EngineId = EngineId.QWEN15_LOCAL,
+    /**
+     * Explicit provider choice; Google Translate (ML Kit, on-device, no key, no large download) unless the user picks
+     * something else.
+     */
+    val engineId: EngineId = EngineId.GOOGLE,
     /** User-chosen model ids per provider (e.g. `claude-sonnet-4-5`, `openai/gpt-4o-mini`). Not secrets. */
     val models: Map<EngineId, String> = emptyMap(),
     /** BATCHED (default) sends one call per image; SEQUENTIAL does strict 2-back per region. */
     val contextMode: ContextMode = ContextMode.BATCHED,
     val adBlockDefault: Boolean = true,
-    val bubbleFont: BubbleFont = BubbleFont.PLUS_JAKARTA_SANS,
+    /**
+     * The reader's lettering font, a Studio font id (`cat:…` bundled, `user:…` the user's own, `sys:…` the phone's);
+     * null is Auto, the comic font for the target language (`StudioFonts.defaultFor`).
+     */
+    val readerFontId: String? = null,
     val sfxMode: SfxMode = SfxMode.OVERLAY,
     val freeTextMode: FreeTextMode = FreeTextMode.ERASE,
     val patchQuality: Int = 100,
@@ -49,7 +56,7 @@ data class Settings(
         engineId = site?.engineId ?: engineId,
         sfxMode = sfxMode,
         freeTextMode = freeTextMode,
-        bubbleFont = bubbleFont,
+        fontId = readerFontId,
         patchQuality = patchQuality,
         contextMode = contextMode,
     )

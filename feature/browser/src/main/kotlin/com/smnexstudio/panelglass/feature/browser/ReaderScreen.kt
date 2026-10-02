@@ -93,6 +93,8 @@ fun ReaderScreen(
     startNow: Boolean = false,
     /** The library site that was tapped, when the reader was opened from one. */
     initialSiteId: Long? = null,
+    /** [initialUrl] came from another app's intent: never translated on open. */
+    initialExternal: Boolean = false,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenKeySheet: (engineName: String) -> Unit = {},
@@ -101,6 +103,7 @@ fun ReaderScreen(
     val ui by vm.ui.collectAsStateWithLifecycle()
     val screen by vm.screen.collectAsStateWithLifecycle()
     val scroll by vm.scroll.collectAsStateWithLifecycle()
+    val zoom by vm.zoom.collectAsStateWithLifecycle()
     val autoStart by vm.autoStart.collectAsStateWithLifecycle()
     val pageText by vm.pageText.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -144,7 +147,8 @@ fun ReaderScreen(
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
             settings.mediaPlaybackRequiresUserGesture = true
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            // https only: an https page's http subresources are never loaded (the app sends no cleartext at all).
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             // Multiple windows on, so window.open / target=_blank reach onCreateWindow (NewWindows) and get a
             // decision; with them off a single-window WebView loads them over the reader itself.
             settings.setSupportMultipleWindows(true)
@@ -167,7 +171,7 @@ fun ReaderScreen(
                 if (e.actionMasked == android.view.MotionEvent.ACTION_UP) vm.onGestureEnd()
                 false
             }
-            vm.attach(this, initialUrl, initialSiteId)
+            vm.attach(this, initialUrl, initialSiteId, initialExternal)
         }
     }
     // Off screen (Settings on top) the page keeps loading but its timers and media stop; the view model destroys it
@@ -234,7 +238,7 @@ fun ReaderScreen(
                 pageText,
                 onSource = { vm.pageText.pickSource(it) }, onTarget = { vm.pageText.pickTarget(it) },
                 onTranslate = { vm.pageText.translate() }, onShowOriginal = { vm.pageText.showOriginal() },
-                onClose = { vm.pageText.close() },
+                onClose = { vm.pageText.close() }, onDownloadPacks = { vm.pageText.downloadPacks() },
             )
             HorizontalDivider(thickness = 1.dp, color = Tokens.InkRaised)
         }
@@ -261,7 +265,7 @@ fun ReaderScreen(
         // ---- page ---------------------------------------------------------------------------
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(factory = { (webView.parent as? ViewGroup)?.removeView(webView); webView }, modifier = Modifier.fillMaxSize())
-            ScreenOverlayLayer(screen, scroll)
+            ScreenOverlayLayer(screen, scroll, zoom)
             // Browser-style load bar, laid over the page so it never resizes the WebView.
             LoadBar(ui.progress, Modifier.align(Alignment.TopCenter))
         }
@@ -272,6 +276,10 @@ fun ReaderScreen(
             val failure = screen.failure
             when (failure) {
                 is EngineFailure.MissingKey -> ErrorRow(stringResource(UiR.string.error_needs_key, failure.engine.uiName()), stringResource(UiR.string.action_add_key)) { onOpenKeySheet(failure.engine.name) }
+                // Only Japanese, Korean and Chinese download by themselves: any other language waits for this tap.
+                is EngineFailure.PackMissing -> ErrorRow(
+                    stringResource(UiR.string.error_pack_missing, vm.packNames(failure.tags)), stringResource(UiR.string.action_download),
+                ) { vm.downloadPacksAndRetry(failure.tags) { captureViewport(webView) } }
                 // The escape hatch is Google Translate (ML Kit, on-device, no key) — named as such, since the failing
                 // engine may itself be the on-device model — and only offered while it is not the one that failed.
                 is EngineFailure.QuotaExceeded -> ErrorRow(stringResource(UiR.string.error_quota, failure.engine.uiName()), stringResource(UiR.string.action_use_google_translate)) { vm.switchToOnDevice { captureViewport(webView) } }

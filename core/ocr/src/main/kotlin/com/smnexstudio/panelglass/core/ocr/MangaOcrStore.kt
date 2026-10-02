@@ -35,9 +35,9 @@ class MangaOcrStore @Inject constructor(
     class Files(val encoder: File, val decoder: File, val vocab: File)
 
     private val legacyDir: File get() = File(File(context.filesDir, "models"), "manga-ocr")
-    /** Where DownloadManager itself writes (shared storage on Android 8–9, see [SystemDownloads.finalFile]). */
-    private val externalDir: File? get() = downloads.root()?.let { File(it, REL_DIR) }
-    private val downloadDir: File get() = downloads.finalFile(REL_DIR) ?: legacyDir
+    /** Where DownloadManager writes and the checked files stay ([SystemDownloads.finalFile]). */
+    private val externalDir: File? get() = downloads.finalFile(REL_DIR)
+    private val downloadDir: File get() = externalDir ?: legacyDir
 
     /** The older internal copy when it is complete, else the downloaded one. */
     val dir: File get() = if (isComplete(legacyDir)) legacyDir else downloadDir
@@ -55,13 +55,13 @@ class MangaOcrStore @Inject constructor(
     private fun filesIn(d: File) = Files(File(d, ENCODER), File(d, DECODER), File(d, VOCAB))
     private fun isComplete(d: File): Boolean = PARTS.all { isGood(File(d, it.name), it) }
     /** Complete and checked against its SHA-256 where it will be loaded from. */
-    private fun isGood(f: File, p: Part) = f.length() >= p.min && downloads.isPrivate(f) && downloads.isVerified(f, p.sha256)
+    private fun isGood(f: File, p: Part) = f.length() >= p.min && downloads.isVerified(f, p.sha256)
     private fun isReadyOnDisk(): Boolean = isComplete(dir)
     private fun sizeOnDisk() = files.let { it.encoder.length() + it.decoder.length() + it.vocab.length() }
     private fun key(name: String) = "manga-ocr:$name"
     private fun have(p: Part) = isGood(File(legacyDir, p.name), p) || isGood(File(downloadDir, p.name), p)
 
-    /** Parts on disk at full size but not checked yet (earlier installs, side-loads, Android 8–9 shared storage). */
+    /** Parts on disk at full size but not checked yet (earlier installs, side-loads). */
     private fun unchecked(): List<Pair<Part, File>> = PARTS.filter { !have(it) }.mapNotNull { p ->
         listOfNotNull(legacyDir, externalDir).map { File(it, p.name) }.firstOrNull { it.length() >= p.min }?.let { p to it }
     }
@@ -77,7 +77,7 @@ class MangaOcrStore @Inject constructor(
         val todo = unchecked()
         _state.value = ModelState.Downloading(EXPECTED_BYTES, EXPECTED_BYTES, SystemDownloads.CHECKING)
         job = scope.launch {
-            val bad = todo.count { (p, f) -> downloads.adopt(f, "$REL_DIR/${p.name}", p.sha256) == null }
+            val bad = todo.count { (p, f) -> downloads.adopt(f, p.sha256) == null }
             _state.value = when {
                 bad > 0 -> ModelState.Failed(SystemDownloads.CORRUPT)
                 isReadyOnDisk() -> ModelState.Ready(sizeOnDisk())

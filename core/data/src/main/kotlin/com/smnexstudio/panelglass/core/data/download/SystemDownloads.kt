@@ -3,7 +3,6 @@ package com.smnexstudio.panelglass.core.data.download
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import java.io.File
@@ -93,43 +92,19 @@ class SystemDownloads @Inject constructor(@ApplicationContext private val contex
     // ---- integrity ----------------------------------------------------------------------------------------------
 
     /**
-     * Where a verified file for [relativePath] ends up. From Android 10 the app-specific external directory is
-     * private to this app; on Android 8–9 any app holding the storage permission can rewrite it, so the file is
-     * moved into internal storage there.
+     * Where a verified file for [relativePath] ends up: the app-specific external directory, private to this app
+     * (Android 10+; the app needs Android 12).
      */
-    fun finalFile(relativePath: String): File? =
-        if (externalIsPrivate) root()?.let { File(it, relativePath) } else File(context.filesDir, relativePath)
+    fun finalFile(relativePath: String): File? = root()?.let { File(it, relativePath) }
 
-    /** Whether [file] can be loaded where it is: internal storage, or external storage no other app can write. */
-    fun isPrivate(file: File): Boolean =
-        externalIsPrivate || file.canonicalPath.startsWith(context.filesDir.canonicalPath + File.separator)
-
-    /**
-     * Moves [src] to [finalFile] of [relativePath] if its SHA-256 is [sha256], else deletes it and throws. On
-     * Android 8–9 the file is hashed while it is copied into internal storage, so what was checked is what loads.
-     */
+    /** Moves [src] to [finalFile] of [relativePath] if its SHA-256 is [sha256], else deletes it and throws. */
     fun place(src: File, relativePath: String, sha256: String): File {
         val target = finalFile(relativePath) ?: throw IOException("Storage unavailable")
         target.parentFile?.mkdirs()
-        val staged = if (isPrivate(src)) {
-            if (!hashOf(src).equals(sha256, ignoreCase = true)) { src.delete(); throw IOException(CORRUPT) }
-            src
-        } else {
-            val tmp = File(target.path + ".tmp")
-            val digest = MessageDigest.getInstance("SHA-256")
-            try {
-                src.inputStream().use { input -> tmp.outputStream().use { out ->
-                    val buf = ByteArray(BUFFER)
-                    while (true) { val n = input.read(buf); if (n < 0) break; digest.update(buf, 0, n); out.write(buf, 0, n) }
-                } }
-            } catch (e: IOException) { tmp.delete(); throw IOException("Not enough storage") }
-            src.delete()
-            if (!hex(digest.digest()).equals(sha256, ignoreCase = true)) { tmp.delete(); throw IOException(CORRUPT) }
-            tmp
-        }
-        if (staged != target) {
+        if (!hashOf(src).equals(sha256, ignoreCase = true)) { src.delete(); throw IOException(CORRUPT) }
+        if (src != target) {
             target.delete()
-            if (!staged.renameTo(target)) { staged.delete(); throw IOException("Could not move the file into place") }
+            if (!src.renameTo(target)) { src.delete(); throw IOException("Could not move the file into place") }
         }
         markVerified(target, sha256)
         return target
@@ -138,15 +113,13 @@ class SystemDownloads @Inject constructor(@ApplicationContext private val contex
     /**
      * Checks a file already on disk (an earlier install, a side-load) once: the result is remembered against its
      * size and modification time, so a multi-gigabyte model is not hashed on every launch. A file that fails is
-     * deleted; one on writable shared storage is moved in through [place]. Returns the file to load, or null.
+     * deleted. Returns the file to load, or null.
      */
-    fun adopt(file: File, relativePath: String, sha256: String): File? {
-        if (isPrivate(file) && isVerified(file, sha256)) return file
+    fun adopt(file: File, sha256: String): File? {
+        if (isVerified(file, sha256)) return file
         return try {
-            if (isPrivate(file)) {
-                if (hashOf(file).equals(sha256, ignoreCase = true)) file.also { markVerified(it, sha256) }
-                else { file.delete(); null }
-            } else place(file, relativePath, sha256)
+            if (hashOf(file).equals(sha256, ignoreCase = true)) file.also { markVerified(it, sha256) }
+            else { file.delete(); null }
         } catch (e: IOException) { null }
     }
 
@@ -159,7 +132,6 @@ class SystemDownloads @Inject constructor(@ApplicationContext private val contex
     private fun stamp(file: File, sha256: String) = sha256.lowercase() + ":" + file.length() + ":" + file.lastModified()
 
     private val verified get() = context.getSharedPreferences("verified_files", Context.MODE_PRIVATE)
-    private val externalIsPrivate: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
     private fun hashOf(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")

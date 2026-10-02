@@ -32,6 +32,11 @@ class PageTranslator @Inject constructor() {
     var translatorFactory: (srcTag: String, tgtTag: String) -> PairTranslator = { s, t -> MlKitPairTranslator(s, t) }
     var detector: LanguageDetector = MlKitLanguageDetector()
 
+    /** Which packs may be fetched on first use ([LanguagePackStore]); tests leave it open. */
+    var packGate: PackGate = PackGate.OPEN
+
+    @Inject fun bindPacks(store: LanguagePackStore) { packGate = store }
+
     private val translators = LinkedHashMap<String, PairTranslator>()
     private val ready = HashSet<String>()
     private val lock = Mutex()
@@ -45,7 +50,10 @@ class PageTranslator @Inject constructor() {
         return translatable(found) ?: translatable(hint)
     }
 
-    /** Downloads the pair's language packs if needed (~30 MB each, on first use of a language). */
+    /**
+     * Readies the pair: fetches Japanese, Korean or Chinese if needed; any other missing pack is an
+     * [EngineFailure.PackMissing] for the user to download.
+     */
     suspend fun prepare(srcTag: String, tgtTag: String) { translator(srcTag, tgtTag) }
 
     /**
@@ -65,6 +73,10 @@ class PageTranslator @Inject constructor() {
     private suspend fun translator(srcTag: String, tgtTag: String): PairTranslator {
         val key = "$srcTag>$tgtTag"
         return lock.withLock {
+            if (key !in ready) {
+                val missing = packGate.missing(setOf(srcTag, tgtTag))
+                if (missing.isNotEmpty()) throw EngineException(EngineFailure.PackMissing(EngineId.GOOGLE, missing.sorted()))
+            }
             val t = translators.remove(key) ?: translatorFactory(srcTag, tgtTag)
             translators[key] = t // most recently used last
             if (key !in ready) {

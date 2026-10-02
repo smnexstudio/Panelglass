@@ -66,15 +66,6 @@ data class Site(
     }
 }
 
-/** Unused (a viewport's detection is never reused); kept in the schema like [UrlEtagEntry], drop at the next bump. */
-@Entity(tableName = "ocr_cache")
-data class OcrCacheEntry(
-    @PrimaryKey val imageHash: String,
-    val srcLang: Lang,
-    val regionsJson: String,
-    val createdAt: Long,
-)
-
 @Entity(tableName = "sfx_cache")
 data class SfxCacheEntry(
     @PrimaryKey val key: String,
@@ -91,19 +82,6 @@ data class GlossaryEntry(
     val seriesKey: String,
     val source: String,
     val target: String,
-)
-
-/**
- * Unused since the per-image path was removed (it mapped image URLs to content hashes). The table stays in the
- * schema so existing installs keep their sites and history: dropping it needs a DB version bump, which is destructive
- * here. Remove it together with the next schema change.
- */
-@Entity(tableName = "url_etag")
-data class UrlEtagEntry(
-    @PrimaryKey val url: String,
-    val etag: String?,
-    val imageHash: String,
-    val seenAt: Long,
 )
 
 @Entity(tableName = "history")

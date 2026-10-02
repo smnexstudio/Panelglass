@@ -5,12 +5,16 @@ import android.content.MutableContextWrapper
 import android.view.ViewGroup
 import android.graphics.Bitmap
 import android.webkit.WebView
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
+import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
+import com.smnexstudio.panelglass.core.ui.languageName
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -23,6 +27,7 @@ import com.smnexstudio.panelglass.core.pipeline.RegionOfInterest
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.Site
 import com.smnexstudio.panelglass.core.model.TranslateConfig
+import com.smnexstudio.panelglass.core.model.WebUrl
 import com.smnexstudio.panelglass.core.pipeline.TranslationPipeline
 import com.smnexstudio.panelglass.core.ui.R as UiR
 import com.smnexstudio.panelglass.core.ui.uiName
@@ -39,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -65,50 +71,68 @@ class ViewportCapture(
     val thumbNow: (suspend () -> Thumb?)? = null,
 )
 
-/** The on-screen page images' rects in the viewport (view pixels) with their keys, at a given scroll offset. */
-class ImageLayout(val images: List<IntRect>, val keys: List<String>, val scrollX: Int, val scrollY: Int)
+/**
+ * The on-screen page images' rects in the viewport (view pixels at [scale]) with their keys, at a given scroll
+ * offset (page pixels at [scale]).
+ */
+class ImageLayout(val images: List<IntRect>, val keys: List<String>, val scrollX: Int, val scrollY: Int, val scale: Float = 1f)
 
 /**
  * Where a patch stands on the page image it was made from: that image's key and the patch's offset from the
- * image's top-left corner (view pixels at the capture's zoom).
+ * image's top-left corner, in CSS pixels (zoom-independent).
  */
-class Anchor(val key: String, val dx: Int, val dy: Int)
+class Anchor(val key: String, val dx: Float, val dy: Float)
 
-/** The anchor for a patch at [left],[top] (view pixels) whose centre lies on one of [images]; null on none. */
-internal fun anchorFor(left: Int, top: Int, width: Int, height: Int, images: List<IntRect>, keys: List<String>): Anchor? {
+/**
+ * The anchor for a patch at [left],[top] (view pixels at [scale]) whose centre lies on one of [images]; null on
+ * none.
+ */
+internal fun anchorFor(
+    left: Int, top: Int, width: Int, height: Int, images: List<IntRect>, keys: List<String>, scale: Float = 1f,
+): Anchor? {
     val cx = left + width / 2; val cy = top + height / 2
     val i = images.indices.firstOrNull { images[it].contains(cx, cy) && keys.getOrNull(it).orEmpty().isNotEmpty() } ?: return null
-    return Anchor(keys[i], left - images[i].left, top - images[i].top)
+    return Anchor(keys[i], (left - images[i].left) / scale, (top - images[i].top) / scale)
 }
 
 /**
- * Page position of a patch anchored to an image, from where that image is [now]; null when it is not on screen.
- * Page coordinates are what the overlay draws in (scroll + view), so a patch stays on its art whatever moved it:
- * a reader re-centring its page in its own layer (bilibili, 11 px), or scroll anchoring when a lazy image above
- * the viewport finished loading (rawkuma: the art stayed put on screen while the scroll offset jumped 94 px).
+ * Position (CSS pixels) of a patch anchored to an image, from where that image is [now]; null when it is not on
+ * screen. The patch stays on its art whatever moved it: a reader re-centring its page in its own layer (bilibili,
+ * 11 px), scroll anchoring when a lazy image above the viewport finished loading (rawkuma: the art stayed put on
+ * screen while the scroll offset jumped 94 px), or a zoom.
  */
-internal fun anchoredPosition(anchor: Anchor, now: ImageLayout): Pair<Int, Int>? {
+internal fun anchoredPosition(anchor: Anchor, now: ImageLayout): Pair<Float, Float>? {
     val i = now.keys.indexOf(anchor.key).takeIf { it >= 0 } ?: return null
     val img = now.images[i]
-    return Pair(now.scrollX + img.left + anchor.dx, now.scrollY + img.top + anchor.dy)
+    return Pair((now.scrollX + img.left) / now.scale + anchor.dx, (now.scrollY + img.top) / now.scale + anchor.dy)
 }
 
-/** A rendered, decoded patch in page (content) pixels at the capture's zoom, so it stays glued to the art while scrolling. */
-class ScreenPatch(val image: ImageBitmap, val left: Int, val top: Int, val width: Int, val height: Int, val anchor: Anchor? = null) {
-    val right: Int get() = left + width
-    val bottom: Int get() = top + height
-    fun at(left: Int, top: Int) = ScreenPatch(image, left, top, width, height, anchor)
+/**
+ * A rendered, decoded patch placed in CSS pixels (page pixels / zoom), so it stays glued to the art while the page
+ * scrolls and while it is zoomed: [rectAt] is where it is drawn at a given zoom. A bitmap made at one zoom is only
+ * scaled at another.
+ */
+class ScreenPatch(val image: ImageBitmap, val left: Float, val top: Float, val width: Float, val height: Float, val anchor: Anchor? = null) {
+    val right: Float get() = left + width
+    val bottom: Float get() = top + height
+    fun at(left: Float, top: Float) = ScreenPatch(image, left, top, width, height, anchor)
+
+    /** Page (content) pixels at [scale], the WebView's zoom. */
+    fun rectAt(scale: Float) = IntRect(
+        (left * scale).roundToInt(), (top * scale).roundToInt(), (right * scale).roundToInt(), (bottom * scale).roundToInt(),
+    )
+
     fun overlapFraction(o: ScreenPatch): Float {
-        val w = (minOf(right, o.right) - maxOf(left, o.left)).coerceAtLeast(0)
-        val h = (minOf(bottom, o.bottom) - maxOf(top, o.top)).coerceAtLeast(0)
+        val w = (minOf(right, o.right) - maxOf(left, o.left)).coerceAtLeast(0f)
+        val h = (minOf(bottom, o.bottom) - maxOf(top, o.top)).coerceAtLeast(0f)
         val area = width * height
-        return if (area <= 0) 0f else (w * h).toFloat() / area
+        return if (area <= 0f) 0f else w * h / area
     }
 
     /** The same bubble seen from two viewports: mostly overlapping *and* about the same size. A big crop (a sound effect's) that merely covers a small neighbour is not its duplicate. */
     fun duplicates(o: ScreenPatch, minOverlap: Float): Boolean {
         if (overlapFraction(o) < minOverlap) return false
-        val a = (width * height).toFloat(); val b = (o.width * o.height).toFloat()
+        val a = width * height; val b = o.width * o.height
         return maxOf(a, b) <= minOf(a, b) * DUPLICATE_SIZE_RATIO
     }
 
@@ -128,7 +152,6 @@ data class ScreenSession(
     val error: String? = null,
     /** The typed failure behind [error], when an engine produced it: the bottom bar offers its fix (add key, switch). */
     val failure: EngineFailure? = null,
-    val scale: Float = 1f,
 )
 
 data class ReaderUiState(
@@ -154,6 +177,7 @@ class ReaderViewModel @Inject constructor(
     private val history: HistoryRepository,
     private val registry: EngineRegistry,
     pageTranslator: PageTranslator,
+    private val packs: LanguagePackStore,
     val warmup: ReaderWarmup,
 ) : ViewModel(), MangaWebViewClient.Listener {
 
@@ -168,15 +192,16 @@ class ReaderViewModel @Inject constructor(
         eval = { js -> evalInPage(js) },
         onTextChanged = { if (_screen.value.active) { clearScreenPatches(); translateViewport() } },
         saveTarget = { settingsRepo.setPageTranslateTarget(it) },
+        fetchPacks = { packs.downloadNow(it) },
     )
 
-    /** Runs [js] in the page; its JSON result, or null without a page. */
+    /** Runs [js] in the page; its JSON result, or null without a page or when the reply is over [MAX_BRIDGE_REPLY]. */
     private suspend fun evalInPage(js: String): String? = withContext(Dispatchers.Main) {
         val wv = web ?: return@withContext null
-        suspendCancellableCoroutine { cont ->
+        suspendCancellableCoroutine<String?> { cont ->
             try { wv.evaluateJavascript(js) { v -> if (cont.isActive) cont.resume(v) } }
             catch (e: Exception) { if (cont.isActive) cont.resume(null) }
-        }
+        }?.takeIf { it.length <= MAX_BRIDGE_REPLY }
     }
 
     val settings: StateFlow<Settings> = settingsRepo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
@@ -186,14 +211,21 @@ class ReaderViewModel @Inject constructor(
     /** Current WebView scroll offset, fed from the view; the overlay subtracts it to place page-space patches. */
     private val _scroll = MutableStateFlow(Pair(0, 0))
     val scroll: StateFlow<Pair<Int, Int>> = _scroll
+    /** The WebView's current zoom (`WebView.scale`); the overlay multiplies the patches' CSS pixels by it. */
+    private val _zoom = MutableStateFlow(1f)
+    val zoom: StateFlow<Float> = _zoom
 
     private var capture: (suspend () -> ViewportCapture?)? = null
     private var screenJob: Job? = null
     private var settleJob: Job? = null
     private var lastCaptureScroll: Pair<Int, Int>? = null
     private var lastViewport = Pair(0, 0)
-    /** Blocks the last capture could not read because its edge cut them, in page pixels: they are what a small scroll reveals. */
+    /**
+     * Blocks the last capture could not read because its edge cut them, in page pixels at [deferredScale]: they are
+     * what a small scroll reveals.
+     */
     private var deferred: List<IntRect> = emptyList()
+    private var deferredScale = 1f
 
     /** Start: translate what is on screen now, then keep doing so as the reader scrolls. */
     fun startScreen(capture: suspend () -> ViewportCapture?) {
@@ -212,17 +244,18 @@ class ReaderViewModel @Inject constructor(
         _screen.value = ScreenSession()
     }
 
-    /** From the WebView: every scroll step. Patches move with the page; a settled new viewport is translated. */
+    /**
+     * From the WebView: every scroll step, with its zoom. Patches move with the page and scale with a zoom (they are
+     * kept in CSS pixels); a settled new viewport is translated.
+     */
     fun onScroll(x: Int, y: Int, scale: Float) {
         _scroll.value = Pair(x, y)
-        val s = _screen.value
-        if (!s.active) return
-        if (s.patches.isNotEmpty() && abs(scale - s.scale) > 0.01f) {
-            // Zoom changed: page-space coordinates are no longer valid.
-            screenJob?.cancel()
-            _screen.update { it.copy(patches = emptyList(), working = false) }
-            lastCaptureScroll = null
-        }
+        val zoomed = abs(scale - _zoom.value) > ZOOM_EPSILON
+        _zoom.value = scale
+        if (!_screen.value.active) return
+        // A zoom keeps every patch on its art. Once it settles the viewport is captured again: the bubbles already
+        // patched are skipped, so only what zooming out brought into view (or made readable) is read.
+        if (zoomed) lastCaptureScroll = null
         settleJob?.cancel()
         settleJob = viewModelScope.launch {
             delay(SETTLE_MS)
@@ -233,10 +266,16 @@ class ReaderViewModel @Inject constructor(
             val (vw, vh) = lastViewport
             val moved = last == null || abs(y - last.second) >= vh * MIN_MOVE || abs(x - last.first) >= vw * MIN_MOVE
             // A block the last capture had to skip (cut by the edge) is worth a capture on its own once it is whole on screen.
-            val revealed = deferred.any { it.top >= y + EDGE_MARGIN && it.bottom <= y + vh - EDGE_MARGIN && it.left >= x && it.right <= x + vw }
+            val k = scale / deferredScale
+            val revealed = deferred.any {
+                it.top * k >= y + EDGE_MARGIN && it.bottom * k <= y + vh - EDGE_MARGIN && it.left * k >= x && it.right * k <= x + vw
+            }
             if (moved || revealed) translateViewport()
         }
     }
+
+    /** From the WebViewClient: the zoom changed (a pinch need not scroll, and scroll steps can lag the scale). */
+    override fun onScaleChanged(scale: Float) = onScroll(_scroll.value.first, _scroll.value.second, scale)
 
     private fun translateViewport() {
         val cfg = _ui.value.config ?: return
@@ -248,10 +287,13 @@ class ReaderViewModel @Inject constructor(
             lastCaptureScroll = Pair(c.scrollX, c.scrollY)
             lastViewport = Pair(c.bitmap.width, c.bitmap.height)
             lastThumb = Thumb.of(c.bitmap); thumbNow = c.thumbNow
-            _screen.update { it.copy(working = true, error = null, failure = null, scale = c.scale) }
+            // The zoom the pixels were taken at is the live one (a page that never scrolled has sent no onScroll yet).
+            _zoom.value = c.scale
+            _screen.update { it.copy(working = true, error = null, failure = null) }
             val w = c.bitmap.width; val h = c.bitmap.height
-            // Bubbles an earlier capture already patched are not read or translated again (the slow part of a scroll).
-            val done = _screen.value.patches.map { IntRect(it.left - c.scrollX, it.top - c.scrollY, it.right - c.scrollX, it.bottom - c.scrollY) }
+            // Bubbles an earlier capture already patched (at any zoom) are not read or translated again (the slow
+            // part of a scroll).
+            val done = _screen.value.patches.map { it.rectAt(c.scale).offset(-c.scrollX, -c.scrollY) }
             val roi = RegionOfInterest(include = c.images, exclude = c.overlays, done = done)
             val bypass = bypassCacheOnce; bypassCacheOnce = false
             try {
@@ -261,8 +303,9 @@ class ReaderViewModel @Inject constructor(
                     val vx = (patch.xPct / 100f * w).toInt(); val vy = (patch.yPct / 100f * h).toInt()
                     val pw = (patch.wPct / 100f * w).toInt().coerceAtLeast(1); val ph = (patch.hPct / 100f * h).toInt().coerceAtLeast(1)
                     val sp = ScreenPatch(
-                        img, left = c.scrollX + vx, top = c.scrollY + vy, width = pw, height = ph,
-                        anchor = anchorFor(vx, vy, pw, ph, c.images, c.imageKeys),
+                        img, left = (c.scrollX + vx) / c.scale, top = (c.scrollY + vy) / c.scale,
+                        width = pw / c.scale, height = ph / c.scale,
+                        anchor = anchorFor(vx, vy, pw, ph, c.images, c.imageKeys, c.scale),
                     )
                     _screen.update { s ->
                         // Overlapping viewports see the same bubble twice: a patch mostly covered by an existing one
@@ -271,7 +314,7 @@ class ReaderViewModel @Inject constructor(
                         val dup = s.patches.any { sp.duplicates(it, DUPLICATE_OVERLAP) }
                         android.util.Log.d("ScreenSession", "patch ${sp.left},${sp.top} ${sp.width}x${sp.height} scroll=${c.scrollX},${c.scrollY} dup=$dup")
                         if (dup) s
-                        else s.copy(patches = prune(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h))
+                        else s.copy(patches = prune(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale))
                     }
                 }
                 layoutNow = c.layoutNow ?: layoutNow
@@ -279,6 +322,7 @@ class ReaderViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { page ->
                         deferred = page.deferred.map { IntRect(c.scrollX + it.left, c.scrollY + it.top, c.scrollX + it.right, c.scrollY + it.bottom) }
+                        deferredScale = c.scale
                         _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
                         if (c.pending > 0) recaptureWhenLoaded(c)
                         else if (page.regionCount == 0 && c.imageKeys.any { it.startsWith("canvas#") }) retryEmptyCanvas(c)
@@ -336,10 +380,11 @@ class ReaderViewModel @Inject constructor(
             val now = thumbNow?.invoke() ?: return@launch
             val (vw, vh) = lastViewport
             val view = IntRect(at.first, at.second, at.first + vw, at.second + vh)
-            val patched = _screen.value.patches.map { IntRect(it.left - at.first, it.top - at.second, it.right - at.first, it.bottom - at.second) }
+            val zoom = _zoom.value
+            val patched = _screen.value.patches.map { it.rectAt(zoom).offset(-at.first, -at.second) }
             if (contentChanged(before, now, patched) != true) return@launch
             android.util.Log.d("ScreenSession", "page changed without a scroll: translating it again")
-            _screen.update { s -> s.copy(patches = s.patches.filterNot { IntRect(it.left, it.top, it.right, it.bottom).intersects(view) }) }
+            _screen.update { s -> s.copy(patches = s.patches.filterNot { it.rectAt(zoom).intersects(view) }) }
             emptyRetriedAt = null
             translateViewport()
         }
@@ -386,7 +431,9 @@ class ReaderViewModel @Inject constructor(
         _screen.update { s ->
             s.copy(patches = s.patches.map { p ->
                 val pos = p.anchor?.let { anchoredPosition(it, now) } ?: return@map p
-                if (pos.first == p.left && pos.second == p.top) p else { moved++; p.at(pos.first, pos.second) }
+                // Under a pixel at the current zoom is rounding in the image rects, not a move.
+                if (abs(pos.first - p.left) * now.scale < 1f && abs(pos.second - p.top) * now.scale < 1f) p
+                else { moved++; p.at(pos.first, pos.second) }
             })
         }
         if (moved > 0) android.util.Log.d("ScreenSession", "layout moved: $moved patches back on their images")
@@ -395,6 +442,7 @@ class ReaderViewModel @Inject constructor(
     /** The status line for a failed viewport: say what went wrong, not just which engine. */
     private fun screenError(f: EngineFailure?): String {
         val name = f?.engine?.uiName(context) ?: return context.getString(UiR.string.error_translation_failed)
+        if (f is EngineFailure.PackMissing) return context.getString(UiR.string.error_pack_missing, packNames(f.tags))
         val res = when (f) {
             is EngineFailure.Overloaded -> UiR.string.error_overloaded_scroll
             is EngineFailure.MissingKey -> UiR.string.error_needs_key
@@ -406,10 +454,13 @@ class ReaderViewModel @Inject constructor(
         return context.getString(res, name)
     }
 
+    /** ML Kit tags named in the UI's language ("Hindi, Arabic"). */
+    fun packNames(tags: List<String>): String = tags.joinToString(", ") { languageName(it) }
+
     /** Keep memory bounded: patches further than a few screens from the viewport are dropped (they are re-made on return). */
-    private fun prune(patches: List<ScreenPatch>, scrollY: Int, viewportH: Int): List<ScreenPatch> {
+    private fun prune(patches: List<ScreenPatch>, scrollY: Int, viewportH: Int, scale: Float): List<ScreenPatch> {
         val keep = viewportH * KEEP_SCREENS
-        return patches.filter { it.bottom >= scrollY - keep && it.top <= scrollY + viewportH + keep }
+        return patches.filter { val r = it.rectAt(scale); r.bottom >= scrollY - keep && r.top <= scrollY + viewportH + keep }
     }
 
     private var bypassCacheOnce = false
@@ -503,16 +554,26 @@ class ReaderViewModel @Inject constructor(
         if (_screen.value.active) { clearScreenPatches(); translateViewport() }
     }
 
-    fun attach(webView: WebView, initialUrl: String, siteId: Long? = null) {
+    /**
+     * [external]: [requestedUrl] came from another app's intent. Such a page is never translated on open, whatever
+     * translate-on-open says, or any installed app could spend the user's provider quota on a page of its choosing.
+     */
+    fun attach(webView: WebView, requestedUrl: String, siteId: Long? = null, external: Boolean = false) {
         pinnedSiteId = siteId
         web?.takeIf { it !== webView }?.destroy()
         web = webView
         client = MangaWebViewClient(context, warmup.bridgeScript, this).also { it.blockList = blockLists.list.value }
         webView.webViewClient = client
+        // The bridge goes in before any page script runs, so a page cannot define `__mt`/`__pt` first and have the
+        // app talk to its fake. The onPageStarted/onPageFinished injections stay as the fallback (a no-op once there).
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            runCatching { WebViewCompat.addDocumentStartJavaScript(webView, warmup.bridgeScript, setOf("*")) }
+        }
 
         // Kick off web navigation immediately — never block behind DataStore/Room reads
-        // The URL can come from another app's intent: only web pages, never javascript:, file: or content:.
-        if (isWebUrl(initialUrl)) {
+        // The URL can come from another app's intent: https pages only (http upgraded), never javascript:, file: or content:.
+        val initialUrl = WebUrl.https(requestedUrl).orEmpty()
+        if (initialUrl.isNotEmpty()) {
             _ui.update { it.copy(url = initialUrl) }
             webView.loadUrl(initialUrl)
         }
@@ -528,7 +589,7 @@ class ReaderViewModel @Inject constructor(
             _ui.update { it.copy(site = site, adBlockEnabled = adBlock, config = cfg) }
             prewarm(cfg)
             // Translate-on-open: the screen starts it (it owns the capture), once, when it sees this flag.
-            if (s.translateOnOpen || site?.autoTranslate == true) _autoStart.value = true
+            if (!external && (s.translateOnOpen || site?.autoTranslate == true)) _autoStart.value = true
         }
     }
 
@@ -538,17 +599,9 @@ class ReaderViewModel @Inject constructor(
         web?.loadUrl(target)
     }
 
-    private fun isWebUrl(url: String): Boolean {
-        val scheme = android.net.Uri.parse(url.trim()).scheme?.lowercase()
-        return scheme == "http" || scheme == "https"
-    }
-
-    private fun normalise(input: String): String {
-        val t = input.trim()
-        return if (t.startsWith("http://") || t.startsWith("https://")) t
-        else if (t.contains('.') && !t.contains(' ')) "https://$t"
-        else "https://duckduckgo.com/?q=" + android.net.Uri.encode(t)
-    }
+    /** A typed address as an https URL (http upgraded); anything that is not one becomes a search. */
+    private fun normalise(input: String): String =
+        WebUrl.https(input) ?: ("https://duckduckgo.com/?q=" + android.net.Uri.encode(input.trim()))
 
     fun goBack(): Boolean {
         val wv = web ?: return false
@@ -571,6 +624,21 @@ class ReaderViewModel @Inject constructor(
 
 
     /** Error-row action: keep reading with Google Translate (ML Kit, on-device, no key). Explicit user choice, never automatic. */
+    /**
+     * The bar's "Download" on [EngineFailure.PackMissing]: fetch the language packs the user just agreed to, then
+     * translate the screen again. A failed download says so in the bar; nothing switches engines.
+     */
+    fun downloadPacksAndRetry(tags: List<String>, capture: suspend () -> ViewportCapture?) {
+        viewModelScope.launch {
+            _screen.update { it.copy(working = true, failure = null, error = context.getString(UiR.string.pack_downloading)) }
+            if (packs.downloadNow(tags)) startScreen(capture)
+            else _screen.update {
+                it.copy(working = false, error = context.getString(UiR.string.pack_failed),
+                    failure = EngineFailure.Unavailable(EngineId.GOOGLE, context.getString(UiR.string.pack_failed)))
+            }
+        }
+    }
+
     fun switchToOnDevice(capture: suspend () -> ViewportCapture?) {
         val cfg = _ui.value.config?.copy(engineId = EngineId.GOOGLE) ?: return
         _ui.update { it.copy(config = cfg) }
@@ -636,7 +704,7 @@ class ReaderViewModel @Inject constructor(
         _ui.update { it.copy(title = title.orEmpty(), canGoBack = web?.canGoBack() == true, progress = 100) }
         viewModelScope.launch { history.record(url, title.orEmpty()) }
         pageText.onPageFinished()
-        if (_screen.value.active) onScroll(_scroll.value.first, _scroll.value.second, _screen.value.scale)
+        if (_screen.value.active) onScroll(_scroll.value.first, _scroll.value.second, _zoom.value)
     }
 
     override fun onBlockedCountChanged(count: Int) = _ui.update { it.copy(blockedCount = count) }
@@ -656,6 +724,8 @@ class ReaderViewModel @Inject constructor(
     private companion object {
         /** Quiet time after the last scroll event before the viewport counts as settled. */
         const val SETTLE_MS = 450L
+        /** Zoom steps smaller than this are the same zoom (WebView reports the scale as a float). */
+        const val ZOOM_EPSILON = 0.001f
         /** Fraction of the viewport the page must have moved before a settled viewport is captured again. */
         const val MIN_MOVE = 0.2f
         const val DUPLICATE_OVERLAP = 0.5f

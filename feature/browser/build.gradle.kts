@@ -11,7 +11,7 @@ android {
     namespace = "com.smnexstudio.panelglass.feature.browser"
     compileSdk = 35
     defaultConfig {
-        minSdk = 26
+        minSdk = 31
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

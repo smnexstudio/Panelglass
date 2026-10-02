@@ -34,8 +34,101 @@ Luckiest Guy
   Licensed under the Apache License, Version 2.0.
 
 -------------------------------------------------------------------------------
+Studio fonts (core/render/src/main/assets/fonts; files, versions and SHA-256s in
+catalogue.json, rebuilt by tools/fonts/build_catalogue.py). Each family keeps
+its own licence; the files are bundled, never sold on their own.
+
+Baloo 2
+  core/render/src/main/assets/fonts/baloo_2_extrabold/
+  Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Bangers
+  core/render/src/main/assets/fonts/bangers/
+  Copyright 2010 The Bangers Project Authors (https://github.com/googlefonts/bangers)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Black Han Sans
+  core/render/src/main/assets/fonts/black_han_sans/
+  Copyright 2015 The Black Han Sans Project Authors (https://github.com/zesstype/Black-Han-Sans)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Comic Neue
+  core/render/src/main/assets/fonts/comic_neue/
+  Copyright 2014 The Comic Neue Project Authors (https://github.com/crozynski/comicneue)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Dela Gothic One
+  core/render/src/main/assets/fonts/dela_gothic_one/
+  Copyright 2020 The Dela Gothic Project Authors (https://github.com/syakuzen/DelaGothic)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Gaegu
+  core/render/src/main/assets/fonts/gaegu/
+  Copyright 2018 The Gaegu Project Authors
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Itim
+  core/render/src/main/assets/fonts/itim/
+  Copyright (c) 2015, Cadson Demak (info@cadsondemak.com), Copyright (c) 2014, Pablo Impallari (www.impallari.com|impallari@gmail.com)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+jf open 粉圓 (Huninn)
+  core/render/src/main/assets/fonts/jf_open_huninn/
+  Copyright (c) 2010 MOTOYA CO.,LTD.
+  Copyright (c) 2011-2016 The Varela Round Project Authors (https://github.com/alefalefalef/Varela-Round-Hebrew/), with Reserved Font Names 'Varela' and 'Varela Round'.
+  Copyright (c) 2020-2024 The jf open huninn font is redistributed by justfont Co., LTD., with Reserved Font Names 'open huninn' and 'huninn'. under SIL Open Font License. The Hanzi part of this project was derived from Kosugi Maru under Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Kalam
+  core/render/src/main/assets/fonts/kalam/
+  Copyright (c) 2014, Indian Type Foundry (info@indiantypefoundry.com).
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Kanit
+  core/render/src/main/assets/fonts/kanit_black/
+  Copyright 2020 The Kanit Project Authors (https://github.com/cadsondemak/kanit)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Lalezar
+  core/render/src/main/assets/fonts/lalezar/
+  Copyright 2015 The Lalezar Project Authors (https://github.com/BornaIz/Lalezar)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Reem Kufi Fun
+  core/render/src/main/assets/fonts/reem_kufi_fun/
+  Copyright 2015-2022 The Reem Kufi Project Authors (https://github.com/aliftype/reem-kufi), with Reserved Font Name "Josefin Sans".
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Rubik Mono One
+  core/render/src/main/assets/fonts/rubik_mono_one/
+  Copyright 2015 The Rubik Project Authors (mail@hubertfischer.com)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Shantell Sans
+  core/render/src/main/assets/fonts/shantell_sans/
+  Copyright 2022 The Shantell Sans Project Authors (https://github.com/arrowtype/shantell-sans)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Smiley Sans (得意黑)
+  core/render/src/main/assets/fonts/smiley_sans/
+  Copyright (c) 2022--2024, atelierAnchor <https://atelier-anchor.com>,
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+ZCOOL KuaiLe
+  core/render/src/main/assets/fonts/zcool_kuaile/
+  Copyright 2018 The ZCOOL KuaiLe Project Authors (https://github.com/googlefonts/zcool-kuaile)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+Zen Antique
+  core/render/src/main/assets/fonts/zen_antique/
+  Copyright 2021 The Zen Antique Project Authors (https://github.com/googlefonts/zen-antique)
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt beside the files).
+
+-------------------------------------------------------------------------------
 Models downloaded at runtime (not included in this repository) keep their own
-licences: manga-ocr (Apache-2.0), Qwen2.5-1.5B-Instruct (Apache-2.0) and
+licences: manga-ocr (Apache-2.0), LaMa (Carve/LaMa-ONNX, Apache-2.0),
+Qwen2.5-1.5B-Instruct (Apache-2.0) and
 Gemma 4 E2B (Gemma Terms of Use). Libraries are listed in
 gradle/libs.versions.toml and keep their own licences.
 

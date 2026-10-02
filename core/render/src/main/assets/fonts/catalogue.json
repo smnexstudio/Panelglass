@@ -1,0 +1,443 @@
+{
+ "version": 1,
+ "fonts": [
+  {
+   "id": "comic_neue",
+   "name": "Comic Neue",
+   "role": "dialogue",
+   "tags": [
+    "comic",
+    "handwritten",
+    "rounded"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "comic_neue/ComicNeue-Regular.ttf",
+    "bold": "comic_neue/ComicNeue-Bold.ttf",
+    "italic": "comic_neue/ComicNeue-Italic.ttf",
+    "boldItalic": "comic_neue/ComicNeue-BoldItalic.ttf"
+   },
+   "sha256": {
+    "regular": "a0ee5a37c8b27c4db0700137d928598b1e23b0089e1546a8961909176b779360",
+    "bold": "3e7e5fccfd7e0788f317b43312151c1bd5cf058c9697a8d83eac3939050bd61e",
+    "italic": "e06bfd1552f5c9464c5665733ffd69239b0593885dbb9e059688a5900f78cf98",
+    "boldItalic": "5c312c2a2fa64eee82f3b87fcfab8f3b12a5e59b043124401d322eb323cfbf16"
+   },
+   "scripts": [
+    "latin"
+   ]
+  },
+  {
+   "id": "bangers",
+   "name": "Bangers",
+   "role": "sfx",
+   "tags": [
+    "comic",
+    "bold",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "bangers/Bangers-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "4160a7311de9342674cce9160cde9fcbb30f48190397d86ff1b70b455af65824"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese"
+   ]
+  },
+  {
+   "id": "shantell_sans",
+   "name": "Shantell Sans",
+   "role": "dialogue",
+   "tags": [
+    "comic",
+    "handwritten",
+    "marker"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "shantell_sans/ShantellSans-Variable.ttf"
+   },
+   "sha256": {
+    "regular": "d98a7913853f78d71aa0b86daf66b5eddb5a3266c07bfd51ef70632b88c41084"
+   },
+   "boldVariation": "'wght' 700",
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "cyrillic"
+   ]
+  },
+  {
+   "id": "shantell_sans_extrabold",
+   "name": "Shantell Sans ExtraBold",
+   "role": "sfx",
+   "tags": [
+    "comic",
+    "bold",
+    "marker"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "shantell_sans/ShantellSans-Variable.ttf"
+   },
+   "sha256": {
+    "regular": "d98a7913853f78d71aa0b86daf66b5eddb5a3266c07bfd51ef70632b88c41084"
+   },
+   "variation": "'wght' 800",
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "cyrillic"
+   ]
+  },
+  {
+   "id": "rubik_mono_one",
+   "name": "Rubik Mono One",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "wide",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "rubik_mono_one/RubikMonoOne-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "b22624b6a36e543e942106edfccd198c50b57b65b924bfe02a6f0a5699429e6b"
+   },
+   "scripts": [
+    "latin",
+    "cyrillic"
+   ]
+  },
+  {
+   "id": "zen_antique",
+   "name": "Zen Antique",
+   "role": "dialogue",
+   "tags": [
+    "manga",
+    "antique",
+    "print"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "zen_antique/ZenAntique-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "8c5cf7a136837ee705d06bbc133ea18ac06b7dd284f38aace91f5de36725c315"
+   },
+   "scripts": [
+    "latin",
+    "cyrillic",
+    "ja"
+   ]
+  },
+  {
+   "id": "dela_gothic_one",
+   "name": "Dela Gothic One",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "impact",
+    "manga"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "dela_gothic_one/DelaGothicOne-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "4ff87a0965f1b0505e5a2c58424bc6ad3cff27e56a82f21c2fc9d6b0e3857ee2"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "cyrillic",
+    "ja"
+   ]
+  },
+  {
+   "id": "gaegu",
+   "name": "Gaegu",
+   "role": "dialogue",
+   "tags": [
+    "handwritten",
+    "comic"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "gaegu/Gaegu-Regular.ttf",
+    "bold": "gaegu/Gaegu-Bold.ttf"
+   },
+   "sha256": {
+    "regular": "aa52c98336f7c62e2896fc8b12b56a75d5b476d88a2f104b0980f4f7ce0adfc3",
+    "bold": "cc38a4af9506a45254d1ce07c589ec473d9e5f0be319e5a77b17c214903f8c1c"
+   },
+   "scripts": [
+    "ko"
+   ]
+  },
+  {
+   "id": "black_han_sans",
+   "name": "Black Han Sans",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "black_han_sans/BlackHanSans-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "31960809284026681774a8e52dc19ebcad26cf69b0ad9d560f288296fbb52739"
+   },
+   "scripts": [
+    "ko"
+   ]
+  },
+  {
+   "id": "zcool_kuaile",
+   "name": "ZCOOL KuaiLe",
+   "role": "dialogue",
+   "tags": [
+    "handwritten",
+    "rounded",
+    "comic"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "zcool_kuaile/ZCOOLKuaiLe-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "812a6fc1fe54b6d73a419245c32dfeba8aa33104d5be90d1cf6af082007cb71d"
+   },
+   "scripts": [
+    "zh-hans"
+   ]
+  },
+  {
+   "id": "smiley_sans",
+   "name": "Smiley Sans",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "italic",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "smiley_sans/SmileySans-Oblique.ttf"
+   },
+   "sha256": {
+    "regular": "b447d7e781f08bc95c4c9f23ba71ed2b8ebb639aa7184485c71c4ca5afcd25c4"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "cyrillic",
+    "zh-hans"
+   ]
+  },
+  {
+   "id": "jf_open_huninn",
+   "name": "jf open 粉圓",
+   "role": "dialogue",
+   "tags": [
+    "rounded",
+    "handwritten"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "jf_open_huninn/jf-openhuninn-2.1.ttf"
+   },
+   "sha256": {
+    "regular": "9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "cyrillic",
+    "ja",
+    "zh-hant"
+   ]
+  },
+  {
+   "id": "itim",
+   "name": "Itim",
+   "role": "dialogue",
+   "tags": [
+    "handwritten",
+    "comic"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "itim/Itim-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "9164d7eb92ca717b53b07193e3445c96782222d24215151b8d2851b576b17645"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "thai"
+   ]
+  },
+  {
+   "id": "kanit_black",
+   "name": "Kanit Black",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "kanit_black/Kanit-Black.ttf"
+   },
+   "sha256": {
+    "regular": "5d290c2cc9926764bd782aa6abc47a8f55bd64641d0afb56e115ee522698ee7e"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "thai"
+   ]
+  },
+  {
+   "id": "reem_kufi_fun",
+   "name": "Reem Kufi Fun",
+   "role": "dialogue",
+   "tags": [
+    "rounded",
+    "comic"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "reem_kufi_fun/ReemKufiFun-Variable.ttf"
+   },
+   "sha256": {
+    "regular": "d1342cebd08afc04a51bf9a28e5ac6a8299c5716c47df9b7ea27f94653aaa40f"
+   },
+   "boldVariation": "'wght' 700",
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "arabic"
+   ]
+  },
+  {
+   "id": "lalezar",
+   "name": "Lalezar",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "impact"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "lalezar/Lalezar-Regular.ttf"
+   },
+   "sha256": {
+    "regular": "7b80807bc831f141de0f7dcf6816412bf0c548968d548c5156ca388733390ea9"
+   },
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "arabic"
+   ]
+  },
+  {
+   "id": "kalam",
+   "name": "Kalam",
+   "role": "dialogue",
+   "tags": [
+    "handwritten",
+    "comic"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "kalam/Kalam-Regular.ttf",
+    "bold": "kalam/Kalam-Bold.ttf"
+   },
+   "sha256": {
+    "regular": "57cecb63d4608019371954274ae1d8c397764debd5b19d4a33c1efa4dc923c0b",
+    "bold": "2f6576601db015d4f6c08678120277fc8510b98c06e932ce7a6a9cbff4cbdded"
+   },
+   "scripts": [
+    "latin",
+    "devanagari"
+   ]
+  },
+  {
+   "id": "baloo_2_extrabold",
+   "name": "Baloo 2 ExtraBold",
+   "role": "sfx",
+   "tags": [
+    "bold",
+    "rounded"
+   ],
+   "licence": "OFL-1.1",
+   "files": {
+    "regular": "baloo_2_extrabold/Baloo2-Variable.ttf"
+   },
+   "sha256": {
+    "regular": "d47a6852548059b1db49a1319d06d499d546c3fa2237cf9eee9c43c8abb025c2"
+   },
+   "variation": "'wght' 800",
+   "scripts": [
+    "latin",
+    "vietnamese",
+    "devanagari"
+   ]
+  },
+  {
+   "id": "coming_soon",
+   "name": "Coming Soon",
+   "role": "dialogue",
+   "tags": [
+    "comic",
+    "handwritten"
+   ],
+   "licence": "Apache-2.0",
+   "res": "coming_soon",
+   "scripts": [
+    "latin"
+   ]
+  },
+  {
+   "id": "plus_jakarta_sans",
+   "name": "Plus Jakarta Sans",
+   "role": "caption",
+   "tags": [
+    "clean",
+    "sans"
+   ],
+   "licence": "OFL-1.1",
+   "res": "plus_jakarta_sans",
+   "scripts": [
+    "latin",
+    "vietnamese"
+   ]
+  },
+  {
+   "id": "luckiest_guy",
+   "name": "Luckiest Guy",
+   "role": "sfx",
+   "tags": [
+    "comic",
+    "bold",
+    "impact"
+   ],
+   "licence": "Apache-2.0",
+   "res": "luckiest_guy",
+   "scripts": [
+    "latin"
+   ]
+  }
+ ]
+}

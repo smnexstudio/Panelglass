@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.smnexstudio.panelglass"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 35
         // Release builds pass the version from the git tag (-PversionName=1.2.3); versionCode is derived from it so
         // every release installs over the previous one. Local builds keep the defaults.
@@ -59,6 +59,8 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    // Studio fonts are mapped straight from the APK by Font.Builder(assets, …), so they are stored uncompressed.
+    androidResources { noCompress += listOf("ttf", "otf") }
     testOptions {
         unitTests.all { it.useJUnitPlatform() }
     }
@@ -75,6 +77,7 @@ dependencies {
     implementation(project(":feature:browser"))
     implementation(project(":feature:library"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:studio"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

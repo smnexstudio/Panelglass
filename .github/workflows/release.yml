@@ -88,7 +88,7 @@ jobs:
           fi
           gh release create "$GITHUB_REF_NAME" \
             "dist/panelglass-$VERSION.apk" "dist/panelglass-$VERSION.apk.sha256" \
-            --title "Panelglass $VERSION" "${NOTES[@]}" --verify-tag
+            --title "Panelglass – Manga Translator for Android $GITHUB_REF_NAME" "${NOTES[@]}" --verify-tag
 
       - name: Remove the signing key
         if: always()

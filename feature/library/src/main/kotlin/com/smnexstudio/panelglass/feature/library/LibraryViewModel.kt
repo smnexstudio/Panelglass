@@ -9,6 +9,7 @@ import com.smnexstudio.panelglass.core.model.HistoryEntry
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.Site
+import com.smnexstudio.panelglass.core.model.WebUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +28,8 @@ class LibraryViewModel @Inject constructor(
     val recent: StateFlow<List<HistoryEntry>> = history.recent.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun add(name: String, url: String, sourceLang: Lang? = null, targetLang: Lang? = null) = viewModelScope.launch {
-        val normalised = if (url.startsWith("http")) url.trim() else "https://" + url.trim()
+        // https only: an http address is saved as its https upgrade.
+        val normalised = WebUrl.https(url) ?: return@launch
         val display = name.trim().ifEmpty { Site.hostOf(normalised).substringBefore('.').replaceFirstChar { it.uppercase() } }
         sites.add(Site(name = display, url = normalised, sourceLang = sourceLang, targetLang = targetLang, adBlockEnabled = settings.value.adBlockDefault))
     }

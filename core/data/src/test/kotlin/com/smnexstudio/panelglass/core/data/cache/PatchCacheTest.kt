@@ -37,6 +37,8 @@ class PatchCacheTest {
         assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 2))
         assertTrue(a != cache.key("h", Lang.JA, Lang.ES, EngineId.GEMINI, 1))
         assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GOOGLE, 1))
+        assertTrue(a != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:bangers"), "another font draws the page again")
+        assertTrue(cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:bangers") != cache.key("h", Lang.JA, Lang.EN, EngineId.GEMINI, 1, "cat:kalam"))
         assertNull(cache.get(cache.key("h", Lang.KO, Lang.EN, EngineId.GEMINI, 1)))
     }
 
@@ -63,5 +65,20 @@ class PatchCacheTest {
         cache.put(key, page(1, 8))
         dir.listFiles()!!.first { it.name.endsWith(".pg") }.writeBytes(byteArrayOf(1, 2, 3))
         assertNull(cache.get(key))
+    }
+
+    /** A damaged length field must not size an allocation: the record is dropped and its file deleted. */
+    @Test
+    fun oversizedLengthIsRefusedAndDeleted() = runTest {
+        val cache = PatchCache(dir)
+        val key = cache.key("y", Lang.JA, Lang.EN, EngineId.GOOGLE, 1)
+        cache.put(key, page(1, 8))
+        val file = dir.listFiles()!!.first { it.name.endsWith(".pg") }
+        val bytes = file.readBytes()
+        // Header: magic, w, h, regionCount, n (5 ints); patch: 4 floats, then the length int at offset 36.
+        java.nio.ByteBuffer.wrap(bytes).putInt(36, Int.MAX_VALUE)
+        file.writeBytes(bytes)
+        assertNull(cache.get(key))
+        assertTrue(!file.exists())
     }
 }

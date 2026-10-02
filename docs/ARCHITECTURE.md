@@ -20,8 +20,8 @@ model. The translation flow itself is in [FLOW.md](FLOW.md); detection and OCR i
 1. **Translate what the user sees.** The reader never downloads page images. It snapshots the WebView's viewport,
    so it works on any site, whatever the site does with its images (canvas, blob URLs, scrambled tiles).
 2. **One pipeline, one entry point.** `TranslationPipeline.translate` is the only way pixels become translations.
-3. **Patches, not pages.** The output is a small WEBP per text region, positioned in page coordinates and drawn
-   natively over the WebView. The page's DOM is never modified by the translator.
+3. **Patches, not pages.** The output is a small WEBP per text region, positioned in the page's CSS pixels and drawn
+   natively over the WebView, so it scrolls and zooms with the art. The page's DOM is never modified by the translator.
 4. **The user's engine is the engine.** A failing engine surfaces a typed failure; it is never silently replaced by
    another provider.
 5. **Nothing secret or personal in logs or in the repo.** API keys live only in an Android-Keystore-backed store.
@@ -109,7 +109,9 @@ flowchart LR
   (`ContentChange`), a rotation. It keeps each patch anchored to its page image so it follows layout shifts.
 - **`mt.js`** is injected into every page. It reports where the page's images are (with a key per image), how many
   are still loading, and which controls float over them (`viewportMap()`); it also hides full-screen interstitials
-  and disables `window.open`.
+  and disables `window.open`. `mt.js` and `pt.js` go in at document start (`WebViewCompat.addDocumentStartJavaScript`),
+  before any page script, and `__mt`/`__pt` are read-only frozen objects, so a page cannot stand in for the bridge.
+  Replies over `MAX_BRIDGE_REPLY` characters are dropped unparsed.
 - **`MangaWebViewClient`** blocks requests to hosts on the merged block lists and enforces the navigation policy
   (no cross-site redirects without a tap, no ad hosts as the main frame, only `mailto:`/`tel:`/`sms:` leave the
   app). **`NewWindows`** decides every new-window request: only a tapped same-site link opens, in the reader.
@@ -154,10 +156,12 @@ the picker and refused by the registry.
 | API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
 | Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine and `PIPELINE_VERSION` |
 | Detector model | `assets/` → `filesDir/models/` | Bundled, 11 MB |
-| LLMs, manga-ocr | App-specific external storage (internal on Android 8–9) | Downloaded by DownloadManager, SHA-256 verified |
+| LLMs, manga-ocr | App-specific external storage | Downloaded by DownloadManager, SHA-256 verified |
 | Block lists | `filesDir/blocklist/<source>.txt` | Fetched at runtime, refreshed daily |
 
-`android:allowBackup="false"`: nothing is backed up, and everything is removed on uninstall.
+`android:allowBackup="false"` plus `data_extraction_rules.xml` (which excludes every domain from cloud backup and from
+device-to-device transfer, which Android 12+ would otherwise still do): nothing is backed up or copied to a new
+phone, and everything is removed on uninstall.
 
 ## Concurrency and memory
 
@@ -181,8 +185,8 @@ the picker and refused by the registry.
 - **WebView.** No file or content access; no JavaScript interface is exposed to pages; new windows are decided
   natively; blocked hosts never become the main frame.
 - **Downloads.** Every model file is pinned to a Hugging Face commit and verified against its SHA-256 before it is
-  used; mismatches are deleted. On Android 8–9, where app-specific external storage is writable by other apps, files
-  are verified while being copied into internal storage.
+  used; mismatches are deleted. App-specific external storage is private to the app on every supported version
+  (Android 12+).
 
 ## Testing
 

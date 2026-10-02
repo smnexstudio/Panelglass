@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
+import com.smnexstudio.panelglass.core.data.repo.MangaStorage
+import com.smnexstudio.panelglass.core.data.repo.StudioRepository
+import com.smnexstudio.panelglass.core.model.Manga
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.EngineResolution
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
 import com.smnexstudio.panelglass.core.model.ModelState
-import com.smnexstudio.panelglass.core.model.BubbleFont
 import android.content.Context
 import com.smnexstudio.panelglass.core.engine.local.DeviceMemory
 import com.smnexstudio.panelglass.core.engine.local.LocalModel
@@ -16,6 +18,7 @@ import com.smnexstudio.panelglass.core.engine.local.ModelStores
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ocr.MangaOcrStore
+import com.smnexstudio.panelglass.core.ocr.LamaStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -87,6 +90,8 @@ class SettingsViewModel @Inject constructor(
     private val modelStores: ModelStores,
     private val packStore: LanguagePackStore,
     private val mangaOcrStore: MangaOcrStore,
+    private val lamaStore: LamaStore,
+    private val studio: StudioRepository,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
     val keys: StateFlow<Set<EngineId>> = registry.observeKeys().stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
@@ -96,6 +101,9 @@ class SettingsViewModel @Inject constructor(
     /** Engines of on-device models this phone cannot hold. */
     val hiddenEngines: Set<EngineId> = LocalModel.entries.filter { it !in localModels }.map { it.engineId }.toSet()
     val mangaOcrState: StateFlow<ModelState> = mangaOcrStore.state
+    /** LaMa, the Studio's cleanup model; offered only on phones with the memory for it. */
+    val lamaState: StateFlow<ModelState> = lamaStore.state
+    val lamaFits: Boolean get() = lamaStore.fitsThisPhone
     val packState: StateFlow<PackState> = packStore.state
     val engines: List<EngineId> get() = EngineId.entries.filter { it.offered && it !in hiddenEngines }
 
@@ -128,9 +136,22 @@ class SettingsViewModel @Inject constructor(
     fun setQwenBackend(v: QwenBackend) = viewModelScope.launch { repo.setQwenBackend(v) }
     /** What Automatic picks on this phone (by its RAM), shown next to the choice. */
     val qwenAutoOnCpu: Boolean = DeviceMemory.qwenOnCpu(context, QwenBackend.AUTO)
-    fun setFont(v: BubbleFont) = viewModelScope.launch { repo.setBubbleFont(v) }
+    /** The reader's font, a Studio font id; null for Auto (the target language's comic font). */
+    fun setReaderFont(id: String?) = viewModelScope.launch { repo.setReaderFont(id) }
+    /** The Studio's favourite fonts, shared with the reader's font picker. */
+    val fontFavourites: StateFlow<List<String>> = repo.fontFavourites.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    fun toggleFontFavourite(id: String) = viewModelScope.launch { repo.toggleFontFavourite(id) }
     fun setTheme(t: com.smnexstudio.panelglass.core.model.AppTheme) = viewModelScope.launch { repo.setAppTheme(t) }
     fun clearHistory() = viewModelScope.launch { history.clear() }
+
+    /** What each Studio manga takes on the phone; null until measured (it walks the page files). */
+    val studioStorage = MutableStateFlow<List<MangaStorage>?>(null)
+    fun loadStudioStorage() = viewModelScope.launch { studioStorage.value = studio.storage() }
+    /** Deletes the manga with its chapters, pages and their files; exported files are not touched. */
+    fun deleteStudioManga(m: Manga) = viewModelScope.launch {
+        studio.deleteManga(m)
+        studioStorage.value = studio.storage()
+    }
 
     // ---- translation --------------------------------------------------------------------------
     fun setSrc(l: Lang) = viewModelScope.launch { repo.setDefaultSourceLang(l) }
@@ -198,10 +219,24 @@ class SettingsViewModel @Inject constructor(
     fun downloadMangaOcr() = mangaOcrStore.download()
     fun cancelMangaOcr() = mangaOcrStore.cancel()
     fun deleteMangaOcr() = mangaOcrStore.delete()
+    fun downloadLama() = lamaStore.download()
+    fun cancelLama() = lamaStore.cancel()
+    fun deleteLama() = lamaStore.delete()
 
-    fun downloadPacks() = packStore.downloadAll()
-    fun cancelPacks() = packStore.cancel()
-    fun deletePacks() = packStore.deleteAll()
+    fun downloadPack(tag: String) = packStore.download(listOf(tag))
+    fun deletePack(tag: String) = packStore.delete(tag)
+
+    /** The Try box's "Download": fetch the missing packs, then run the same text again. */
+    fun downloadPacksAndTry(tags: List<String>) {
+        tryJob?.cancel()
+        tryJob = viewModelScope.launch {
+            _tryState.update { it.copy(running = true, failure = null) }
+            val ok = packStore.downloadNow(tags)
+            _tryState.update { it.copy(running = false) }
+            if (ok) tryTranslate()
+            else _tryState.update { it.copy(failure = EngineFailure.Unavailable(EngineId.GOOGLE, context.getString(UiR.string.pack_failed))) }
+        }
+    }
 
     fun setTryInput(s: String) = _tryState.update { it.copy(input = s) }
 
