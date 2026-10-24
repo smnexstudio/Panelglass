@@ -109,6 +109,9 @@
     <string name="key_hint">คีย์ API</string>
     <string name="key_hint_saved">คีย์ API (บันทึกแล้ว · เว้นว่างไว้เพื่อใช้คีย์เดิม)</string>
     <string name="key_model">โมเดล</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">กำลังโหลดโมเดล…</string>
     <plurals name="key_models_count">
         <item quantity="other">คีย์นี้ใช้ได้กับ %d โมเดล</item>

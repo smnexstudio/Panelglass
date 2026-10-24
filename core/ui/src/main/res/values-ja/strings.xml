@@ -109,6 +109,9 @@
     <string name="key_hint">API キー</string>
     <string name="key_hint_saved">API キー（保存済み · 空欄のままで維持）</string>
     <string name="key_model">モデル</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">モデルを読み込み中…</string>
     <plurals name="key_models_count">
         <item quantity="other">このキーで使えるモデル: %d 件</item>

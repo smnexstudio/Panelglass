@@ -130,7 +130,7 @@ val EngineId.shortName: String
     get() = when (this) {
         EngineId.GOOGLE -> "G"; EngineId.GEMINI -> "Ge"; EngineId.CLAUDE -> "C"
         EngineId.OPENAI -> "O"; EngineId.OPENROUTER -> "R"; EngineId.DEEPL -> "D"; EngineId.PAPAGO -> "P"; EngineId.DEEPSEEK -> "S"
-        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"
+        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"; EngineId.CUSTOM -> "AI"
     }
 
 /** Provider-tinted tile backgrounds. */
@@ -147,4 +147,5 @@ val EngineId.tileTint: Color
         EngineId.DEEPL -> Color(0xFFD5EEF7)
         EngineId.PAPAGO -> Color(0xFFDFF5DC)
         EngineId.DEEPSEEK -> Color(0xFFE4E9FF)
+        EngineId.CUSTOM -> Color(0xFFE8E4F8)
     }

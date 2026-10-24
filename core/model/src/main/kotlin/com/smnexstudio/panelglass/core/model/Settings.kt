@@ -39,6 +39,8 @@ data class Settings(
     val autoUpdateCheck: Boolean = true,
     /** A Studio run on an on-device model waits for the charger (Settings › Models); the reader is not affected. */
     val studioOnlyWhileCharging: Boolean = false,
+    /** Server address for Custom AI; not a secret. */
+    val customBaseUrl: String = "",
 ) {
     /**
      * The model to call for [id]: the user's choice, else the provider's default; blank when neither exists. A

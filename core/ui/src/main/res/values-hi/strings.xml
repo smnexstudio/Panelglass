@@ -111,6 +111,9 @@
     <string name="key_hint">API कुंजी</string>
     <string name="key_hint_saved">API कुंजी (सेव है · बनाए रखने के लिए खाली छोड़ें)</string>
     <string name="key_model">मॉडल</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">मॉडल लोड हो रहे हैं…</string>
     <plurals name="key_models_count">
         <item quantity="one">इस कुंजी के लिए %d मॉडल</item>

@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.data.db.PanelglassDb
 import com.smnexstudio.panelglass.core.data.repo.SfxCacheRepository
 import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
+import com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
@@ -65,7 +66,8 @@ class BatchingTranslatorTest {
     private val qwen = locals[LocalModel.QWEN15]
     private val gemini = GeminiEngine(support, keys, settings)
     private val registry = EngineRegistry(
-        locals, gemini, ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
+        locals, gemini, CustomOpenAiEngine(support, keys, settings),
+        ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
         DeepLEngine(support, keys), PapagoEngine(support, keys), DeepSeekEngine(support, keys),
         GoogleTranslateEngine(), OpenRouterEngine(support, keys, settings), keys, settings,
     )
