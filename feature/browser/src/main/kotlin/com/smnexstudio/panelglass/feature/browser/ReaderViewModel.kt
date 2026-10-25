@@ -315,61 +315,88 @@ class ReaderViewModel @Inject constructor(
         val cfg = _ui.value.config ?: return
         val cap = capture ?: return
         screenJob?.cancel()
-        screenJob = viewModelScope.launch {
-            val c = cap()
-            if (c == null) { _screen.update { it.copy(working = false, error = context.getString(UiR.string.reader_capture_failed)) }; return@launch }
-            lastCaptureScroll = Pair(c.scrollX, c.scrollY)
-            lastViewport = Pair(c.bitmap.width, c.bitmap.height)
-            lastThumb = Thumb.of(c.bitmap); thumbNow = c.thumbNow
-            // The zoom the pixels were taken at is the live one (a page that never scrolled has sent no onScroll yet).
-            _zoom.value = c.scale
-            _screen.update { it.copy(working = true, error = null, failure = null) }
-            val w = c.bitmap.width; val h = c.bitmap.height
-            // Bubbles an earlier capture already patched (at any zoom) are not read or translated again (the slow
-            // part of a scroll).
-            val done = _screen.value.patches.map { it.rectAt(c.scale).offset(-c.scrollX, -c.scrollY) }
-            // The app's own status disc is in the snapshot too: never read it as page text.
-            val disc = StatusDiscSpec.rectIn(w, context.resources.displayMetrics.density)
-            val roi = RegionOfInterest(include = c.images, exclude = c.overlays + disc, done = done)
-            val bypass = bypassCacheOnce; bypassCacheOnce = false
-            try {
-                val result = pipeline.translate(ImageSource.Native(c.bitmap), cfg, imageId = "screen", roi = roi, bypassCache = bypass) { patch ->
-                    // onPatch runs on the pipeline's worker: decode here, never in composition.
-                    val img = decodePatch(patch) ?: return@translate
-                    val vx = (patch.xPct / 100f * w).toInt(); val vy = (patch.yPct / 100f * h).toInt()
-                    val pw = (patch.wPct / 100f * w).toInt().coerceAtLeast(1); val ph = (patch.hPct / 100f * h).toInt().coerceAtLeast(1)
-                    val sp = ScreenPatch(
-                        img, left = (c.scrollX + vx) / c.scale, top = (c.scrollY + vy) / c.scale,
-                        width = pw / c.scale, height = ph / c.scale,
-                        anchor = anchorFor(vx, vy, pw, ph, c.images, c.imageKeys, c.scale),
-                    )
-                    _screen.update { s ->
-                        // Overlapping viewports see the same bubble twice: a patch mostly covered by an existing one
-                        // is a duplicate; conversely a fragment (a bubble cut by the last viewport edge) mostly
-                        // covered by the new, fuller patch gives way to it.
-                        val dup = s.patches.any { sp.duplicates(it, DUPLICATE_OVERLAP) }
-                        android.util.Log.d("ScreenSession", "patch ${sp.left},${sp.top} ${sp.width}x${sp.height} scroll=${c.scrollX},${c.scrollY} dup=$dup")
-                        if (dup) s
-                        else s.copy(patches = prune(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale))
-                    }
+        screenJob = viewModelScope.launch { translateViewportOnce(followUps = true) }
+    }
+
+    /**
+     * What one viewport translation did: whether it captured at all, the failure it hit, and the follow-up the
+     * caller may want (images that were still downloading).
+     */
+    private class StepOutcome(
+        val captured: Boolean,
+        val failure: EngineFailure? = null,
+        val pending: Int = 0,
+        val pendingNow: (suspend () -> Int)? = null,
+    )
+
+    /**
+     * One viewport: capture it, run the pipeline, add the patches. [followUps] starts the two follow-up captures
+     * (a page that was still loading, a canvas page with no text); a whole-page scan owns its own capturing and
+     * does not want them.
+     */
+    private suspend fun translateViewportOnce(followUps: Boolean): StepOutcome {
+        val cfg = _ui.value.config ?: return StepOutcome(false)
+        val cap = capture ?: return StepOutcome(false)
+        val c = cap()
+        if (c == null) {
+            _screen.update { it.copy(working = false, error = context.getString(UiR.string.reader_capture_failed)) }
+            return StepOutcome(false)
+        }
+        lastCaptureScroll = Pair(c.scrollX, c.scrollY)
+        lastViewport = Pair(c.bitmap.width, c.bitmap.height)
+        lastThumb = Thumb.of(c.bitmap); thumbNow = c.thumbNow
+        // The zoom the pixels were taken at is the live one (a page that never scrolled has sent no onScroll yet).
+        _zoom.value = c.scale
+        _screen.update { it.copy(working = true, error = null, failure = null) }
+        val w = c.bitmap.width; val h = c.bitmap.height
+        // Bubbles an earlier capture already patched (at any zoom) are not read or translated again (the slow
+        // part of a scroll).
+        val done = _screen.value.patches.map { it.rectAt(c.scale).offset(-c.scrollX, -c.scrollY) }
+        val disc = StatusDiscSpec.rectIn(w, context.resources.displayMetrics.density)
+        val roi = RegionOfInterest(include = c.images, exclude = c.overlays + disc, done = done)
+        val bypass = bypassCacheOnce; bypassCacheOnce = false
+        var failure: EngineFailure? = null
+        try {
+            val result = pipeline.translate(ImageSource.Native(c.bitmap), cfg, imageId = "screen", roi = roi, bypassCache = bypass) { patch ->
+                // onPatch runs on the pipeline's worker: decode here, never in composition.
+                val img = decodePatch(patch) ?: return@translate
+                val vx = (patch.xPct / 100f * w).toInt(); val vy = (patch.yPct / 100f * h).toInt()
+                val pw = (patch.wPct / 100f * w).toInt().coerceAtLeast(1); val ph = (patch.hPct / 100f * h).toInt().coerceAtLeast(1)
+                val sp = ScreenPatch(
+                    img, left = (c.scrollX + vx) / c.scale, top = (c.scrollY + vy) / c.scale,
+                    width = pw / c.scale, height = ph / c.scale,
+                    anchor = anchorFor(vx, vy, pw, ph, c.images, c.imageKeys, c.scale),
+                )
+                _screen.update { s ->
+                    // Overlapping viewports see the same bubble twice: a patch mostly covered by an existing one
+                    // is a duplicate; conversely a fragment (a bubble cut by the last viewport edge) mostly
+                    // covered by the new, fuller patch gives way to it.
+                    val dup = s.patches.any { sp.duplicates(it, DUPLICATE_OVERLAP) }
+                    android.util.Log.d("ScreenSession", "patch ${sp.left},${sp.top} ${sp.width}x${sp.height} scroll=${c.scrollX},${c.scrollY} dup=$dup")
+                    if (dup) s
+                    else s.copy(patches = prune(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale))
                 }
-                layoutNow = c.layoutNow ?: layoutNow
-                reanchor()
-                result.fold(
-                    onSuccess = { page ->
-                        deferred = page.deferred.map { IntRect(c.scrollX + it.left, c.scrollY + it.top, c.scrollX + it.right, c.scrollY + it.bottom) }
-                        deferredScale = c.scale
-                        _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
+            }
+            layoutNow = c.layoutNow ?: layoutNow
+            reanchor()
+            result.fold(
+                onSuccess = { page ->
+                    deferred = page.deferred.map { IntRect(c.scrollX + it.left, c.scrollY + it.top, c.scrollX + it.right, c.scrollY + it.bottom) }
+                    deferredScale = c.scale
+                    _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
+                    if (followUps) {
                         if (c.pending > 0) recaptureWhenLoaded(c)
                         else if (page.regionCount == 0 && c.imageKeys.any { it.startsWith("canvas#") }) retryEmptyCanvas(c)
-                    },
-                    onFailure = { e ->
-                        val f = (e as? EngineException)?.failure
-                        _screen.update { it.copy(working = false, error = screenError(f), failure = f) }
-                    },
-                )
-            } finally { c.bitmap.recycle() }
-        }
+                    }
+                },
+                onFailure = { e ->
+                    val f = (e as? EngineException)?.failure
+                    failure = f
+                    _screen.update { it.copy(working = false, error = screenError(f), failure = f) }
+                },
+            )
+        } finally { c.bitmap.recycle() }
+        return StepOutcome(captured = true, failure = failure, pending = c.pending, pendingNow = c.pendingNow)
     }
 
     private var loadedJob: Job? = null
