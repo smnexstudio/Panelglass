@@ -471,7 +471,7 @@ class ReaderViewModel @Inject constructor(
      * a touch on the page does not, because the user took over).
      */
     fun cancelScan(restore: Boolean = true) {
-        if (!scanning && scanJob == null) return
+        if (!scanning && scanJob == null) { scanRestore = false; return }
         scanRestore = restore
         scanJob?.cancel()
         scanJob = null
@@ -489,7 +489,6 @@ class ReaderViewModel @Inject constructor(
         withContext(Dispatchers.Main) { web?.keepScreenOn = true }
         scanStart = withContext(Dispatchers.Main) { web?.let { Pair(it.scrollX, it.scrollY) } ?: Pair(0, 0) }
         var gaps = 0
-        var restore = false
         try {
             val first = measurePage()
             if (first == null) {
@@ -544,13 +543,14 @@ class ReaderViewModel @Inject constructor(
             if (gaps > 0) {
                 _screen.update { it.copy(error = context.getString(UiR.string.reader_scan_gaps, gaps)) }
             }
-            restore = true
         } finally {
             scanning = false
             withContext(NonCancellable) {
                 withContext(Dispatchers.Main) { web?.keepScreenOn = false }
                 _screen.update { it.copy(scan = null, working = false) }
-                if (restore && scanRestore) scrollPageTo(scanStart.second)
+                // The page goes back to where the scan started: on a normal end, and on a cancel by the button.
+                // A cancel by a touch keeps the place the user took over at (scanRestore is false then).
+                if (scanRestore) scrollPageTo(scanStart.second)
             }
         }
     }
