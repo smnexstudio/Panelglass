@@ -12,6 +12,7 @@ components are introduced in [ARCHITECTURE.md](ARCHITECTURE.md); how text is fou
 - [Translation](#translation)
 - [Erasing and rendering](#erasing-and-rendering)
 - [Showing patches while scrolling](#showing-patches-while-scrolling)
+- [Whole-page scan](#whole-page-scan)
 - [Failures](#failures)
 - [Diagnostics](#diagnostics)
 - [Translate page (the page's own text)](#translate-page-the-pages-own-text)
@@ -235,6 +236,33 @@ Key points:
   resized the WebView, and a reader that centres its page then moved the art under patches already made.
 - **Memory bound:** patches more than three screens above or below the viewport are pruned and re-made on return.
 - A new page load clears the patches; the next settled viewport translates again.
+
+## Whole-page scan
+
+The three-dot menu's **Translate whole page**: the app scrolls the page by itself, from the top to the bottom, and
+translates every stop with the same machinery as the continuous mode (capture, detect, OCR, translate, patches).
+
+- **The plan is pure logic** (`PageScanPlan`, `PageScan.kt`): one step covers 70% of the viewport, so 30% overlaps and
+  a bubble cut by one screenshot's edge is whole in the next. The last stop is always the bottom of the page. At most
+  120 steps.
+- **The loop** (`ReaderViewModel.runScan`): scroll, settle 700 ms, measure, capture and translate, next. One capture
+  at a time. The page is measured in JavaScript every step, because a lazy page grows; at the bottom it waits 1.5 s and
+  measures again, continuing only if the page grew.
+- **What is kept:** the patches stay (in memory only) while the user stays on the page, so scrolling back shows them
+  at once. They are dropped when the page changes or the reader is closed. While the page is held the usual pruning is
+  replaced by a **memory budget** of 96 MB of decoded bitmap bytes: above it, the patches farthest from the viewport go
+  first; those areas are re-made by the continuous mode when the user scrolls there (the pipeline caches them, so it
+  is cheap).
+- **Cancel:** a **Cancel scan** action in the bottom bar keeps the session and all the patches and scrolls the page back
+  to where the scan started. A touch on the page cancels the scan *without* scrolling back (the user took over).
+  Leaving the reader (Settings) cancels it too.
+- **Failures per step:** a transient failure (`Overloaded`, `Network`, `Unavailable`) is retried twice, 2 s then 4 s; a
+  step that still fails is skipped and counted, and the count is reported at the end. `MissingKey`, `QuotaExceeded` and
+  `PackMissing` stop the scan at once and leave the failure in the bottom bar, which already offers the fix. A capture
+  that does not come back (the app is not on screen; PixelCopy needs it) is retried twice at 1 s, then the scan stops.
+- **Only pages that scroll as a window** (vertical readers) are supported. A page that cannot scroll, or whose first
+  scroll does not move it, is translated only as far as it shows, with a note saying so.
+- **The cost:** an engine that needs a key, or one that runs on the device, asks first how many screens it will be.
 
 ## Failures
 
