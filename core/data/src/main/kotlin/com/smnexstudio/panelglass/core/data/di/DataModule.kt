@@ -62,4 +62,9 @@ object DataModule {
     @Provides @Singleton
     fun patchCache(@ApplicationContext ctx: Context): com.smnexstudio.panelglass.core.data.cache.PatchCache =
         com.smnexstudio.panelglass.core.data.cache.PatchCache(java.io.File(ctx.cacheDir, "patches"))
+
+    /** The translations the reader has already paid for, next to the patch cache but with their own budget. */
+    @Provides @Singleton
+    fun regionStore(@ApplicationContext ctx: Context): com.smnexstudio.panelglass.core.data.cache.RegionStore =
+        com.smnexstudio.panelglass.core.data.cache.RegionStore(java.io.File(ctx.cacheDir, "regions"))
 }
