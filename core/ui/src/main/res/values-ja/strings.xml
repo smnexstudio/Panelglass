@@ -667,4 +667,5 @@
     <string name="update_install_permission">Android に確認されたら Panelglass にアプリのインストールを許可し、もう一度「インストール」をタップしてください。</string>
     <string name="update_failed_check">アップデートを確認できませんでした。接続を確認してもう一度お試しください。</string>
     <string name="update_failed_download">アップデートをダウンロードできませんでした。</string>
+    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
 </resources>

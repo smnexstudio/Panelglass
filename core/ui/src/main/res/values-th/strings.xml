@@ -667,4 +667,5 @@
     <string name="update_install_permission">หาก Android ถาม ให้อนุญาตให้ Panelglass ติดตั้งแอป แล้วแตะติดตั้งอีกครั้ง</string>
     <string name="update_failed_check">ตรวจหาอัปเดตไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
     <string name="update_failed_download">ดาวน์โหลดอัปเดตไม่ได้</string>
+    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
 </resources>

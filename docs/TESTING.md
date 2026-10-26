@@ -9,6 +9,8 @@ in CI). Line coverage of the JVM tests, measured by JaCoCo: 56.9% of all code (b
 
 The upstream counts and coverage above are historical baseline figures, not validation of this branch. Custom AI adds endpoint, engine and save-validation tests; the branch test run must be checked separately.
 
+This recovery branch adds tolerant-parser, duplicate-ID/type, small-model-name and HTTPS guard regression coverage. Existing baseline totals above are not results for this branch. HTTPS-only endpoint and required-key behavior are retained; LAN cleartext support is not part of this contribution.
+
 ## Contents
 
 - [Running the tests](#running-the-tests)

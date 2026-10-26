@@ -682,4 +682,5 @@
     <string name="update_install_permission">Si Android lo pide, permite que Panelglass instale aplicaciones y vuelve a tocar Instalar.</string>
     <string name="update_failed_check">No se pudo buscar actualizaciones. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="update_failed_download">No se pudo descargar la actualización.</string>
+    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
 </resources>
