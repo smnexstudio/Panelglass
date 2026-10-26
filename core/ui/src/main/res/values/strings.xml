@@ -159,7 +159,7 @@
     <string name="settings_overlay_memory" translatable="false">Overlay memory limit</string>
     <string name="settings_overlay_memory_desc" translatable="false">A hard ceiling on memory used by drawn translations, whatever the screen count.</string>
     <string name="settings_saved_translations" translatable="false">Saved translations</string>
-    <string name="settings_saved_translations_desc" translatable="false">Reused without calling the AI again after you scroll away and back.</string>
+    <string name="settings_saved_translations_desc" translatable="false">Reused without calling the AI again after you scroll away and back. Translations saved by an older version cannot be reused and are translated again once.</string>
     <string name="settings_saved_translations_storage" translatable="false">Saved translations storage</string>
     <string name="settings_saved_translations_storage_desc" translatable="false">The oldest saved translations are removed first when this is full.</string>
     <string name="settings_memory_auto" translatable="false">Auto</string>
