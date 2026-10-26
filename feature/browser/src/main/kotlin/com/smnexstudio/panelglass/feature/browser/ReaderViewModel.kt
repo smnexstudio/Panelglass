@@ -56,6 +56,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.NonCancellable
@@ -1300,6 +1301,8 @@ class ReaderViewModel @Inject constructor(
     override fun onCleared() {
         web?.let { (it.parent as? ViewGroup)?.removeView(it); it.destroy() }
         web = null
+        // The saved translations' work must not outlive the reader.
+        storeScope.cancel()
     }
 
     suspend fun blockListAge(): Long = settingsRepo.settings.first().blockListUpdatedAt
