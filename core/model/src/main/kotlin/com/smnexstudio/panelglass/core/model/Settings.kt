@@ -41,6 +41,8 @@ data class Settings(
     val customBaseUrl: String = "",
     /** The user's own model the "Offline model" engine runs; empty when none is active. */
     val activeUserModelId: String = "",
+    /** How much of the conversation around a bubble the reader sends to the model. */
+    val dialogueContext: DialogueContext = DialogueContext.STANDARD,
 ) {
     /**
      * The model to call for [id]: the user's choice, else the provider's default; blank when neither exists. A
@@ -67,6 +69,7 @@ data class Settings(
         fontId = readerFontId,
         patchQuality = patchQuality,
         contextMode = contextMode,
+        dialogueContext = dialogueContext,
         notes = translationNotes,
     )
 }

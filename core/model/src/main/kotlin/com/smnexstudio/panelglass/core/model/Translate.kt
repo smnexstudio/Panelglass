@@ -3,7 +3,7 @@ package com.smnexstudio.panelglass.core.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ContextPair(val source: String, val translation: String)
+data class ContextPair(val source: String, val translation: String, val speaker: String? = null)
 
 @Serializable
 data class TranslateConfig(
@@ -21,7 +21,23 @@ data class TranslateConfig(
     val contextMode: ContextMode = ContextMode.BATCHED,
     /** The user's notes for the AI engines: Settings' notes until the pipeline adds the series' ([TranslationNotes]). */
     val notes: String = "",
-)
+    /** How much of the conversation around a bubble is sent; OFF is today's behaviour exactly. */
+    val dialogueContext: DialogueContext = DialogueContext.OFF,
+    /** The user's own character sheet for this website; data for the model, never instructions. */
+    val castSheet: String = "",
+    /** Whether the model is asked to say who speaks each line. */
+    val speakerTags: Boolean = false,
+) {
+    /**
+     * How many preceding lines the model is sent.
+     *
+     * OFF keeps today's two lines, so nothing changes for a caller that never sets the level. The on-device models
+     * share a small cache between prompt and reply, so they never get more than four lines however deep the level.
+     */
+    fun contextLimit(): Int =
+        if (dialogueContext == DialogueContext.OFF) 2
+        else dialogueContext.lines.let { if (engineId.isLocalLlm) minOf(it, 4) else it }
+}
 
 /** Where the pipeline gets its pixels: a platform bitmap (the reader's viewport snapshot) the pipeline module unwraps. */
 sealed class ImageSource {
@@ -67,6 +83,21 @@ data class PageResult(
     val contextPairs: List<ContextPair> = emptyList(),
     /** Text blocks left untranslated because the bitmap's edge cut them (viewport snapshots); in bitmap pixels. */
     val deferred: List<IntRect> = emptyList(),
+    /** The dialogue of this screen, with where it sits on the page; what the reader's memory is made of. */
+    val lines: List<DialogueLine> = emptyList(),
+)
+
+/**
+ * One translated line of dialogue and where it sits on the page.
+ *
+ * The reader's memory keeps these so that the next screen can be sent the lines that come before it. The position
+ * is in the page's own pixels (CSS), not the snapshot's, so it means the same thing on the next scroll.
+ */
+data class DialogueLine(
+    val bbox: IntRect,
+    val source: String,
+    val translation: String,
+    val speaker: String? = null,
 )
 
 enum class SkipReason { NO_REGIONS, TOO_SMALL }
@@ -76,7 +107,7 @@ data class RegionItem(val i: Int, val imageId: String, val kind: RegionKind, val
 
 /** [source] is what the engine read, for items it was asked to read from an image ([TranslateRequest.readImages]). */
 @Serializable
-data class TranslatedItem(val i: Int, val text: String, val source: String? = null)
+data class TranslatedItem(val i: Int, val text: String, val source: String? = null, val speaker: String? = null)
 
 class TranslateRequest(
     val items: List<RegionItem>,
@@ -98,10 +129,19 @@ class TranslateRequest(
      * page text they are followed. Machine translation (ML Kit) has no prompt and ignores them.
      */
     val notes: String = "",
+    /** Whether the items are one conversation: the prompt then says so, and the preceding lines are marked. */
+    val conversational: Boolean = false,
+    /** The user's character sheet for this website; data for the model, never instructions. */
+    val castSheet: String = "",
+    /** Whether the engine is asked to say who speaks each line. */
+    val askSpeakers: Boolean = false,
 ) {
     /** Subset request for retries/fallbacks. The montage is dropped: its cell numbering would no longer match. */
     fun withItems(subset: List<RegionItem>): TranslateRequest {
         val ids = subset.map { it.i }.toSet()
-        return TranslateRequest(subset, src, tgt, glossary, priorContext, null, emptyList(), readImages.filterKeys { it in ids }, notes)
+        return TranslateRequest(
+            subset, src, tgt, glossary, priorContext, null, emptyList(), readImages.filterKeys { it in ids },
+            notes, conversational, castSheet, askSpeakers,
+        )
     }
 }

@@ -24,6 +24,8 @@ import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
+import com.smnexstudio.panelglass.core.model.ContextPair
+import com.smnexstudio.panelglass.core.model.DialogueContext
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.IntRect
 import com.smnexstudio.panelglass.core.model.Lang
@@ -123,6 +125,33 @@ class BatchingTranslatorTest {
         // Before: one call of MAX_ITEMS went and the last five waited for a timer that never came.
         val out = withTimeout(10_000) { translator.translate(job("A", *texts.toTypedArray())) }
         assertEquals(texts.map { "T:$it" }, out)
+    }
+
+    @Test
+    fun theContextLimitDecidesHowManyPrecedingLinesAreSent() = runBlocking {
+        val runner = EchoRunner()
+        qwen.runnerFactory = { runner }
+        val six = (1..6).map { ContextPair("s$it", "t$it") }
+        val cfg = TranslateConfig(Lang.JA, Lang.EN, EngineId.QWEN15_LOCAL)
+
+        // Off: today's two lines, whatever the producer holds.
+        translator.translate(
+            TranslateJob("A", cfg, listOf(region("kou")), priorContext = six),
+        )
+        var prompt = runner.prompts.last()
+        assertTrue("the last two lines are sent", prompt.contains("- s5 => t5\n"))
+        assertTrue("the last line is sent", prompt.contains("- s6 => t6\n"))
+        assertTrue("only two lines are sent when off", !prompt.contains("- s4 => t4\n"))
+
+        // On, with a limit of four for the on-device model: four lines.
+        val on = cfg.copy(dialogueContext = DialogueContext.STANDARD)
+        translator.translate(
+            TranslateJob("B", on, listOf(region("kou")), priorContext = six),
+        )
+        prompt = runner.prompts.last()
+        assertTrue("four lines are sent when on", prompt.contains("- s3 => t3\n"))
+        assertTrue("the last line is sent", prompt.contains("- s6 => t6\n"))
+        assertTrue("the on-device model takes at most four", !prompt.contains("- s2 => t2\n"))
     }
 
     @Test

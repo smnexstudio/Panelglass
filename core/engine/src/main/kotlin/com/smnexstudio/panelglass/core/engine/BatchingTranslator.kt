@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import com.smnexstudio.panelglass.core.data.repo.SfxCacheRepository
 import com.smnexstudio.panelglass.core.model.ContextPair
+import com.smnexstudio.panelglass.core.model.DialogueContext
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -52,8 +53,8 @@ class TranslateJob(
     val immediate: Boolean = false,
 )
 
-/** A region's translation, and what the engine read when the region was [TextRegion.unread]. */
-class Reading(val text: String, val source: String?)
+/** A region's translation, what the engine read when the region was [TextRegion.unread], and who said it. */
+class Reading(val text: String, val source: String?, val speaker: String? = null)
 
 /**
  * The translate stage. Resolves SFX through dictionary → cache → engine, de-duplicates by
@@ -78,6 +79,14 @@ class BatchingTranslator @Inject constructor(
         val read: Boolean = false,
         /** The user's notes for this series ([TranslateConfig.notes]); items with other notes never share a call. */
         val notes: String = "",
+        /** How many preceding lines the model is sent ([TranslateConfig.contextLimit]). */
+        val contextLimit: Int = 2,
+        /** Whether the items are one conversation. */
+        val conversational: Boolean = false,
+        /** The user's character sheet for this website. */
+        val castSheet: String = "",
+        /** Whether the model is asked to say who speaks each line. */
+        val askSpeakers: Boolean = false,
     ) {
         val result = CompletableDeferred<Reading>()
         /** Set when the caller stopped waiting; the batch it was flushed into is cancelled once every member is. */
@@ -120,7 +129,7 @@ class BatchingTranslator @Inject constructor(
             if (region.unread) {
                 // Nothing to look up or de-duplicate: every unread region has the same placeholder text.
                 val crop = job.crops[i] ?: continue
-                pending += i to Pending(RegionItem(0, job.imageId, region.kind, ""), crop, cfg.src, cfg.tgt, cfg.glossary, job.priorContext, read = true, notes = cfg.notes)
+                pending += i to Pending(RegionItem(0, job.imageId, region.kind, ""), crop, cfg.src, cfg.tgt, cfg.glossary, job.priorContext, read = true, notes = cfg.notes, contextLimit = cfg.contextLimit(), conversational = cfg.dialogueContext != DialogueContext.OFF, castSheet = cfg.castSheet, askSpeakers = cfg.speakerTags)
                 continue
             }
             if (region.kind == RegionKind.SFX) {
@@ -131,7 +140,7 @@ class BatchingTranslator @Inject constructor(
             }
             val dedupeKey = region.kind.name + "|" + (if (region.kind == RegionKind.SFX) TextNorm.sfxKey(region.text) else region.text.trim())
             val p = local.getOrPut(dedupeKey) {
-                Pending(RegionItem(0, job.imageId, region.kind, region.text.trim()), job.crops[i], cfg.src, cfg.tgt, cfg.glossary, job.priorContext, notes = cfg.notes)
+                Pending(RegionItem(0, job.imageId, region.kind, region.text.trim()), job.crops[i], cfg.src, cfg.tgt, cfg.glossary, job.priorContext, notes = cfg.notes, contextLimit = cfg.contextLimit(), conversational = cfg.dialogueContext != DialogueContext.OFF, castSheet = cfg.castSheet, askSpeakers = cfg.speakerTags)
             }
             pending += i to p
         }
@@ -216,7 +225,8 @@ class BatchingTranslator @Inject constructor(
         val items = batch.mapIndexed { idx, p -> p.item.copy(i = idx) }
         val src = batch.first().src; val tgt = batch.first().tgt
         val glossary = HashMap<String, String>().apply { batch.forEach { putAll(it.glossary) } }
-        val context = batch.flatMap { it.context }.distinct().takeLast(PromptParts.CONTEXT_LINES)
+        val limit = batch.maxOf { it.contextLimit }
+        val context = batch.flatMap { it.context }.distinct().takeLast(limit)
         val engine = when (val r = registry.resolve(engineId)) {
             is EngineResolution.Ready -> r.engine
             is EngineResolution.Failed -> { batch.forEach { it.result.completeExceptionally(EngineException(r.failure)) }; return }
@@ -231,7 +241,12 @@ class BatchingTranslator @Inject constructor(
                 montageIdx = crops.map { it.index }
             }
         }
-        val req = TranslateRequest(items, src, tgt, glossary, context, montage, montageIdx, readImages, batch.first().notes)
+        val req = TranslateRequest(
+            items, src, tgt, glossary, context, montage, montageIdx, readImages, batch.first().notes,
+            conversational = batch.any { it.conversational },
+            castSheet = batch.firstOrNull { it.castSheet.isNotBlank() }?.castSheet.orEmpty(),
+            askSpeakers = batch.any { it.askSpeakers },
+        )
 
         var attempt = 0
         while (true) {
@@ -239,7 +254,7 @@ class BatchingTranslator @Inject constructor(
                 val result = engine.translate(req).associateBy { it.i }
                 batch.forEachIndexed { idx, p ->
                     val got = result[idx]
-                    p.result.complete(Reading(got?.text?.takeIf { it.isNotBlank() } ?: p.item.text, got?.source))
+                    p.result.complete(Reading(got?.text?.takeIf { it.isNotBlank() } ?: p.item.text, got?.source, got?.speaker))
                 }
                 return
             } catch (e: CancellationException) {

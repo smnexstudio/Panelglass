@@ -10,6 +10,8 @@ import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.PromptParts
 import com.smnexstudio.panelglass.core.engine.TranslateJob
 import com.smnexstudio.panelglass.core.model.ContextPair
+import com.smnexstudio.panelglass.core.model.DialogueContext
+import com.smnexstudio.panelglass.core.model.DialogueLine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -115,11 +117,16 @@ class TranslationPipeline @Inject constructor(
         onStage: (Stage) -> Unit = {},
         roi: RegionOfInterest? = null,
         bypassCache: Boolean = false,
+        /**
+         * The context to use, asked AFTER the regions are known: the top of the first new bubble on the page, in
+         * snapshot pixels. The reader answers with the lines above that point.
+         */
+        contextFor: ((topPx: Int) -> List<ContextPair>)? = null,
         onPatch: (Patch) -> Unit,
     ): Result<PageResult> = withContext(Dispatchers.Default) {
         val started = System.currentTimeMillis()
         try {
-            Result.success(run(source, cfg, imageId, priorContext, onStage, onPatch, started, roi, bypassCache))
+            Result.success(run(source, cfg, imageId, priorContext, onStage, onPatch, started, roi, bypassCache, contextFor))
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: EngineException) {
@@ -162,6 +169,7 @@ class TranslationPipeline @Inject constructor(
         source: ImageSource, baseCfg: TranslateConfig, imageId: String, priorContext: List<ContextPair>,
         onStage: (Stage) -> Unit, onPatch: (Patch) -> Unit, started: Long,
         roi: RegionOfInterest? = null, bypassCache: Boolean = false,
+        contextFor: ((topPx: Int) -> List<ContextPair>)? = null,
     ): PageResult {
         // ---- cache -------------------------------------------------------------------------
         onStage(Stage.CACHE)
@@ -169,7 +177,14 @@ class TranslationPipeline @Inject constructor(
         val native = (source as? ImageSource.Native)?.handle as? Bitmap ?: throw IllegalArgumentException("Unreadable image source")
         val cfg = series.resolve(baseCfg)
         val hash = nativeHash(native)
-        val cacheKey = patchCache.key(hash, cfg.src, cfg.tgt, cfg.engineId, PIPELINE_VERSION, cfg.fontId, SeriesResolver.digest(cfg))
+        // What else changes the translation goes into the key: the model, the context level, the character sheet.
+        // Without it a page translated with one model would be served for another.
+        val variant = listOf(
+            registry.cacheTag(cfg.engineId),
+            if (cfg.dialogueContext != DialogueContext.OFF) "ctx${cfg.contextLimit()}" else "",
+            if (cfg.castSheet.isNotBlank()) "cast" + PatchCache.sha256Hex(cfg.castSheet.toByteArray()).take(8) else "",
+        ).filter { it.isNotEmpty() }.joinToString("|")
+        val cacheKey = patchCache.key(hash, cfg.src, cfg.tgt, cfg.engineId, PIPELINE_VERSION, cfg.fontId, SeriesResolver.digest(cfg), variant)
         (if (bypassCache) null else patchCache.get(cacheKey))?.let { hit ->
             hit.patches.forEach(onPatch)
             onStage(Stage.DONE)
@@ -221,11 +236,14 @@ class TranslationPipeline @Inject constructor(
                 if (r.unread) crops[i] = readCrop(src, r.bbox)
                 else if (r.kind == RegionKind.SFX && !r.unreadable) crops[i] = sfxCrop(src, r.bbox)
             }
+            // The context is asked for AFTER the regions are known: the lines above the first new bubble on the
+            // page are the ones that come before it, whether the reader scrolls up or down.
+            val context0 = contextFor?.invoke(regions.minOf { it.bbox.top }) ?: priorContext
 
             // ---- translate + render --------------------------------------------------------------
             val patches = ArrayList<Patch>()
             var renderMs = 0L
-            val outcome = translateGroups(regions, crops, cfg, priorContext, started, onStage) { group, translated ->
+            val outcome = translateGroups(regions, crops, cfg, context0, started, onStage) { group, translated ->
                 // ---- render + encode: the engine call is spent, so this group is finished even if cancelled --
                 val renderStart = elapsed(started)
                 withContext(NonCancellable) {
@@ -273,9 +291,20 @@ class TranslationPipeline @Inject constructor(
                 )
                 val contextPairs = regions.mapIndexedNotNull { idx, region ->
                     val text = translated[idx]
-                    if (!text.isNullOrBlank()) ContextPair(region.text, text) else null
+                    if (!text.isNullOrBlank()) ContextPair(region.text, text, outcome.speakers[idx]) else null
                 }
-                PageResult(imageId, width, height, regions.size, patches.size, false, timingMs = elapsed(started), contextPairs = contextPairs, deferred = deferred)
+                // The dialogue of this screen, with where it sits: what the reader's memory is made of. SFX stay
+                // out: they would pollute the memory with sound words.
+                val lines = regions.mapIndexedNotNull { idx, region ->
+                    val text = translated[idx]
+                    if (!text.isNullOrBlank() && region.kind != RegionKind.SFX) {
+                        DialogueLine(region.bbox, region.text, text, outcome.speakers[idx])
+                    } else null
+                }
+                PageResult(
+                    imageId, width, height, regions.size, patches.size, false, timingMs = elapsed(started),
+                    contextPairs = contextPairs, deferred = deferred, lines = lines,
+                )
             }
         } finally {
             dump?.close()
@@ -284,7 +313,7 @@ class TranslationPipeline @Inject constructor(
     }
 
     /** What [translateGroups] did: one translation per region (null = none) and where the time went. */
-    private class GroupsOutcome(val translated: Array<String?>, val translateStart: Long, val translateMs: Long, val groups: Int, val context: List<ContextPair>)
+    private class GroupsOutcome(val translated: Array<String?>, val translateStart: Long, val translateMs: Long, val groups: Int, val context: List<ContextPair>, val speakers: Array<String?>)
 
     /**
      * The translate stage both entry points share. One engine call per image, except the on-device model: there a page
@@ -301,6 +330,7 @@ class TranslationPipeline @Inject constructor(
         val groups = if (cfg.engineId.isLocalLlm && regions.size > LOCAL_GROUP)
             regions.indices.chunked(LOCAL_GROUP) else listOf(regions.indices.toList())
         val translated = arrayOfNulls<String>(regions.size)
+        val speakers = arrayOfNulls<String>(regions.size)
         var context = priorContext
         var translateStart = -1L; var translateMs = 0L
         for (group in groups) {
@@ -319,13 +349,14 @@ class TranslationPipeline @Inject constructor(
             translateMs += elapsed(started) - groupStart
             group.forEachIndexed { k, idx ->
                 translated[idx] = out[k]?.text?.takeIf { it.isNotBlank() }
+                speakers[idx] = out[k]?.speaker
                 // What the engine read replaces the placeholder: continuity context, the dump, and the glyph size.
                 if (regions[idx].unread) regions[idx] = withReading(regions[idx], out[k]?.source, cfg.src)
             }
             onGroup(group, translated)
-            context = (context + group.mapNotNull { idx -> translated[idx]?.takeIf { it.isNotBlank() }?.let { ContextPair(regions[idx].text, it) } }).takeLast(PromptParts.CONTEXT_LINES)
+            context = (context + group.mapIndexedNotNull { k, idx -> translated[idx]?.takeIf { it.isNotBlank() }?.let { ContextPair(regions[idx].text, it, out[k]?.speaker) } }).takeLast(cfg.contextLimit())
         }
-        return GroupsOutcome(translated, translateStart, translateMs, groups.size, context)
+        return GroupsOutcome(translated, translateStart, translateMs, groups.size, context, speakers)
     }
 
     // ---- the Studio: whole pages, no viewport, no rendering, no patch cache ------------------------------------

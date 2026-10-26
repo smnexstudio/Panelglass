@@ -58,6 +58,37 @@ class EngineRegistry @Inject constructor(
     /** The engine chosen in Settings. */
     override suspend fun resolveSelected(): EngineResolution = resolve(settings.current().engineId)
 
+    /**
+     * What else changes the translation of this engine, as one short string.
+     *
+     * The patch cache keys on it: a page translated with one model must not be served for another, and the user's
+     * own server is a different server as soon as the address changes.
+     */
+    suspend fun cacheTag(id: EngineId): String {
+        val s = settings.current()
+        val parts = ArrayList<String>(2)
+        if (id.hasModel) {
+            val model = s.modelFor(id).trim()
+            if (model.isNotEmpty()) parts += model
+        }
+        when (id) {
+            EngineId.CUSTOM -> {
+                val address = s.customBaseUrl.trim()
+                if (address.isNotEmpty()) {
+                    val label = (CustomEndpoint.parse(address) as? CustomEndpoint.Parsed.Ok)?.label
+                        ?: address.substringAfter("://", address).substringBefore('/')
+                    if (label.isNotEmpty()) parts += label
+                }
+            }
+            EngineId.LOCAL_USER -> {
+                val model = s.activeUserModelId.trim()
+                if (model.isNotEmpty()) parts += model
+            }
+            else -> Unit
+        }
+        return parts.joinToString("|")
+    }
+
     override suspend fun resolve(id: EngineId): EngineResolution {
         val engine = engines[id] ?: return EngineResolution.Failed(EngineFailure.Unavailable(id, "Unknown engine"))
         // A planned engine (still stored from an older version, or pinned by a launch intent) is not offered: say so

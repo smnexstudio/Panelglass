@@ -297,6 +297,8 @@ Panelglass is not on Google Play. Each release is published on GitHub:
    pronouns** sets the series' character names and pronouns.
 7. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
 
+Dialogue context in Settings controls preceding dialogue: Off retains the two-line behavior, Standard uses six lines and Deep uses twelve, capped at four for on-device models. The reader's Characters menu edits a website-specific character sheet. Existing translation notes remain the instructions setting.
+
 ### Build from source
 
 Requirements: the Android SDK (platform 35) and **JDK 21**. Gradle locates JDK 21 automatically through

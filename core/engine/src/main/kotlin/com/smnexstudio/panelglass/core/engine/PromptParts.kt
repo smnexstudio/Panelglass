@@ -17,8 +17,9 @@ object PromptParts {
     /** `term => rendering; …` on one line. */
     fun glossaryInline(glossary: Map<String, String>): String = glossary.entries.joinToString("; ") { pair(it.key, it.value) }
 
-    /** `- source => translation` per preceding line (the last [CONTEXT_LINES]), one per line. */
-    fun context(prior: List<ContextPair>): String = prior.takeLast(CONTEXT_LINES).joinToString("") { "- " + pair(it.source, it.translation) + "\n" }
+    /** `- source => translation` per preceding line (the last [limit]), one per line. */
+    fun context(prior: List<ContextPair>, limit: Int = CONTEXT_LINES): String =
+        prior.takeLast(limit).joinToString("") { "- " + pair(it.source, it.translation) + "\n" }
 
     private fun pair(source: String, target: String) = "$source => $target"
 }

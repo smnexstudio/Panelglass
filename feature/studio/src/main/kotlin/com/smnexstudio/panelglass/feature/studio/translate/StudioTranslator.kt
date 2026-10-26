@@ -114,6 +114,8 @@ class StudioTranslator @Inject constructor(
                 // The manga's own glossary (the "Remember this effect" entries, later).
                 seriesKey = seriesKey(manga.id),
                 notes = s.translationNotes,
+                // The Studio reads whole pages, so the level decides how many lines it carries.
+                dialogueContext = s.dialogueContext,
             ),
         )
     }
@@ -134,7 +136,7 @@ class StudioTranslator @Inject constructor(
         val loaded = loader.load(repo.files.file(page.file))
             ?: return@withLock EngineFailure.Unavailable(cfg.engineId, UNREADABLE_PAGE)
         try {
-            val out = stages.translate(loaded.bitmap, listOf(RegionScale.scale(regionOf(bubble), loaded.scale)), cfg, contextOf(all.takeWhile { it.id != bubbleId }))
+            val out = stages.translate(loaded.bitmap, listOf(RegionScale.scale(regionOf(bubble), loaded.scale)), cfg, contextOf(all.takeWhile { it.id != bubbleId }, cfg.contextLimit()))
             repo.saveTranslation(page, listOf(applied(bubble, out, 0, loaded.scale)))
             null
         } catch (e: EngineException) {
@@ -169,7 +171,7 @@ class StudioTranslator @Inject constructor(
             val id = repo.addBubble(bubble)
             val saved = bubble.copy(id = id)
             val failure = try {
-                val prior = contextOf(repo.bubbleList(pageId).filter { !it.ignored && it.id != id })
+                val prior = contextOf(repo.bubbleList(pageId).filter { !it.ignored && it.id != id }, cfg.contextLimit())
                 val out = stages.translate(loaded.bitmap, listOf(RegionScale.scale(regionOf(saved), loaded.scale)), cfg, prior)
                 repo.saveTranslation(repo.getPage(pageId) ?: page, listOf(applied(saved, out, 0, loaded.scale)))
                 null
@@ -224,7 +226,7 @@ class StudioTranslator @Inject constructor(
         var last: EngineFailure? = null
         for (page in pages) {
             if (!redo && StudioStage.TRANSLATED in page.stages) {
-                context = contextOf(repo.bubbleList(page.id))
+                context = contextOf(repo.bubbleList(page.id), cfg.contextLimit())
                 continue
             }
             set(ChapterRun(chapterId, RunPhase.TRANSLATING, done, toTranslate, last, failedPages))
@@ -419,10 +421,10 @@ class StudioTranslator @Inject constructor(
         }
 
         /** The last two lines of a page that has them: continuity context for the next page. */
-        fun contextOf(bubbles: List<Bubble>): List<ContextPair> = bubbles
+        fun contextOf(bubbles: List<Bubble>, limit: Int = 2): List<ContextPair> = bubbles
             .filter { !it.ignored && it.sourceText.isNotBlank() && it.translatedText.isNotBlank() }
             .map { ContextPair(it.sourceText, it.translatedText) }
-            .takeLast(2)
+            .takeLast(limit)
     }
 }
 

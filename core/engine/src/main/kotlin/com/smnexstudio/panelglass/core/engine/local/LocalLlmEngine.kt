@@ -5,6 +5,7 @@ import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.engine.PromptParts
 import com.smnexstudio.panelglass.core.engine.TranslationEngine
 import com.smnexstudio.panelglass.core.engine.llm.LlmContract
+import com.smnexstudio.panelglass.core.model.CastSheet
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -338,8 +339,16 @@ object LocalPrompt {
             append("Glossary: ").append(PromptParts.glossaryInline(req.glossary)).append('\n')
         }
         if (req.priorContext.isNotEmpty()) {
+            // The producer decides how many lines there are; the on-device models take at most four.
             append("Earlier lines, for continuity only, do not output them:\n")
-            append(PromptParts.context(req.priorContext))
+            append(PromptParts.context(req.priorContext, 4))
+        }
+        if (req.conversational) {
+            append("The lines are one conversation: keep names and pronouns consistent with the earlier lines.\n")
+        }
+        if (req.castSheet.isNotBlank()) {
+            // The on-device models are terse: a short sheet, on one line.
+            append("Characters: ").append(CastSheet.forPrompt(req.castSheet, 400).replace("\n", "; ")).append('\n')
         }
     }
 

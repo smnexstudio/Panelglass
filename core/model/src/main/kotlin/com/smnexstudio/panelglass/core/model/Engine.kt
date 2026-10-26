@@ -150,3 +150,20 @@ enum class ContextMode(val label: String) {
     BATCHED("Batched (default)"),
     SEQUENTIAL("Sequential (strict 2-back)"),
 }
+
+/**
+ * How much of the conversation around a bubble is sent to the model.
+ *
+ * Comic dialogue is hard to translate without knowing who is talking: a pronoun has no antecedent, a name is a
+ * name only if the model has seen it. This setting says how many of the lines before the current screen are sent
+ * with it, and whether the model is asked to say who speaks.
+ *
+ * `OFF` is today's behaviour exactly: two lines of context, no speaker tags, and the same prompts and cache keys
+ * as before.
+ */
+@Serializable
+enum class DialogueContext(val label: String, val lines: Int) {
+    OFF("Off", 0),
+    STANDARD("Standard", 6),
+    DEEP("Deep", 12),
+}

@@ -656,4 +656,15 @@
     <string name="update_failed_check">ตรวจหาอัปเดตไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
     <string name="update_failed_download">ดาวน์โหลดอัปเดตไม่ได้</string>
     <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="settings_dialogue_context" translatable="false">Dialogue context</string>
+    <string name="settings_dialogue_context_desc" translatable="false">Sends earlier lines and speaker hints so names, pronouns and tone stay consistent. Uses a little more time and tokens.</string>
+    <string name="dialogue_off" translatable="false">Off</string>
+    <string name="dialogue_standard" translatable="false">Standard (6 lines)</string>
+    <string name="dialogue_deep" translatable="false">Deep (12 lines)</string>
+    <string name="reader_characters" translatable="false">Characters…</string>
+    <string name="cast_title" translatable="false">Characters for this site</string>
+    <string name="cast_hint" translatable="false">One per line, e.g.\nMika: girl, polite, calls Ren \"Ren-kun\"\nRen: boy, rough speech, says \"ore\""</string>
+    <string name="cast_note" translatable="false">Used only for translation on this website. Not shared.</string>
+    <string name="cast_counter" translatable="false">%1$d / %2$d</string>
+    <string name="cast_clear" translatable="false">Clear</string>
 </resources>

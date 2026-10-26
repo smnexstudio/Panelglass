@@ -70,6 +70,7 @@ import com.smnexstudio.panelglass.core.data.repo.MangaStorage
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
+import com.smnexstudio.panelglass.core.model.DialogueContext
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.Lang
@@ -151,9 +152,16 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     var packsSheet by remember { mutableStateOf(false) }
     var notesDialog by remember { mutableStateOf(false) }
     var sfxPicker by remember { mutableStateOf(false) }
+    var dialoguePicker by remember { mutableStateOf(false) }
     val sfxNames = mapOf(
         SfxMode.SKIP to stringResource(UiR.string.studio_sfx_keep), SfxMode.REPLACE to stringResource(UiR.string.studio_sfx_replace),
     )
+    val dialogueNames = mapOf(
+        DialogueContext.OFF to stringResource(UiR.string.dialogue_off),
+        DialogueContext.STANDARD to stringResource(UiR.string.dialogue_standard),
+        DialogueContext.DEEP to stringResource(UiR.string.dialogue_deep),
+    )
+    val dialogueDesc = stringResource(UiR.string.settings_dialogue_context_desc)
     val studioStorage by vm.studioStorage.collectAsStateWithLifecycle()
     var deletingManga by remember { mutableStateOf<MangaStorage?>(null) }
     LaunchedEffect(Unit) { vm.loadStudioStorage() }
@@ -207,6 +215,13 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
                 s.translationNotes.lineSequence().firstOrNull { it.isNotBlank() } ?: stringResource(UiR.string.settings_notes_empty),
                 stringResource(UiR.string.action_edit), onAction = { notesDialog = true },
             )
+            CardDivider()
+            // How much of the conversation around a bubble the reader sends to the model.
+            ValueRow(
+                stringResource(UiR.string.settings_dialogue_context),
+                dialogueNames.getValue(s.dialogueContext),
+                onClick = { dialoguePicker = true },
+            ) { }
         }
 
         // ---- try -------------------------------------------------------------------------------
@@ -397,6 +412,13 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     if (sfxPicker) ChoiceSheet(
         stringResource(UiR.string.studio_role_sfx), SfxMode.entries, s.sfxMode,
         render = { sfxNames.getValue(it) }, onPick = { vm.setSfxMode(it) }, onDismiss = { sfxPicker = false },
+    )
+    if (dialoguePicker) ChoiceSheet(
+        stringResource(UiR.string.settings_dialogue_context), DialogueContext.entries, s.dialogueContext,
+        render = { dialogueNames.getValue(it) },
+        // The same description under every option: what the setting does, not what this option does.
+        subtitle = { dialogueDesc },
+        onPick = { vm.setDialogueContext(it) }, onDismiss = { dialoguePicker = false },
     )
     if (notesDialog) TranslationNotesDialog(s.translationNotes, onDismiss = { notesDialog = false }) { vm.setTranslationNotes(it); notesDialog = false }
 

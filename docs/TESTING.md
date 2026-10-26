@@ -11,6 +11,8 @@ The upstream counts and coverage above are historical baseline figures, not vali
 
 This recovery branch adds tolerant-parser, duplicate-ID/type, small-model-name and HTTPS guard regression coverage. Existing baseline totals above are not results for this branch. HTTPS-only endpoint and required-key behavior are retained; LAN cleartext support is not part of this contribution.
 
+Dialogue-context extraction adds DialogueContextTest, DialogueContextSettingTest, DialogueContextPromptTest, PromptGoldenTest and ChapterMemoryTest. It excludes the old standalone prompt editor and compute-backend changes. Validate this branch separately; baseline counts are historical.
+
 ## Contents
 
 - [Running the tests](#running-the-tests)

@@ -153,6 +153,17 @@
     <string name="key_hint">API key</string>
     <string name="key_hint_saved">API key (saved · leave empty to keep)</string>
     <string name="key_model">Model</string>
+    <string name="settings_dialogue_context" translatable="false">Dialogue context</string>
+    <string name="settings_dialogue_context_desc" translatable="false">Sends earlier lines and speaker hints so names, pronouns and tone stay consistent. Uses a little more time and tokens.</string>
+    <string name="dialogue_off" translatable="false">Off</string>
+    <string name="dialogue_standard" translatable="false">Standard (6 lines)</string>
+    <string name="dialogue_deep" translatable="false">Deep (12 lines)</string>
+    <string name="reader_characters" translatable="false">Characters…</string>
+    <string name="cast_title" translatable="false">Characters for this site</string>
+    <string name="cast_hint" translatable="false">One per line, e.g.\nMika: girl, polite, calls Ren \"Ren-kun\"\nRen: boy, rough speech, says \"ore\""</string>
+    <string name="cast_note" translatable="false">Used only for translation on this website. Not shared.</string>
+    <string name="cast_counter" translatable="false">%1$d / %2$d</string>
+    <string name="cast_clear" translatable="false">Clear</string>
     <string name="key_base_url">Server address</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
     <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>

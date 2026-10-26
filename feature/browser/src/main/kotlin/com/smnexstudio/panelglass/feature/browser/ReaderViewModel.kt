@@ -16,6 +16,7 @@ import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ui.languageName
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
+import com.smnexstudio.panelglass.core.model.DialogueContext
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -193,6 +194,12 @@ class ReaderViewModel @Inject constructor(
 
     private val _ui = MutableStateFlow(ReaderUiState())
     val ui: StateFlow<ReaderUiState> = _ui
+
+    // ---- the chapter's memory: the lines the reader has already translated -------------------------------
+    // In RAM only, and cleared when the page changes: a new chapter is a new conversation.
+    private val memory = ChapterMemory()
+    /** The user's character sheet for the page being read, in the page's own host. */
+    @Volatile private var castText = ""
 
     // ---- the series' names, pronouns and notes (⋮ › Glossary & pronouns) ------------------------------------
 
@@ -393,8 +400,22 @@ class ReaderViewModel @Inject constructor(
         val roi = RegionOfInterest(include = c.images, exclude = c.overlays + disc, done = done)
         val bypass = bypassCacheOnce; bypassCacheOnce = false
         var failure: EngineFailure? = null
+        // The dialogue-context level is read NOW, not taken from the config that was captured when the page opened:
+        // a change in Settings must take effect without reopening the page.
+        val level = settingsRepo.current().dialogueContext
+        val cfgNow = if (level == DialogueContext.OFF) cfg else cfg.copy(
+            dialogueContext = level,
+            castSheet = castText,
+            speakerTags = level != DialogueContext.OFF && !cfg.engineId.isLocalLlm,
+        )
         try {
-            val result = pipeline.translate(ImageSource.Native(c.bitmap), cfg, imageId = "screen", roi = roi, bypassCache = bypass) { patch ->
+            val result = pipeline.translate(
+                ImageSource.Native(c.bitmap), cfgNow, imageId = "screen", roi = roi, bypassCache = bypass,
+                contextFor = if (level == DialogueContext.OFF) null else { topPx ->
+                    // The snapshot's pixels to the page's: the same factor the patch code uses.
+                    memory.linesAbove((c.scrollY + topPx) / c.scale, cfgNow.contextLimit())
+                },
+            ) { patch ->
                 // onPatch runs on the pipeline's worker: decode here, never in composition.
                 val img = decodePatch(patch) ?: return@translate
                 val vx = (patch.xPct / 100f * w).toInt(); val vy = (patch.yPct / 100f * h).toInt()
@@ -420,6 +441,18 @@ class ReaderViewModel @Inject constructor(
                 onSuccess = { page ->
                     deferred = page.deferred.map { IntRect(c.scrollX + it.left, c.scrollY + it.top, c.scrollX + it.right, c.scrollY + it.bottom) }
                     deferredScale = c.scale
+                    if (level != DialogueContext.OFF && page.lines.isNotEmpty()) {
+                        // The lines of this screen join the memory, with their place on the page: the region's box
+                        // is in the snapshot's pixels, and the page's position is the same conversion the patch uses.
+                        memory.add(page.lines.map { line ->
+                            val left = (c.scrollX + line.bbox.left) / c.scale
+                            val top = (c.scrollY + line.bbox.top) / c.scale
+                            ChapterMemory.Entry(
+                                top = top, left = left,
+                                source = line.source, translation = line.translation, speaker = line.speaker,
+                            )
+                        })
+                    }
                     _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
                     if (followUps) {
                         if (c.pending > 0) recaptureWhenLoaded(c)
@@ -775,12 +808,31 @@ class ReaderViewModel @Inject constructor(
         translateViewport()
     }
 
+    /**
+     * The user's character sheet for the website being read.
+     *
+     * It is saved for the page's host and used from the next translation on; the text is never logged.
+     */
+    fun saveCastSheet(text: String) {
+        val host = Site.hostOf(_ui.value.url)
+        if (host.isEmpty()) return
+        viewModelScope.launch {
+            settingsRepo.setCastSheet(host, text)
+            castText = settingsRepo.castSheetFor(host)
+        }
+    }
+
+    /** The character sheet of the website being read, for the editor. */
+    fun castSheet(): String = castText
+
     /** Layout changed underneath (new page): forget page-space patches; the next settle re-translates. */
     fun clearScreenPatches() {
         cancelScan(restore = false)
         holdPage = false
         screenJob?.cancel()
         lastCaptureScroll = null
+        // The memory belongs to the page: with the patches gone, the lines they came from are gone too.
+        memory.clear()
         _screen.update { if (it.active) it.copy(patches = emptyList(), working = false, regions = 0, error = null, failure = null) else it }
     }
 
@@ -978,6 +1030,8 @@ class ReaderViewModel @Inject constructor(
         viewModelScope.launch {
             val site = siteFor(url)
             val s = settingsRepo.current()
+            // The character sheet belongs to the website being read.
+            castText = settingsRepo.castSheetFor(Site.hostOf(url))
             val adBlock = siteAdBlockOverride ?: site?.adBlockEnabled ?: s.adBlockDefault
             client.adBlockEnabled = adBlock
             // Keep the session's engine: a page load must not undo a pick made in the reader.

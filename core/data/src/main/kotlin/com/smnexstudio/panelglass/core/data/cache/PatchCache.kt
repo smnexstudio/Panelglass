@@ -30,12 +30,20 @@ class PatchCache(
     private var totalBytes: Long = -1
 
     /**
+     * The cache key of a page's rendered patches.
+     *
      * [font]: the lettering font id (null is Auto), so a page is drawn again after the font changes. [series]: a
      * digest of the glossary and notes the engine was given ("" when there were none, which keeps older keys), so
-     * an edit to them translates the page again.
+     * an edit to them translates the page again. [variant] carries what else changes the translation: the model the
+     * user chose, the dialogue-context level, the character sheet. Without it a translation made with one model
+     * would be served for another. An empty variant leaves the key exactly as it was.
      */
-    fun key(imageHash: String, src: Lang, tgt: Lang, engine: EngineId, pipelineVersion: Int, font: String? = null, series: String = ""): String =
-        "$imageHash|${src.code}|${tgt.code}|${engine.name}|v$pipelineVersion|${font ?: "auto"}" + (if (series.isEmpty()) "" else "|$series")
+    fun key(
+        imageHash: String, src: Lang, tgt: Lang, engine: EngineId, pipelineVersion: Int,
+        font: String? = null, series: String = "", variant: String = "",
+    ): String =
+        "$imageHash|${src.code}|${tgt.code}|${engine.name}|v$pipelineVersion|${font ?: "auto"}" +
+            (if (series.isEmpty()) "" else "|$series") + (if (variant.isEmpty()) "" else "|$variant")
 
     suspend fun get(key: String): CachedPage? = withContext(Dispatchers.IO) {
         val f = fileFor(key)
