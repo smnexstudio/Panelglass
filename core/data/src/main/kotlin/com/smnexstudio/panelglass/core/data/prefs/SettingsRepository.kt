@@ -16,6 +16,8 @@ import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.FreeTextMode
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.QwenBackend
+import com.smnexstudio.panelglass.core.model.RetentionLimits
+import com.smnexstudio.panelglass.core.model.SavedTranslations
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.SfxMode
 import com.smnexstudio.panelglass.core.model.TranslationNotes
@@ -67,6 +69,14 @@ class SettingsRepository @Inject constructor(
         val dialogueContext = stringPreferencesKey("dialogueContext")
         /** The user's character sheets, one per website host: a JSON object of host to text. */
         val castSheets = stringPreferencesKey("castSheets")
+        /** The screens of overlays kept around the viewport; 0 means Auto. */
+        val overlayScreens = intPreferencesKey("overlayScreens")
+        /** The decoded memory the overlays may use, in MB; 0 means Auto. */
+        val overlayMemoryMb = intPreferencesKey("overlayMemoryMb")
+        /** How long a finished translation is kept on disk. */
+        val savedTranslations = stringPreferencesKey("savedTranslations")
+        /** The disk the saved translations may use, in MB. */
+        val savedTranslationsMb = intPreferencesKey("savedTranslationsMb")
         val updateCheckedAt = longPreferencesKey("updateCheckedAt")
         val autoUpdateCheck = booleanPreferencesKey("autoUpdateCheck")
         /** The user's own OpenAI-compatible server for the "Custom AI" engine; an address, not a secret. */
@@ -102,6 +112,10 @@ class SettingsRepository @Inject constructor(
             qwenBackend = p[K.qwenBackend]?.let { enumOrNull<QwenBackend>(it) } ?: d.qwenBackend,
             translationNotes = p[K.translationNotes] ?: d.translationNotes,
             dialogueContext = p[K.dialogueContext]?.let { enumOrNull<DialogueContext>(it) } ?: d.dialogueContext,
+            overlayScreens = RetentionLimits.clampScreens(p[K.overlayScreens] ?: d.overlayScreens),
+            overlayMemoryMb = RetentionLimits.clampOverlayMb(p[K.overlayMemoryMb] ?: d.overlayMemoryMb),
+            savedTranslations = p[K.savedTranslations]?.let { enumOrNull<SavedTranslations>(it) } ?: d.savedTranslations,
+            savedTranslationsMb = RetentionLimits.clampStorageMb(p[K.savedTranslationsMb] ?: d.savedTranslationsMb),
             autoUpdateCheck = p[K.autoUpdateCheck] ?: d.autoUpdateCheck,
             customBaseUrl = p[K.customBaseUrl] ?: d.customBaseUrl,
             activeUserModelId = p[K.activeUserModel] ?: d.activeUserModelId,
@@ -133,6 +147,18 @@ class SettingsRepository @Inject constructor(
 
     /** How much of the conversation around a bubble the reader sends to the model. */
     suspend fun setDialogueContext(v: DialogueContext) { dataStore.edit { it[K.dialogueContext] = v.name } }
+
+    /** The screens of overlays kept around the viewport; 0 means Auto. */
+    suspend fun setOverlayScreens(v: Int) { dataStore.edit { it[K.overlayScreens] = RetentionLimits.clampScreens(v) } }
+
+    /** The decoded memory the overlays may use, in MB; 0 means Auto. */
+    suspend fun setOverlayMemoryMb(v: Int) { dataStore.edit { it[K.overlayMemoryMb] = RetentionLimits.clampOverlayMb(v) } }
+
+    /** How long a finished translation is kept on disk. */
+    suspend fun setSavedTranslations(v: SavedTranslations) { dataStore.edit { it[K.savedTranslations] = v.name } }
+
+    /** The disk the saved translations may use, in MB. */
+    suspend fun setSavedTranslationsMb(v: Int) { dataStore.edit { it[K.savedTranslationsMb] = RetentionLimits.clampStorageMb(v) } }
 
     /** The character sheet of one website host, or an empty string when there is none. */
     suspend fun castSheetFor(host: String): String = castSheets(dataStore.data.first())[host.lowercase()].orEmpty()

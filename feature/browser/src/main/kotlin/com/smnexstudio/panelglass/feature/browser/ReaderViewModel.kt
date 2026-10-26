@@ -13,10 +13,12 @@ import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
+import com.smnexstudio.panelglass.core.engine.local.DeviceMemory
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ui.languageName
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
 import com.smnexstudio.panelglass.core.model.DialogueContext
+import com.smnexstudio.panelglass.core.model.RetentionLimits
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -221,7 +223,7 @@ class ReaderViewModel @Inject constructor(
         if (writes.isEmpty()) return
         if (_screen.value.active) viewModelScope.launch {
             writes.joinAll()
-            clearScreenPatches(); translateViewport()
+            clearScreenPatches("glossary"); translateViewport()
         }
     }
 
@@ -231,7 +233,7 @@ class ReaderViewModel @Inject constructor(
     val pageText = PageTextTranslation(
         viewModelScope, pageTranslator,
         eval = { js -> evalInPage(js) },
-        onTextChanged = { if (_screen.value.active) { clearScreenPatches(); translateViewport() } },
+        onTextChanged = { if (_screen.value.active) { clearScreenPatches("pageText"); translateViewport() } },
         saveTarget = { settingsRepo.setPageTranslateTarget(it) },
         fetchPacks = { packs.downloadNow(it) },
     )
@@ -317,6 +319,7 @@ class ReaderViewModel @Inject constructor(
         settleJob?.cancel(); settleJob = null
         screenJob?.cancel(); screenJob = null
         capture = null
+        android.util.Log.d("ScreenSession", "clear reason=stop")
         _screen.value = ScreenSession()
     }
 
@@ -432,7 +435,11 @@ class ReaderViewModel @Inject constructor(
                     val dup = s.patches.any { sp.duplicates(it, DUPLICATE_OVERLAP) }
                     android.util.Log.d("ScreenSession", "patch ${sp.left},${sp.top} ${sp.width}x${sp.height} scroll=${c.scrollX},${c.scrollY} dup=$dup")
                     if (dup) s
-                    else s.copy(patches = keepPatches(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale))
+                    else {
+                        val kept = keepPatches(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale)
+                        android.util.Log.d("ScreenSession", "retain patches=${kept.size} bytes=${kept.sumOf { it.bytes }}")
+                        s.copy(patches = kept)
+                    }
                 }
             }
             layoutNow = c.layoutNow ?: layoutNow
@@ -453,6 +460,10 @@ class ReaderViewModel @Inject constructor(
                             )
                         })
                     }
+                    android.util.Log.d(
+                        "ScreenSession",
+                        "capture end regions=${page.regionCount} fromCache=${page.fromCache} patchesBefore=${_screen.value.patches.size}",
+                    )
                     _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
                     if (followUps) {
                         if (c.pending > 0) recaptureWhenLoaded(c)
@@ -669,6 +680,7 @@ class ReaderViewModel @Inject constructor(
         cancelScan(restore = false)
         holdPage = false
         screenJob?.cancel(); loadedJob?.cancel(); gestureJob?.cancel()
+        android.util.Log.d("ScreenSession", "clear reason=rotation")
         _screen.update { it.copy(patches = emptyList(), working = false) }
         lastCaptureScroll = null; lastThumb = null; emptyRetriedAt = null
         settleJob?.cancel()
@@ -732,19 +744,38 @@ class ReaderViewModel @Inject constructor(
     /** ML Kit tags named in the UI's language ("Hindi, Arabic"). */
     fun packNames(tags: List<String>): String = tags.joinToString(", ") { languageName(it) }
 
-    /** Keep memory bounded: patches further than a few screens from the viewport are dropped (they are re-made on return). */
-    private fun prune(patches: List<ScreenPatch>, scrollY: Int, viewportH: Int, scale: Float): List<ScreenPatch> {
-        val keep = viewportH * KEEP_SCREENS
-        return patches.filter { val r = it.rectAt(scale); r.bottom >= scrollY - keep && r.top <= scrollY + viewportH + keep }
-    }
 
     /**
      * Which patches to keep. While a page is held (a whole-page scan), they are kept whole under a memory budget:
      * the ones farthest from the viewport go first. Otherwise the usual few screens are kept and the rest are
      * re-made on return.
      */
+    /** How much of the overlay is kept: the screens around the viewport, and the byte budget for them. */
+    private data class PatchLimits(val screens: Int, val maxBytes: Long)
+
+    /**
+     * The limits the user chose, read from the settings snapshot the view model already holds.
+     *
+     * `0` means Auto: the number of screens and the memory cap then follow the phone's own memory. The settings
+     * snapshot is read without blocking: it is already in memory.
+     */
+    private fun retentionLimits(): PatchLimits {
+        val s = settings.value
+        val ramMb = DeviceMemory.totalBytes(context) / (1024L * 1024L)
+        val screens = if (s.overlayScreens > 0) s.overlayScreens else RetentionLimits.autoScreens(ramMb)
+        val mb = if (s.overlayMemoryMb > 0) s.overlayMemoryMb else RetentionLimits.autoOverlayMb(ramMb)
+        return PatchLimits(screens, mb * 1024L * 1024L)
+    }
+
     private fun keepPatches(patches: List<ScreenPatch>, scrollY: Int, viewportH: Int, scale: Float): List<ScreenPatch> {
-        if (!holdPage) return prune(patches, scrollY, viewportH, scale)
+        if (!holdPage) {
+            val limits = retentionLimits()
+            val pruned = PatchWindow.prune(patches, scrollY, viewportH, scale, limits.screens, limits.maxBytes)
+            if (pruned.droppedByDistance > 0 || pruned.droppedByBytes > 0) {
+                android.util.Log.d("ScreenSession", "prune dropped=${pruned.droppedByDistance + pruned.droppedByBytes} reason=${if (pruned.droppedByBytes > 0) "bytes" else "distance"}")
+            }
+            return pruned.kept
+        }
         val viewportCentre = scrollY + viewportH / 2
         return PageScanPlan.evictFarthest(
             patches,
@@ -803,6 +834,7 @@ class ReaderViewModel @Inject constructor(
         cancelScan(restore = false)
         if (!_screen.value.active) { startScreen(capture); bypassCacheOnce = true; translateViewport(); return }
         screenJob?.cancel()
+        android.util.Log.d("ScreenSession", "clear reason=retranslate")
         _screen.update { it.copy(patches = emptyList(), regions = 0, error = null, failure = null) }
         bypassCacheOnce = true
         translateViewport()
@@ -825,8 +857,13 @@ class ReaderViewModel @Inject constructor(
     /** The character sheet of the website being read, for the editor. */
     fun castSheet(): String = castText
 
-    /** Layout changed underneath (new page): forget page-space patches; the next settle re-translates. */
-    fun clearScreenPatches() {
+    /**
+     * Layout changed underneath (new page): forget page-space patches; the next settle re-translates.
+     *
+     * [reason] says why, for the log: which of the things that legitimately clear the patches happened.
+     */
+    fun clearScreenPatches(reason: String = "page") {
+        android.util.Log.d("ScreenSession", "clear reason=$reason")
         cancelScan(restore = false)
         holdPage = false
         screenJob?.cancel()
@@ -889,7 +926,7 @@ class ReaderViewModel @Inject constructor(
         _ui.update { it.copy(site = site, config = cfg) }
         if (old == null || old == cfg) return
         if (old.engineId != cfg.engineId) prewarm(cfg)
-        if (_screen.value.active) { clearScreenPatches(); translateViewport() }
+        if (_screen.value.active) { clearScreenPatches("engineChange"); translateViewport() }
     }
 
     /**
@@ -1024,7 +1061,7 @@ class ReaderViewModel @Inject constructor(
     // ---- MangaWebViewClient.Listener -------------------------------------------------------
 
     override fun onPageStarted(url: String) {
-        clearScreenPatches()
+        clearScreenPatches("page")
         pageText.onPageStarted()
         _ui.update { it.copy(url = url, stripDismissed = false, canGoBack = web?.canGoBack() == true, progress = minOf(it.progress, 10)) }
         viewModelScope.launch {
@@ -1057,7 +1094,7 @@ class ReaderViewModel @Inject constructor(
 
     override fun onProgressUrl(url: String) {
         // A single-page-app chapter change with no page load: the patches of the old chapter are void.
-        if (holdPage && PageScanPlan.pageKey(url) != scanPageKey) clearScreenPatches()
+        if (holdPage && PageScanPlan.pageKey(url) != scanPageKey) clearScreenPatches("pageTurn")
         _ui.update { it.copy(url = url, canGoBack = web?.canGoBack() == true) }
     }
 

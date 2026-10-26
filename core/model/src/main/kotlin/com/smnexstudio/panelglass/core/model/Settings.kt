@@ -43,6 +43,14 @@ data class Settings(
     val activeUserModelId: String = "",
     /** How much of the conversation around a bubble the reader sends to the model. */
     val dialogueContext: DialogueContext = DialogueContext.STANDARD,
+    /** The screens of overlays kept around the viewport; 0 means Auto. */
+    val overlayScreens: Int = 0,
+    /** The decoded memory the overlays may use, in MB; 0 means Auto. */
+    val overlayMemoryMb: Int = 0,
+    /** How long a finished translation is kept on disk, so that scrolling back costs no AI call. */
+    val savedTranslations: SavedTranslations = SavedTranslations.CHAPTER,
+    /** The disk the saved translations may use, in MB. */
+    val savedTranslationsMb: Int = 200,
 ) {
     /**
      * The model to call for [id]: the user's choice, else the provider's default; blank when neither exists. A
