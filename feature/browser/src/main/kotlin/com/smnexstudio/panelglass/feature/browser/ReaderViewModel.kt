@@ -330,6 +330,30 @@ class ReaderViewModel @Inject constructor(
     /** The work of saving and restoring, off the main thread. */
     private val storeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /**
+     * The saves that have been started and not yet finished.
+     *
+     * A whole-page scan is not done when the last translation is: the patches it produced still have to be
+     * encoded and written. The reader scrolls back to the top as soon as the scan ends, and the restore there
+     * finds nothing if the writes have not landed yet. The counter is what lets the scan wait for them.
+     */
+    private val pendingSaves = java.util.concurrent.atomic.AtomicInteger(0)
+
+    /**
+     * Waits until the saves that were started have finished.
+     *
+     * It is bounded: a save that hangs must not hold the reader at the end of a scan.
+     */
+    private suspend fun awaitPendingSaves(timeoutMs: Long = SAVE_BARRIER_TIMEOUT_MS) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (pendingSaves.get() > 0 && System.currentTimeMillis() < deadline) {
+            delay(50)
+        }
+        if (pendingSaves.get() > 0) {
+            android.util.Log.d("ScreenSession", "save barrier timed out: pending=${pendingSaves.get()}")
+        }
+    }
+
     // ---- the series' names, pronouns and notes (⋮ › Glossary & pronouns) ------------------------------------
 
     private val series = SeriesMemory(
@@ -479,7 +503,15 @@ class ReaderViewModel @Inject constructor(
             val revealed = deferred.any {
                 it.top * k >= y + EDGE_MARGIN && it.bottom * k <= y + vh - EDGE_MARGIN && it.left * k >= x && it.right * k <= x + vw
             }
-            if (moved || revealed) translateViewport()
+            // The saved translations come back **first**, whether the page moved or not.
+            //
+            // They are the cheapest thing the reader can do: no capture, no detector, no OCR, no engine. A
+            // reader who scrolls back to a page they have already paid for should see it again at once, and the
+            // capture is only needed for what is still missing. This is why the movement threshold no longer
+            // decides whether the saved translations come back.
+            val restored = restoreVisible()
+            // A capture is still needed for the bubbles that were never translated.
+            if (moved || revealed || restored == 0) translateViewport()
         }
     }
 
@@ -757,6 +789,11 @@ class ReaderViewModel @Inject constructor(
             scanning = false
             withContext(NonCancellable) {
                 withContext(Dispatchers.Main) { web?.keepScreenOn = false }
+                // The scan is not over when the last translation is: the patches it produced still have to be
+                // written. The reader scrolls back to the top a moment later, and the restore there finds
+                // nothing if the writes have not landed. The wait is bounded: a save that hangs must not hold
+                // the reader.
+                awaitPendingSaves()
                 _screen.update { it.copy(scan = null, working = false) }
                 // The page goes back to where the scan started: on a normal end, and on a cancel by the button.
                 // A cancel by a touch keeps the place the user took over at (scanRestore is false then).
@@ -879,6 +916,27 @@ class ReaderViewModel @Inject constructor(
 
     /** Asks the page where its images are now (from the latest capture's WebView). */
     private var layoutNow: (suspend () -> ImageLayout?)? = null
+
+    /**
+     * Puts the saved translations of what is on screen back onto the screen, without capturing anything.
+     *
+     * This is the cheap path: the page is asked where its images are (the same little map the capture uses), the
+     * records of those images are read, and the ones that match are decoded and published. No screenshot, no
+     * detector, no OCR, no engine call.
+     *
+     * It returns how many bubbles were actually put on the screen.
+     */
+    private suspend fun restoreVisible(): Int {
+        if (settings.value.savedTranslations == SavedTranslations.OFF) return 0
+        if (bypassCacheOnce) return 0
+        val targetScope = scope
+        if (targetScope.isEmpty()) return 0
+        val layout = layoutNow?.invoke() ?: return 0
+        if (layout.images.isEmpty() || layout.keys.isEmpty()) return 0
+        val viewportH = lastViewport.second
+        if (viewportH <= 0) return 0
+        return restoreInto(layout, viewportH, layout.scale)
+    }
 
     /** Puts every patch whose page image is on screen back onto that image, wherever the layout has moved it. */
     private suspend fun reanchor() {
@@ -1106,6 +1164,7 @@ class ReaderViewModel @Inject constructor(
         val targetScope = scope
         if (targetScope.isEmpty()) return
         val budget = storeBudget()
+        pendingSaves.incrementAndGet()
         storeScope.launch {
             try {
                 val webp = patch.webp
@@ -1119,6 +1178,8 @@ class ReaderViewModel @Inject constructor(
             } catch (e: Exception) {
                 // The class name only: never the text, never the key.
                 android.util.Log.w("ScreenSession", "save failed: ${e::class.simpleName}")
+            } finally {
+                pendingSaves.decrementAndGet()
             }
         }
     }
@@ -1132,20 +1193,31 @@ class ReaderViewModel @Inject constructor(
     private suspend fun promoteSaved(c: ViewportCapture): Int {
         if (settings.value.savedTranslations == SavedTranslations.OFF) return 0
         if (bypassCacheOnce) return 0
-        val gen = pageGen
         val layout = ImageLayout(c.images, c.imageKeys, c.scrollX, c.scrollY, c.scale)
+        return restoreInto(layout, c.bitmap.height, c.scale)
+    }
+
+    /**
+     * Puts the saved translations of [layout] back onto the screen.
+     *
+     * One implementation for both callers: the capture's own layout, and the layout the page reports when the
+     * reader scrolls somewhere. The two must not drift apart.
+     */
+    private suspend fun restoreInto(layout: ImageLayout, viewportH: Int, scale: Float): Int {
+        val gen = pageGen
         val fp = fingerprint
         val targetScope = scope
         if (targetScope.isEmpty()) return 0
+        if (viewportH <= 0) return 0
         val limit = storeMaxAge()
-        val margin = PatchRetention.restoreMargin(retentionLimits().screens, c.bitmap.height)
+        val margin = PatchRetention.restoreMargin(retentionLimits().screens, viewportH)
         val existing = _screen.value.patches
         val restored = ArrayList<ScreenPatch>()
         var quarantined = 0
         withContext(Dispatchers.IO) {
             // Every image of the page, with the occurrence it is: the same picture twice is two images.
-            for (index in c.imageKeys.indices) {
-                val key = c.imageKeys[index]
+            for (index in layout.keys.indices) {
+                val key = layout.keys[index]
                 if (!PatchRetention.retainable(key)) continue
                 // The records of this key: they may belong to several images with the same key.
                 val saved = regions.load(targetScope, key, limit)
@@ -1153,7 +1225,7 @@ class ReaderViewModel @Inject constructor(
                 // The records the broken version left behind are counted, not drawn.
                 quarantined += saved.count { PatchRetention.legacyReason(it.schema) != null }
                 restored += RetentionCoordinator.restore(
-                    saved, key, occurrenceOf(index, c.imageKeys), layout, c.bitmap.height, margin, fp,
+                    saved, key, occurrenceOf(index, layout.keys), layout, viewportH, margin, fp,
                     existing + restored,
                     decode = { bytes -> decodePatch(Patch(0f, 0f, 0f, 0f, bytes)) },
                 )
@@ -1174,7 +1246,7 @@ class ReaderViewModel @Inject constructor(
                 published += p
             }
             val merged = s.patches + published
-            s.copy(patches = keepPatches(merged, c.scrollY, c.bitmap.height, c.scale))
+            s.copy(patches = keepPatches(merged, layout.scrollY, viewportH, scale))
         }
         android.util.Log.d(
             "ScreenSession",
@@ -1481,6 +1553,9 @@ class ReaderViewModel @Inject constructor(
     private companion object {
         /** Quiet time after the last scroll event before the viewport counts as settled. */
         const val SETTLE_MS = 450L
+
+        /** How long the end of a scan waits for the saves it started, in milliseconds. */
+        const val SAVE_BARRIER_TIMEOUT_MS = 5_000L
         /** Zoom steps smaller than this are the same zoom (WebView reports the scale as a float). */
         const val ZOOM_EPSILON = 0.001f
         /** Fraction of the viewport the page must have moved before a settled viewport is captured again. */
