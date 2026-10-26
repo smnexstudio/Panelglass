@@ -94,7 +94,24 @@ class ViewportCapture(
  * The on-screen page images' rects in the viewport (view pixels at [scale]) with their keys, at a given scroll
  * offset (page pixels at [scale]).
  */
-class ImageLayout(val images: List<IntRect>, val keys: List<String>, val scrollX: Int, val scrollY: Int, val scale: Float = 1f)
+class ImageLayout(val images: List<IntRect>, val keys: List<String>, val scrollX: Int, val scrollY: Int, val scale: Float = 1f) {
+    /**
+     * Which of the page's images is the [occurrence]-th one with this key.
+     *
+     * The same picture twice on one page is two images, not one: a record saved from the second must not be drawn
+     * on the first. The old code always took the first match, which put a translation on the wrong picture.
+     */
+    fun occurrenceIndex(key: String, occurrence: Int): Int {
+        if (occurrence < 0) return -1
+        var seen = 0
+        for (i in keys.indices) {
+            if (keys[i] != key) continue
+            if (seen == occurrence) return i
+            seen++
+        }
+        return -1
+    }
+}
 
 /**
  * Where a patch stands on the page image it was made from: that image's key and the patch's offset from the
@@ -120,6 +137,33 @@ internal fun anchorFor(
     val imgW = img.width / scale
     val imgH = img.height / scale
     return Anchor(keys[i], (left - img.left) / scale, (top - img.top) / scale, imgW, imgH)
+}
+
+/**
+ * Which of the page's images a patch at [view] (view pixels) is on; -1 when it is on none of them.
+ *
+ * The patch's **centre** decides, the same way the anchor has always decided: a bubble at the edge of an image
+ * belongs to the image it mostly lies on.
+ */
+internal fun imageIndexFor(view: Geometry.ViewRect, images: List<IntRect>, keys: List<String>): Int {
+    val cx = view.left + view.width / 2
+    val cy = view.top + view.height / 2
+    return images.indices.firstOrNull { images[it].contains(cx, cy) && keys.getOrNull(it).orEmpty().isNotEmpty() } ?: -1
+}
+
+/**
+ * Which occurrence of its key the image at [index] is: the first image with that key is 0, the second 1, and so on.
+ *
+ * The same picture twice on one page is two images, not one.
+ */
+internal fun occurrenceOf(index: Int, keys: List<String>): Int {
+    if (index < 0 || index >= keys.size) return -1
+    val key = keys[index]
+    var seen = 0
+    for (i in 0 until index) {
+        if (keys[i] == key) seen++
+    }
+    return seen
 }
 
 /**
@@ -440,6 +484,9 @@ class ReaderViewModel @Inject constructor(
         val bypass = bypassCacheOnce; bypassCacheOnce = false
         // The page generation at the start of this capture: a save that finishes after the page changed is dropped.
         val gen = pageGen
+        // The settings this capture is translated under. Captured now: a change later must not re-file this work
+        // under different settings.
+        val fp = fingerprint
         var failure: EngineFailure? = null
         // The dialogue-context level is read NOW, not taken from the config that was captured when the page opened:
         // a change in Settings must take effect without reopening the page.
@@ -459,13 +506,37 @@ class ReaderViewModel @Inject constructor(
             ) { patch ->
                 // onPatch runs on the pipeline's worker: decode here, never in composition.
                 val img = decodePatch(patch) ?: return@translate
-                val vx = (patch.xPct / 100f * w).toInt(); val vy = (patch.yPct / 100f * h).toInt()
-                val pw = (patch.wPct / 100f * w).toInt().coerceAtLeast(1); val ph = (patch.hPct / 100f * h).toInt().coerceAtLeast(1)
+                // The capture's numbers, taken once: the viewport's size, the scroll offset and the zoom all
+                // belong to this snapshot. The percentages become view pixels here, and nowhere else.
+                val geo = Geometry.CaptureGeometry(w, h, c.scrollX, c.scrollY, c.scale)
+                val view = Geometry.viewRect(patch.xPct, patch.yPct, patch.wPct, patch.hPct, geo) ?: return@translate
+                val page = Geometry.pageRect(view, geo) ?: return@translate
+                // The image this bubble is really on, and which occurrence of it: the same picture twice on one
+                // page is two images, and a record belongs to the one it was made from.
+                val imageIndex = imageIndexFor(view, c.images, c.imageKeys)
+                val occurrence = if (imageIndex >= 0) occurrenceOf(imageIndex, c.imageKeys) else -1
+                val imageBox = if (imageIndex >= 0) c.images[imageIndex] else null
+                val imageKey = if (imageIndex >= 0) c.imageKeys.getOrNull(imageIndex).orEmpty() else ""
+                val anchor = if (imageIndex >= 0) {
+                    Anchor(
+                        imageKey,
+                        (view.left - imageBox!!.left) / c.scale, (view.top - imageBox.top) / c.scale,
+                        imageBox.width / c.scale, imageBox.height / c.scale,
+                    )
+                } else null
                 val sp = ScreenPatch(
-                    img, left = (c.scrollX + vx) / c.scale, top = (c.scrollY + vy) / c.scale,
-                    width = pw / c.scale, height = ph / c.scale,
-                    anchor = anchorFor(vx, vy, pw, ph, c.images, c.imageKeys, c.scale),
+                    img, left = page.leftCss, top = page.topCss,
+                    width = page.widthCss, height = page.heightCss,
+                    anchor = anchor,
                 )
+                // The record to save, built from the live geometry. It is made here, outside the state update:
+                // a state update may be evaluated more than once, and a save must happen exactly once.
+                val accepted = if (anchor != null && imageBox != null) {
+                    RetentionCoordinator.accept(
+                        imageKey = imageKey, occurrence = occurrence, view = view, image = imageBox,
+                        geo = geo, fingerprint = fp, createdAtMs = System.currentTimeMillis(),
+                    )
+                } else null
                 _screen.update { s ->
                     // Overlapping viewports see the same bubble twice: a patch mostly covered by an existing one
                     // is a duplicate; conversely a fragment (a bubble cut by the last viewport edge) mostly
@@ -476,11 +547,12 @@ class ReaderViewModel @Inject constructor(
                     else {
                         val kept = keepPatches(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale)
                         android.util.Log.d("ScreenSession", "retain patches=${kept.size} bytes=${kept.sumOf { it.bytes }}")
-                        // The translation is saved, so that coming back to it costs no engine call.
-                        savePatch(patch, sp.anchor, gen)
                         s.copy(patches = kept)
                     }
                 }
+                // The translation is saved, so that coming back to it costs no engine call. The save happens
+                // outside the state update, so it happens exactly once per accepted patch.
+                if (accepted != null) savePatch(patch, accepted)
             }
             layoutNow = c.layoutNow ?: layoutNow
             reanchor()
@@ -877,10 +949,13 @@ class ReaderViewModel @Inject constructor(
         android.util.Log.d("ScreenSession", "clear reason=retranslate")
         _screen.update { it.copy(patches = emptyList(), regions = 0, error = null, failure = null) }
         bypassCacheOnce = true
-        // A fresh translation must replace the saved one, not be replaced by it.
+        // A fresh translation must replace the saved one, not be replaced by it. The clear is awaited: the
+        // replacement work starts after the old records are gone, so the clear cannot delete what came after it.
         val gen = pageGen
         val sc = scope
-        storeScope.launch { if (gen == pageGen && sc.isNotEmpty()) regions.clearScope(sc) }
+        storeScope.launch {
+            if (gen == pageGen && sc.isNotEmpty()) regions.clearScope(sc)
+        }
         translateViewport()
     }
 
@@ -945,26 +1020,30 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Saves one patch, off the main thread.
+     * Saves one accepted translation, off the main thread.
      *
      * The patch's bytes are encoded here and never on the main thread: encoding a lossless WEBP costs every patch
      * more than drawing it does.
+     *
+     * [region] carries the geometry, the fingerprint and the scope of the capture it belongs to. Nothing is read
+     * from the view model's current state inside the background work: a save that started under one chapter must
+     * not land in another, and a save that started under one set of settings must not be filed under another.
      */
-    private fun savePatch(patch: Patch, anchor: Anchor?, gen: Int) {
-        val mode = settings.value.savedTranslations
-        if (mode == SavedTranslations.OFF) return
-        val key = anchor?.key ?: return
-        if (!PatchRetention.retainable(key)) return
+    private fun savePatch(patch: Patch, region: AcceptedRegion) {
+        if (settings.value.savedTranslations == SavedTranslations.OFF) return
+        if (!PatchRetention.retainable(region.imageKey)) return
+        // The scope and the budget of the capture this belongs to: captured now, used later, never re-read.
+        val targetScope = scope
+        if (targetScope.isEmpty()) return
+        val budget = storeBudget()
         storeScope.launch {
             try {
                 val webp = patch.webp
-                val p = ScreenPatch(
-                    image = decodePatch(patch) ?: return@launch,
-                    left = 0f, top = 0f, width = patch.wPct, height = patch.hPct, anchor = anchor,
-                )
-                val saved = PatchRetention.toSaved(p, fingerprint, System.currentTimeMillis(), webp) ?: return@launch
-                if (gen != pageGen) return@launch
-                regions.upsert(scope, saved.first, saved.second, storeBudget())
+                val saved = RetentionCoordinator.toSaved(region, webp) ?: return@launch
+                // The epoch is taken here, and the store checks it **inside** its own lock: a clear that happened
+                // while the bytes were being encoded must not be undone by this write.
+                val epoch = regions.epochOf(targetScope)
+                regions.upsert(targetScope, saved.first, saved.second, budget, epoch)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -986,30 +1065,52 @@ class ReaderViewModel @Inject constructor(
         val gen = pageGen
         val layout = ImageLayout(c.images, c.imageKeys, c.scrollX, c.scrollY, c.scale)
         val fp = fingerprint
+        val targetScope = scope
+        if (targetScope.isEmpty()) return 0
         val limit = storeMaxAge()
         val margin = PatchRetention.restoreMargin(retentionLimits().screens, c.bitmap.height)
         val existing = _screen.value.patches
         val restored = ArrayList<ScreenPatch>()
+        var quarantined = 0
         withContext(Dispatchers.IO) {
-            for (key in c.imageKeys.distinct()) {
+            // Every image of the page, with the occurrence it is: the same picture twice is two images.
+            for (index in c.imageKeys.indices) {
+                val key = c.imageKeys[index]
                 if (!PatchRetention.retainable(key)) continue
-                val saved = regions.load(scope, key, limit)
+                // The records of this key: they may belong to several images with the same key.
+                val saved = regions.load(targetScope, key, limit)
                 if (saved.isEmpty()) continue
-                restored += PatchRetention.restore(
-                    saved, key, layout, c.bitmap.height, margin, fp, existing + restored,
+                // The records the broken version left behind are counted, not drawn.
+                quarantined += saved.count { PatchRetention.legacyReason(it.schema) != null }
+                restored += RetentionCoordinator.restore(
+                    saved, key, occurrenceOf(index, c.imageKeys), layout, c.bitmap.height, margin, fp,
+                    existing + restored,
                     decode = { bytes -> decodePatch(Patch(0f, 0f, 0f, 0f, bytes)) },
                 )
             }
         }
-        if (restored.isEmpty()) return 0
+        if (restored.isEmpty()) {
+            android.util.Log.d("ScreenSession", "restore candidates=0 published=0 quarantined=$quarantined")
+            return 0
+        }
         // The page may have changed while the files were read.
         if (gen != pageGen) return 0
+        // The patches that are actually put on the screen: the ones that were not a duplicate of what is there.
+        val published = ArrayList<ScreenPatch>()
         _screen.update { s ->
-            val merged = s.patches + restored.filter { p -> s.patches.none { p.duplicates(it, DUPLICATE_OVERLAP) } }
+            for (p in restored) {
+                if (s.patches.any { p.duplicates(it, DUPLICATE_OVERLAP) }) continue
+                if (published.any { p.duplicates(it, DUPLICATE_OVERLAP) }) continue
+                published += p
+            }
+            val merged = s.patches + published
             s.copy(patches = keepPatches(merged, c.scrollY, c.bitmap.height, c.scale))
         }
-        android.util.Log.d("ScreenSession", "restore added=${restored.size}")
-        return restored.size
+        android.util.Log.d(
+            "ScreenSession",
+            "restore candidates=${restored.size} published=${published.size} quarantined=$quarantined",
+        )
+        return published.size
     }
 
     /**

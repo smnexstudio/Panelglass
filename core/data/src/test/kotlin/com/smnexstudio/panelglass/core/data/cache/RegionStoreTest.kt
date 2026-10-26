@@ -75,15 +75,22 @@ class RegionStoreTest {
         assertEquals(1, s.load("two", "a.jpg").size)
     }
 
+    /**
+     * A long webtoon has more bubbles than the old cap of 300 allowed.
+     *
+     * The cap used to throw the oldest records away while the disk still had room, which is a silent loss of
+     * translations the reader had already paid for. The cap is now a parsing limit, well above what a page holds,
+     * and the store's byte budget is what evicts.
+     */
     @Test
-    fun atMostThreeHundredRegionsAreKept() = runBlocking {
+    fun moreThanThreeHundredRegionsAreKept() = runBlocking {
         val s = store()
         repeat(320) { i ->
             // Each region is in a different place, so none replaces another.
             s.upsert("chapter", "img.jpg", region(ny = i * 0.002f, fingerprint = "fp$i"), maxBytes = 100_000_000)
         }
         val back = s.load("chapter", "img.jpg")
-        assertEquals(300, back.size)
+        assertEquals(320, back.size)
     }
 
     @Test

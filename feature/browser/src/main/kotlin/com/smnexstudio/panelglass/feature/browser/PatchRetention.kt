@@ -16,6 +16,48 @@ import kotlin.math.abs
  */
 object PatchRetention {
     /**
+     * The version of a saved record's geometry.
+     *
+     * Version 1 was wrong: it stored the patch's *percentages* where the CSS pixels belonged, so every restored
+     * translation came back a fraction of its proper size. Those records cannot be repaired — the viewport's size
+     * and the zoom they were made with are gone, and the WEBP's own pixels are the rendered text, not the layout.
+     *
+     * Version 2 keeps the box as a fraction of the image's own size, which is what it was always meant to be.
+     * A v1 record is kept on disk (the user may want it) but never drawn: see [legacyReason].
+     */
+    const val GEOMETRY_SCHEMA = 2
+
+    /** The oldest schema this app can read. */
+    const val OLDEST_SCHEMA = 1
+
+    /**
+     * Why a record cannot be shown, when it cannot.
+     *
+     * A record from the broken version is not silently ignored: the reader is told, so a one-time regeneration
+     * can be explained rather than discovered.
+     */
+    enum class LegacyReason {
+        /** The record was made with the broken percentage geometry. */
+        GEOMETRY_INVALID,
+
+        /** The record's format is newer than this app understands. */
+        FROM_THE_FUTURE,
+    }
+
+    /**
+     * Whether a record's geometry can be trusted, and why not when it cannot.
+     *
+     * A v1 record's sizes are percentages where CSS pixels belonged. WEBP dimensions are not CSS dimensions, and
+     * the zoom now is not the zoom then, so there is no honest way to recover it: the record is quarantined, not
+     * guessed at.
+     */
+    fun legacyReason(schema: Int): LegacyReason? = when {
+        schema >= GEOMETRY_SCHEMA -> null
+        schema < OLDEST_SCHEMA -> LegacyReason.FROM_THE_FUTURE
+        else -> LegacyReason.GEOMETRY_INVALID
+    }
+
+    /**
      * Whether a translation on this image may be kept.
      *
      * - A blank key names no image.
@@ -46,7 +88,7 @@ object PatchRetention {
         val imgH = anchor.imgH
         if (imgW <= 0f || imgH <= 0f) return null
         val region = SavedRegion(
-            schema = 1,
+            schema = GEOMETRY_SCHEMA,
             nx = anchor.dx / imgW,
             ny = anchor.dy / imgH,
             nw = patch.width / imgW,
