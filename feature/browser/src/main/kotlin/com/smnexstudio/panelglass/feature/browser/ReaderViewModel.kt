@@ -91,7 +91,11 @@ class ImageLayout(val images: List<IntRect>, val keys: List<String>, val scrollX
  * Where a patch stands on the page image it was made from: that image's key and the patch's offset from the
  * image's top-left corner, in CSS pixels (zoom-independent).
  */
-class Anchor(val key: String, val dx: Float, val dy: Float)
+class Anchor(
+    val key: String, val dx: Float, val dy: Float,
+    /** The image's CSS size when the anchor was made; 0 when it is not known. */
+    val imgW: Float = 0f, val imgH: Float = 0f,
+)
 
 /**
  * The anchor for a patch at [left],[top] (view pixels at [scale]) whose centre lies on one of [images]; null on
@@ -102,7 +106,11 @@ internal fun anchorFor(
 ): Anchor? {
     val cx = left + width / 2; val cy = top + height / 2
     val i = images.indices.firstOrNull { images[it].contains(cx, cy) && keys.getOrNull(it).orEmpty().isNotEmpty() } ?: return null
-    return Anchor(keys[i], (left - images[i].left) / scale, (top - images[i].top) / scale)
+    val img = images[i]
+    // The image's CSS size: a saved translation is a fraction of it, so it survives a change of zoom or width.
+    val imgW = img.width / scale
+    val imgH = img.height / scale
+    return Anchor(keys[i], (left - img.left) / scale, (top - img.top) / scale, imgW, imgH)
 }
 
 /**
@@ -1112,7 +1120,6 @@ class ReaderViewModel @Inject constructor(
         const val ZOOM_EPSILON = 0.001f
         /** Fraction of the viewport the page must have moved before a settled viewport is captured again. */
         const val MIN_MOVE = 0.2f
-        const val DUPLICATE_OVERLAP = 0.5f
         const val KEEP_SCREENS = 3
         /** Pixels a deferred block must clear the viewport edge by before it counts as whole (the pipeline's own cut margin plus slack). */
         const val EDGE_MARGIN = 8
