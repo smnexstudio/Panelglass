@@ -107,6 +107,11 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 
 | Class | Tests | Covers |
 |---|---|---|
+| `RetentionLimitsTest` | 8 | The limits of what the reader keeps: a supported value is kept, an unsupported one falls back to the default, and the automatic screen count and memory cap follow the phone's memory |
+| `DialogueContextTest` | 5 | The dialogue-context level: off keeps today's two lines for any engine, standard sends six to a cloud engine and four to an on-device one, deep sends twelve and four, and a config that sets nothing behaves as off |
+| `CastSheetTest` | 5 | The character sheet: trimmed, control characters removed but newlines kept, three blank lines made one, cut at the cap, and shorter for a prompt than for the store |
+| `ContextPairSerializationTest` | 2 | A context pair with and without a speaker survives being written down and read back |
+| `ModelSizeHintTest` | 3 | The size a model name gives away: `Llama-3.2-1B-Instruct` is 1, `llama3.2:1b` is 1, `Qwen2.5-0.5B` is 0.5, `qwen2.5-7b-instruct` is 7, `SEA-LION-v3.5-8B` is 8, `mistral-7b-v0.1` is 7; `gpt-4o`, `gemma-3-270m`, `phi-3.5-mini-instruct` and `x86b` say nothing; the last size in the name wins |
 | `BubbleFontTest` | 4 | Saved font names round-trip; retired fonts map to their successor; unknown names are null; each names its Studio catalogue id (`cat:…`), what a choice saved before the catalogue reads back as |
 | `ComicInfoTest` | 10 | ComicInfo.xml round-trip; blank fields left out; escaping of `& < > " '` and control characters; a DOCTYPE entity (external or internal) is never resolved, character references are; CDATA, self-closing and nested elements; garbage gives an empty result; the first complete element of each field wins (attributes, `</Title >`, self-closing left to a later one); an unclosed comment or CDATA; ten crafted 256 KB inputs (unclosed tags, comments, CDATA, DOCTYPEs) each parsed in linear time, under 2 s |
 | `StageInvalidationTest` | 2 | A reshape or a brush stroke clears Cleaned and nothing else; editing text or style clears nothing |
@@ -122,6 +127,11 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 
 | Class | Tests | Covers |
 |---|---|---|
+| `RegionStoreTest` | 18 | The store of finished translations: a record survives the round trip, an overlapping record with the same fingerprint is replaced, different fingerprints coexist, different images and scopes keep their own, at most 300 per image, the budget removes the oldest file first, an expired record is ignored and deleted, a corrupt, truncated or absurd file is dropped rather than thrown, clearing empties the store, clearing one scope leaves the others, two coroutines writing at once leave a readable file, and no file name holds any part of the image key or the scope |
+| `RetentionSettingsTest` | 9 | The retention settings: the defaults, each value saved and read back, an out-of-range stored value is clamped, an unknown mode falls back to the default, and the other settings are not disturbed |
+| `DialogueContextSettingTest` | 4 | The dialogue-context level is saved, read back, survives a new repository over the same store, falls back to the default when the stored name is unknown, and reaches the resolved config |
+| `CastSheetSettingTest` | 7 | The character sheets: saved and read back, the host is not case sensitive, a blank sheet removes the host, a sheet is cleaned, a damaged file gives none, two websites keep their own sheet, and the flow follows the sheet |
+| `PatchCacheKeyTest` | 3 | The patch cache key: an empty variant leaves it exactly as it was, a variant changes it, and two variants give two keys |
 | `Migration3To4Test` | 2 | A version-3 database opened by the app: sites, history, glossary and SFX cache survive; the Studio tables exist; `url_etag` and `ocr_cache` are dropped |
 | `Migration4To5Test` | 2 | A version-4 database opened by the app: glossary entries survive without a pronoun and take one; series notes are stored, read and removed per series |
 | `RetiredSfxModeTest` | 3 | Studio effects saved as Gloss or Overlay (removed) open as Replace with their text and transform kept; Overlay, never written, reads as Replace; Keep and Replace read as saved |
@@ -195,6 +205,10 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 
 | Class | Tests | Covers |
 |---|---|---|
+| `PatchRetentionCharacterizationTest` | 10 | What the reader has always kept in memory: a patch is kept while it is within three viewport heights above or below the viewport, and dropped beyond it. The rule is pinned here so it cannot change by accident |
+| `PatchWindowTest` | 10 | The pruning of the decoded overlays: the distance rule, the byte cap, both together, a patch on screen is never dropped for the bytes, an empty list, one screen, a deterministic order |
+| `PatchRetentionTest` | 22 | The saved translations: what may be kept (a blank key, a `canvas#` page and a `data:` picture may not), a patch without an anchor or without an image size is not saved, a saved patch comes back on the same rect, after a layout shift, at another zoom and after a rotation; a record of a different shape or made with other settings is skipped; a record outside the margin is not restored, one inside it is; a duplicate is skipped; two bubbles of the same size are both restored; a record that cannot be decoded is skipped; the fingerprint holds the settings and nothing else; **a restored bubble is never detected again, so the engine is never called for it** |
+| `ChapterMemoryTest` | 10 | The reader's memory: only the lines above are given, the nearest ones, in reading order; the same bubble replaces the old one, a different one is kept, a far-away line with the same text is another bubble; at most 600 lines are kept, clearing forgets everything, the speaker is carried, and two threads may use it at once |
 | `BlockListTest` | 11 | Hosts and AdBlock formats parsed; exact hosts and their subdomains blocked, parents and unrelated hosts not; `@@` exceptions win; wildcard and context-scoped rules skipped; localhost ignored; cached form round-trips |
 | `PageScanPlanTest` | 12 | The plan of a whole-page scan: a step is 70% of the viewport, the stops ascend and end at the bottom of the page, a page that fits is one stop, a very long page is capped, the patches that do not fit in memory go first when they are the farthest from the viewport, and the page key drops the fragment |
 | `PatchAnchorTest` | 8 | A patch is anchored to the image under its centre; it follows a reader moving its page in its own layer and scroll anchoring; no key, no anchor; an image off screen leaves the patch in place; the anchor is the same place on the art at any zoom; a patch's CSS rect scales with the zoom; one bubble captured at two zooms is a duplicate |
