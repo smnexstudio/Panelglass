@@ -38,22 +38,41 @@ abstract class LlmEngine(
     /** One call. [maxOutputTokens] caps the reply ([LlmContract.outputBudget]): the provider bills what it writes. */
     protected abstract suspend fun complete(apiKey: String, system: String, turns: List<Turn>, maxOutputTokens: Int): String
 
+    /**
+     * Whether the retry must stand on its own.
+     *
+     * A server at home may rewrite a multi-turn history — dropping the original input, reversing the order — so a
+     * retry that relies on the conversation cannot work there. Such an engine gets one fresh request that carries
+     * the input with it. The hosted providers keep the conversation: they follow it correctly, and their own tests
+     * depend on it.
+     */
+    protected open val selfContainedRetry: Boolean get() = false
+
     override suspend fun translate(req: TranslateRequest): List<TranslatedItem> {
         if (req.items.isEmpty()) return emptyList()
         val key = keys.get(id) ?: throw EngineException(EngineFailure.MissingKey(id))
         val system = LlmContract.systemPrompt(req)
         val montage = if (acceptsImages) req.sfxMontage else null
         val crops = if (acceptsImages) req.readImages.entries.sortedBy { it.key }.map { "Item ${it.key}" to it.value } else emptyList()
-        val turns = mutableListOf(Turn("user", LlmContract.userPayload(req.items, req.readImages.keys), montage, crops))
+        val payload = LlmContract.userPayload(req.items, req.readImages.keys)
+        val turns = mutableListOf(Turn("user", payload, montage, crops))
         val budget = LlmContract.outputBudget(req.items.size)
         val first = complete(key, system, turns, budget)
         return try {
             LlmContract.parse(id, first, req.items)
         } catch (e: EngineException) {
             if (e.failure !is EngineFailure.Malformed) throw e
-            turns += Turn("assistant", first)
-            turns += Turn("user", LlmContract.repairPrompt())
-            LlmContract.parse(id, complete(key, system, turns, budget), req.items)
+            if (selfContainedRetry) {
+                // One fresh request, carrying the input with it: the same images, no assistant turn.
+                val again = listOf(
+                    Turn("user", LlmContract.retryUserMessage(payload, req.readImages.isNotEmpty()), montage, crops),
+                )
+                LlmContract.parse(id, complete(key, system, again, budget), req.items)
+            } else {
+                turns += Turn("assistant", first)
+                turns += Turn("user", LlmContract.repairPrompt())
+                LlmContract.parse(id, complete(key, system, turns, budget), req.items)
+            }
         }
     }
 

@@ -264,6 +264,18 @@ the picker and refused by the registry.
   3 times, overload (HTTP 500/502/503/504/529) up to 2 times, back-off capped at 4 s.
 - **Cloud contract.** LLM engines exchange a JSON array of `{i, text}` items (`LlmContract`); Gemini's reading mode
   returns `{i, source, text}`.
+- **Reading a reply that a local server wrote.** A hosted provider answers with the contract. A server at home may
+  answer with a bare object, with the array inside a code fence, wrapped in a `translations` key, or with the text
+  under `english` or `translation`. `LlmContract.parse` therefore tries the reply as a whole, then as the outermost
+  array, then as the outermost object, and the first that yields a usable list of items wins. An item is usable when
+  it is an object with an `i`; a wrong type anywhere makes the whole candidate unusable rather than throwing, so a
+  reply can never crash the app. What the reply must still carry is unchanged: every requested id exactly once, no
+  ids invented, no reordering.
+- **The retry of a malformed reply.** By default the engine repeats its request with the bad reply and a repair
+  message, which relies on the provider keeping the conversation. A server at home may rewrite that history — the
+  original input dropped, the order reversed — so the Custom AI engine sets `selfContainedRetry` and sends one
+  fresh request that carries the input and the correction together (`LlmContract.retryUserMessage`). The hosted
+  providers keep the old three-turn retry.
 - **On-device contract.** The LiteRT-LM models share one KV cache between prompt and reply (4096 tokens), so they get
   compact numbered lines (`3: translation`) in chunks of at most 12 items, and the reply is streamed and cut as soon
   as every requested line is complete. Only one on-device model is loaded at a time (`LocalEngines`).

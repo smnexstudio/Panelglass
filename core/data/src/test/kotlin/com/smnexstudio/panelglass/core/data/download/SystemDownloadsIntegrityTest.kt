@@ -63,4 +63,18 @@ class SystemDownloadsIntegrityTest {
         assertNotNull(downloads.adopt(f, sha))
         assertTrue(downloads.isVerified(f, sha))
     }
+
+    @Test fun cleartextDownloadsAreRejectedBeforeTheyAreQueued() {
+        for ((i, url) in listOf("http://example.com/model", "http://192.168.0.5/model", "http://[::1]/model").withIndex()) {
+            val key = "insecure-$i"
+            try {
+                downloads.start(key, url, "models/insecure-$i.bin", "Invented test", "Invented description")
+                fail("Expected an insecure download to be refused")
+            } catch (e: IOException) {
+                assertEquals("Only HTTPS downloads are allowed", e.message)
+            }
+            assertFalse(downloads.isActive(key))
+            assertFalse(File(downloads.root(), "models/insecure-$i.bin.part").exists())
+        }
+    }
 }

@@ -57,6 +57,31 @@ class LlmContractTest {
     }
 
     @Test
+    fun thePromptShowsWhatASingleItemReplyLooksLike() {
+        val plain = LlmContract.systemPrompt(TranslateRequest(items, Lang.JA, Lang.EN))
+        assertTrue(plain.contains("Example with one item"), plain)
+        assertTrue(plain.contains("A single item is still an array"), plain)
+        assertTrue(plain.contains("the first character of your reply must be ["), plain)
+        // The same example is in the variant that reads the crops.
+        val withCrops = LlmContract.systemPrompt(
+            TranslateRequest(items, Lang.JA, Lang.EN, readImages = mapOf(0 to ByteArray(1))),
+        )
+        assertTrue(withCrops.contains("Example with one item"), withCrops)
+        assertTrue(withCrops.contains("the first character of your reply must be ["), withCrops)
+    }
+
+    @Test
+    fun theRetryMessageCarriesTheInputWithIt() {
+        val payload = LlmContract.userPayload(items, emptySet())
+        val msg = LlmContract.retryUserMessage(payload)
+        assertTrue(msg.startsWith(payload), msg)
+        assertTrue(msg.contains("Your previous reply could not be used"), msg)
+        assertTrue(msg.contains("The first character of your reply must be ["), msg)
+        // The variant that reads the crops asks for the source as well.
+        assertTrue(LlmContract.retryUserMessage(payload, withSource = true).contains("{i, source, text}"))
+    }
+
+    @Test
     fun promptsCarryTheReadersNotes() {
         val notes = "Characters:\n- Yuki (ユキ): female, she/her"
         val req = TranslateRequest(items, Lang.JA, Lang.EN, notes = notes)

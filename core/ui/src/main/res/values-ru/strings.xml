@@ -700,4 +700,5 @@
     <string name="update_install_permission">Если Android попросит, разрешите Panelglass устанавливать приложения и снова нажмите «Установить».</string>
     <string name="update_failed_check">Не удалось проверить обновления. Проверьте подключение и повторите попытку.</string>
     <string name="update_failed_download">Не удалось загрузить обновление.</string>
+    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
 </resources>

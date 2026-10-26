@@ -9,6 +9,8 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ### Added
 
+- Warn when a Custom AI model name indicates a small parameter count; saving remains allowed.
+
 - **Translate whole page**: the three-dot menu's new item scrolls the page by itself, from the top to the bottom, and
   translates every screen it passes. The translations stay on the page while you are on it, so scrolling back shows
   them at once. The progress is in the bottom bar; **Cancel scan** stops it and scrolls back to where you started, and
@@ -27,6 +29,12 @@ workflow publishes the version's section as the GitHub Release notes.
 - **Export clean pages** from the Studio: a new step in Export asks *Translated* (the lettered pages, as before) or
   *Clean* (text-free pages: the bubbles' text and replaced sound effects erased, nothing lettered), for lettering
   elsewhere. Clean chapters are named `… (Clean)`, so they never replace a translated export.
+
+### Fixed
+
+- Accept compatible-server reply wrappers and text parts; reject duplicate requested IDs and non-string translations.
+- Retry malformed Custom AI replies with the original input instead of relying on conversation history.
+- Refuse cleartext model downloads and guard the production update client against cleartext requests.
 
 ## [0.3.0] - 2026-10-29
 

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.ModelSizeHint
 
 /**
  * White card with a 2.5 dp Ink border and 24 dp radius, sitting on an 8 dp-offset Yellow "sticker" shadow.
@@ -67,6 +68,9 @@ fun StickerDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
  * The "Custom AI" engine also needs its server's address, so its sheet carries a third field and the save callback
  * gains a base-URL argument; every other engine passes `null` for it.
  */
+/** A model smaller than this is warned about: it is unlikely to follow the translation format. */
+private const val SMALL_MODEL_BILLIONS = 2.0
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiKeyDialog(
@@ -142,6 +146,18 @@ fun ApiKeyDialog(
                             }
                         },
                         onClick = { model = id; menuOpen = false },
+                    )
+                }
+            }
+            // A very small model cannot follow the translation format. The user is told, but never stopped: some
+            // small models manage, and the choice is theirs.
+            if (engine == EngineId.CUSTOM) {
+                val size = remember(model) { ModelSizeHint.parameterBillions(model) }
+                if (size != null && size < SMALL_MODEL_BILLIONS) {
+                    Text(
+                        stringResource(R.string.key_small_model_warning),
+                        fontFamily = Jakarta, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.Yellow,
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     )
                 }
             }

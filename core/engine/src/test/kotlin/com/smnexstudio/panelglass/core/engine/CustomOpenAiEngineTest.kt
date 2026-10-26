@@ -198,4 +198,89 @@ class CustomOpenAiEngineTest {
         assertTrue(EngineId.CUSTOM.needsKey)
         assertTrue(EngineId.CUSTOM.hasModel)
     }
+
+    @Test
+    fun aGarbledReplyIsRetriedWithTheInputAndNoHistory() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"I am sorry, I cannot do that."}}]}"""))
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"```json\n[{\"i\":0,\"text\":\"Hello\"},{\"i\":1,\"text\":\"Thanks\"}]\n```"}}]}"""))
+        val engine = engine()
+
+        val out = engine.translate(req)
+
+        assertEquals(listOf("Hello", "Thanks"), out.sortedBy { it.i }.map { it.text })
+        assertEquals(2, server.requestCount)
+
+        // Both requests, in the order they were sent.
+        val first = server.takeRequest()
+        val secondRequest = server.takeRequest()
+        // The second request stands on its own: a system message and one user message, no assistant turn.
+        val second = Json.parseToJsonElement(secondRequest.body.readUtf8()).jsonObject
+        val messages = second["messages"]!!.jsonArray
+        assertEquals(2, messages.size)
+        assertEquals("system", messages[0].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("user", messages[1].jsonObject["role"]!!.jsonPrimitive.content)
+        for (m in messages) assertFalse(m.jsonObject["role"]!!.jsonPrimitive.content == "assistant")
+
+        // The user message carries the original input and the correction.
+        val user = messages[1].jsonObject["content"]!!.jsonPrimitive.content
+        assertTrue(user.contains("\"i\":0"), user)
+        assertTrue(user.contains("\"i\":1"), user)
+        assertTrue(user.contains("The first character of your reply must be ["), user)
+    }
+
+    @Test
+    fun aSecondGarbledReplyIsMalformed() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"nope"}}]}"""))
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"still nope"}}]}"""))
+        val engine = engine()
+
+        val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
+        assertTrue(e.failure is EngineFailure.Malformed)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun aReplyWithEmptyFieldsIsAccepted() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(
+            MockResponse().setBody(
+                """{"model":"","created":-1,"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0},""" +
+                    """"choices":[{"message":{"content":"[{\"i\":0,\"text\":\"Hello\"},{\"i\":1,\"text\":\"Thanks\"}]"}}]}""",
+            ),
+        )
+        val engine = engine()
+
+        val out = engine.translate(req)
+
+        assertEquals(listOf("Hello", "Thanks"), out.sortedBy { it.i }.map { it.text })
+    }
+
+    @Test
+    fun aReplyWhoseContentIsAListOfPartsIsAccepted() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(
+            MockResponse().setBody(
+                """{"choices":[{"message":{"content":[{"type":"text","text":"[{\"i\":0,\"text\":\"Hello\"},""" +
+                    """{\"i\":1,\"text\":\"Thanks\"}]"}]}}]}""",
+            ),
+        )
+        val engine = engine()
+
+        val out = engine.translate(req)
+
+        assertEquals(listOf("Hello", "Thanks"), out.sortedBy { it.i }.map { it.text })
+    }
+
+    @Test
+    fun aReplyWithoutContentIsMalformed() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{}}]}"""))
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{}}]}"""))
+        val engine = engine()
+
+        val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
+        assertTrue(e.failure is EngineFailure.Malformed)
+    }
 }

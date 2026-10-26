@@ -162,7 +162,9 @@ class AppUpdates internal constructor(
         settings: SettingsRepository,
     ) : this(
         downloads, settings,
-        httpClient = { OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build() },
+        httpClient = { OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS)
+            .addInterceptor(com.smnexstudio.panelglass.core.data.di.HttpsOnly())
+            .addNetworkInterceptor(com.smnexstudio.panelglass.core.data.di.HttpsOnly()).build() },
         installedVersion = { kotlin.runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty() },
         debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0,
     )

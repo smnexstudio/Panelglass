@@ -40,6 +40,7 @@ class SystemDownloads @Inject constructor(@ApplicationContext private val contex
      */
     override fun start(key: String, url: String, relativePath: String, title: String, description: String) {
         if (isActive(key)) return
+        if (!url.startsWith("https://", ignoreCase = true)) throw IOException("Only HTTPS downloads are allowed")
         val root = root() ?: throw IOException("Storage unavailable")
         File(root, "$relativePath.part").apply { parentFile?.mkdirs(); delete() }
         val req = DownloadManager.Request(Uri.parse(url))
