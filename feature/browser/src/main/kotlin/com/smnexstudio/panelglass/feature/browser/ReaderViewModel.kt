@@ -1031,8 +1031,14 @@ class ReaderViewModel @Inject constructor(
         }
         val viewportCentre = scrollY + viewportH / 2
         val before = patches.size
-        val kept = PageScanPlan.evictFarthest(
-            patches,
+        // Visible first: the bubbles the reader is looking at are kept whatever the budget says, and the ones
+        // far away go first. A patch that is on screen is never dropped for the byte cap.
+        val (visible, hidden) = patches.partition { p ->
+            val r = p.rectAt(scale)
+            r.bottom >= scrollY && r.top <= scrollY + viewportH
+        }
+        val keptVisible = PageScanPlan.evictFarthest(
+            visible,
             PAGE_PATCH_BUDGET_BYTES,
             bytes = { it.image.width.toLong() * it.image.height * 4L },
             distance = { p ->
@@ -1040,6 +1046,18 @@ class ReaderViewModel @Inject constructor(
                 abs((r.top + r.height / 2) - viewportCentre)
             },
         )
+        // The rest get what is left of the budget.
+        val usedByVisible = keptVisible.sumOf { it.image.width.toLong() * it.image.height * 4L }
+        val keptHidden = PageScanPlan.evictFarthest(
+            hidden,
+            (PAGE_PATCH_BUDGET_BYTES - usedByVisible).coerceAtLeast(0),
+            bytes = { it.image.width.toLong() * it.image.height * 4L },
+            distance = { p ->
+                val r = p.rectAt(scale)
+                abs((r.top + r.height / 2) - viewportCentre)
+            },
+        )
+        val kept = keptVisible + keptHidden
         // The whole-page scan evicts by a rule of its own, so its evictions are said separately.
         if (kept.size < before) {
             RetentionDiagnosticsHub.record(
@@ -1098,14 +1116,17 @@ class ReaderViewModel @Inject constructor(
         android.util.Log.d("ScreenSession", "clear reason=retranslate")
         _screen.update { it.copy(patches = emptyList(), regions = 0, error = null, failure = null) }
         bypassCacheOnce = true
-        // A fresh translation must replace the saved one, not be replaced by it. The clear is awaited: the
-        // replacement work starts after the old records are gone, so the clear cannot delete what came after it.
+        // A fresh translation must replace the saved one, not be replaced by it.
+        //
+        // The clear is awaited before the replacement work starts: the old records are gone first, so the clear
+        // cannot delete what came after it, and the new translation is not refused as a stale write.
         val gen = pageGen
         val sc = scope
-        storeScope.launch {
+        viewModelScope.launch {
             if (gen == pageGen && sc.isNotEmpty()) regions.clearScope(sc)
+            // The replacement starts when the clear is done, not before it.
+            if (gen == pageGen) translateViewport()
         }
-        translateViewport()
     }
 
     // ---- the saved translations: the scope, the fingerprint, saving and restoring -----------------------
