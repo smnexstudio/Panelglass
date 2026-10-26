@@ -558,6 +558,11 @@ class ReaderViewModel @Inject constructor(
         val w = c.bitmap.width; val h = c.bitmap.height
         // The viewport's height, for the memory trim: what is on screen is what the user is looking at.
         viewportHeight = h
+        // The settings this capture is translated under, resolved now: a change made after the page opened must
+        // not be filed under the settings of that moment. It is resolved **before** the restore, so the restore
+        // matches the policy that is in force and not the one of the moment the page opened.
+        refreshFingerprint(cfg)
+        val fp = fingerprint
         // The saved translations come back first: they are in the "already done" list below, so the pipeline
         // never detects, reads or translates them again.
         promoteSaved(c)
@@ -569,9 +574,9 @@ class ReaderViewModel @Inject constructor(
         val bypass = bypassCacheOnce; bypassCacheOnce = false
         // The page generation at the start of this capture: a save that finishes after the page changed is dropped.
         val gen = pageGen
-        // The settings this capture is translated under. Captured now: a change later must not re-file this work
-        // under different settings.
-        val fp = fingerprint
+        // How many patches were on the screen BEFORE this capture: the number is about the capture, and reading
+        // it afterwards counted the patches the capture itself had just added.
+        val patchesBefore = _screen.value.patches.size
         var failure: EngineFailure? = null
         // The dialogue-context level is read NOW, not taken from the config that was captured when the page opened:
         // a change in Settings must take effect without reopening the page.
@@ -664,7 +669,8 @@ class ReaderViewModel @Inject constructor(
                     }
                     android.util.Log.d(
                         "ScreenSession",
-                        "capture end regions=${page.regionCount} fromCache=${page.fromCache} patchesBefore=${_screen.value.patches.size}",
+                        "capture end regions=${page.regionCount} fromCache=${page.fromCache} " +
+                            "patchesBefore=$patchesBefore patchesAfter=${_screen.value.patches.size}",
                     )
                     _screen.update { it.copy(working = false, regions = it.regions + page.regionCount) }
                     if (followUps) {
@@ -1106,7 +1112,25 @@ class ReaderViewModel @Inject constructor(
                 SavedTranslations.WEEK -> Unit
             }
         }
-        fingerprint = PatchRetention.fingerprint(cfg, modelTag(cfg), SeriesResolver.digest(cfg), TranslationPipeline.PIPELINE_VERSION)
+        refreshFingerprint(cfg)
+    }
+
+    /**
+     * Brings the fingerprint up to date with the settings as they are now.
+     *
+     * The fingerprint was once computed when the page opened. A change made afterwards — a different model, a
+     * different dialogue level, a character sheet that has been filled in — would then be filed under the old
+     * settings, and a translation made under one policy would be shown under another. It is rebuilt at the start
+     * of every capture, so it always describes the work that is about to happen.
+     */
+    private suspend fun refreshFingerprint(cfg: TranslateConfig) {
+        val level = settings.value.dialogueContext
+        val contextTag = if (level == DialogueContext.OFF) "" else "ctx${cfg.contextLimit()}"
+        val castTag = if (castText.isBlank()) "" else "cast" + RegionStore.sha256Hex(castText.toByteArray()).take(8)
+        fingerprint = PatchRetention.fingerprint(
+            cfg, modelTag(cfg), SeriesResolver.digest(cfg), TranslationPipeline.PIPELINE_VERSION,
+            contextTag, castTag,
+        )
     }
 
     /**

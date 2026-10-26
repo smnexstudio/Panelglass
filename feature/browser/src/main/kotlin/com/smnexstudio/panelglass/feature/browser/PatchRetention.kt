@@ -169,12 +169,22 @@ object PatchRetention {
     /**
      * What a translation was made with: the languages, the engine, the model, the font, the series and the pipeline.
      *
-     * It must not hold anything that changes between two translations of the same page and nothing that is a secret:
-     * no dialogue-context setting, no session id, no timestamp, no key.
+     * It must not hold anything that changes between two translations of the same page and nothing that is a
+     * secret: no session id, no timestamp, no key.
+     *
+     * The dialogue-context level and the character sheet **are** in it, as a digest and never as text. They
+     * change what the engine is told, so a translation made with one set of them is not the same translation as
+     * one made with another — and a saved translation made without the character sheet must not be shown when
+     * the sheet has since been filled in, and the other way round.
      */
-    fun fingerprint(cfg: TranslateConfig, modelTag: String, seriesDigest: String, pipelineVersion: Int): String =
-        "v1|${cfg.src.code}|${cfg.tgt.code}|${cfg.engineId.name}|$modelTag|${cfg.fontId ?: "auto"}|" +
-            seriesDigest.take(8) + "|$pipelineVersion"
+    fun fingerprint(
+        cfg: TranslateConfig, modelTag: String, seriesDigest: String, pipelineVersion: Int,
+        contextTag: String = "", castTag: String = "",
+    ): String =
+        "v2|${cfg.src.code}|${cfg.tgt.code}|${cfg.engineId.name}|$modelTag|${cfg.fontId ?: "auto"}|" +
+            seriesDigest.take(8) + "|$pipelineVersion" +
+            (if (contextTag.isEmpty()) "" else "|$contextTag") +
+            (if (castTag.isEmpty()) "" else "|$castTag")
 }
 
 /**

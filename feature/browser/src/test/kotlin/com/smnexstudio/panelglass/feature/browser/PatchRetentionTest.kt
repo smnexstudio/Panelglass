@@ -216,11 +216,28 @@ class PatchRetentionTest {
     fun theFingerprintHoldsTheSettingsAndNothingElse() {
         val cfg = TranslateConfig(Lang.JA, Lang.EN, EngineId.CUSTOM, fontId = "comic")
         val fp = PatchRetention.fingerprint(cfg, "my-model", "abcdef1234567890", 15)
-        assertEquals("v1|ja|en|CUSTOM|my-model|comic|abcdef12|15", fp)
+        assertEquals("v2|ja|en|CUSTOM|my-model|comic|abcdef12|15", fp)
         // Nothing secret, nothing that changes between two translations of the same page.
         assertFalse(fp.contains("key"))
         assertFalse(fp.contains("http"))
         assertFalse(fp.contains("timestamp"))
+    }
+
+    /**
+     * The dialogue level and the character sheet change what the engine is told, so they are part of the
+     * identity of a translation. The sheet is a digest of its text: the text itself is never in the fingerprint.
+     */
+    @Test
+    fun theFingerprintHoldsTheContextPolicyAndTheCastSheet() {
+        val cfg = TranslateConfig(Lang.JA, Lang.EN, EngineId.CUSTOM, fontId = "comic")
+        val plain = PatchRetention.fingerprint(cfg, "my-model", "abcdef1234567890", 15)
+        val withContext = PatchRetention.fingerprint(cfg, "my-model", "abcdef1234567890", 15, "ctx6")
+        val withCast = PatchRetention.fingerprint(cfg, "my-model", "abcdef1234567890", 15, "", "cast1234")
+        assertTrue(plain != withContext)
+        assertTrue(plain != withCast)
+        assertTrue(withContext != withCast)
+        // The cast sheet's text is never in it: only its digest.
+        assertFalse(withCast.contains("Kano"))
     }
 
     @Test
