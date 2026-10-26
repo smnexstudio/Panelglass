@@ -1017,13 +1017,21 @@ class ReaderViewModel @Inject constructor(
         if (!holdPage) {
             val limits = retentionLimits()
             val pruned = PatchWindow.prune(patches, scrollY, viewportH, scale, limits.screens, limits.maxBytes)
-            if (pruned.droppedByDistance > 0 || pruned.droppedByBytes > 0) {
-                android.util.Log.d("ScreenSession", "prune dropped=${pruned.droppedByDistance + pruned.droppedByBytes} reason=${if (pruned.droppedByBytes > 0) "bytes" else "distance"}")
+            if (pruned.droppedByDistance > 0) {
+                RetentionDiagnosticsHub.record(
+                    RetentionEvent(RetentionReason.DECODED_EVICTED_DISTANCE, pruned.droppedByDistance.toLong()),
+                )
+            }
+            if (pruned.droppedByBytes > 0) {
+                RetentionDiagnosticsHub.record(
+                    RetentionEvent(RetentionReason.DECODED_EVICTED_BYTES, pruned.droppedByBytes.toLong()),
+                )
             }
             return pruned.kept
         }
         val viewportCentre = scrollY + viewportH / 2
-        return PageScanPlan.evictFarthest(
+        val before = patches.size
+        val kept = PageScanPlan.evictFarthest(
             patches,
             PAGE_PATCH_BUDGET_BYTES,
             bytes = { it.image.width.toLong() * it.image.height * 4L },
@@ -1032,6 +1040,13 @@ class ReaderViewModel @Inject constructor(
                 abs((r.top + r.height / 2) - viewportCentre)
             },
         )
+        // The whole-page scan evicts by a rule of its own, so its evictions are said separately.
+        if (kept.size < before) {
+            RetentionDiagnosticsHub.record(
+                RetentionEvent(RetentionReason.DECODED_EVICTED_WHOLE_PAGE, (before - kept.size).toLong()),
+            )
+        }
+        return kept
     }
 
     private var bypassCacheOnce = false
@@ -1189,6 +1204,7 @@ class ReaderViewModel @Inject constructor(
         if (targetScope.isEmpty()) return
         val budget = storeBudget()
         pendingSaves.incrementAndGet()
+        RetentionDiagnosticsHub.record(RetentionEvent(RetentionReason.SAVE_QUEUED))
         storeScope.launch {
             try {
                 val webp = patch.webp
@@ -1201,6 +1217,7 @@ class ReaderViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 // The class name only: never the text, never the key.
+                RetentionDiagnosticsHub.record(RetentionEvent(RetentionReason.SAVE_FAILED))
                 android.util.Log.w("ScreenSession", "save failed: ${e::class.simpleName}")
             } finally {
                 pendingSaves.decrementAndGet()
@@ -1256,7 +1273,9 @@ class ReaderViewModel @Inject constructor(
             }
         }
         if (restored.isEmpty()) {
-            android.util.Log.d("ScreenSession", "restore candidates=0 published=0 quarantined=$quarantined")
+            RetentionDiagnosticsHub.record(
+                RetentionEvent(RetentionReason.RESTORED_CANDIDATE, 0, quarantined.toLong()),
+            )
             return 0
         }
         // The page may have changed while the files were read.
@@ -1272,9 +1291,11 @@ class ReaderViewModel @Inject constructor(
             val merged = s.patches + published
             s.copy(patches = keepPatches(merged, layout.scrollY, viewportH, scale))
         }
-        android.util.Log.d(
-            "ScreenSession",
-            "restore candidates=${restored.size} published=${published.size} quarantined=$quarantined",
+        RetentionDiagnosticsHub.record(
+            RetentionEvent(RetentionReason.RESTORED_CANDIDATE, restored.size.toLong(), quarantined.toLong()),
+        )
+        RetentionDiagnosticsHub.record(
+            RetentionEvent(RetentionReason.PUBLISHED_RESTORE, published.size.toLong()),
         )
         return published.size
     }
@@ -1305,6 +1326,7 @@ class ReaderViewModel @Inject constructor(
     fun trimOverlays() {
         val s = _screen.value
         if (!s.active) return
+        RetentionDiagnosticsHub.record(RetentionEvent(RetentionReason.DECODED_EVICTED_MEMORY_TRIM))
         val scroll = lastCaptureScroll?.second ?: return
         val scale = _zoom.value
         val height = viewportHeight.takeIf { it > 0 } ?: return

@@ -137,24 +137,45 @@ object RetentionCoordinator {
             // A record of another image with the same key belongs to another picture.
             if (rec.occurrence != occurrence) continue
             // A record made with other settings is not shown; it is not deleted either.
-            if (rec.fingerprint != fingerprint) continue
+            if (rec.fingerprint != fingerprint) {
+                skipped(RetentionReason.FINGERPRINT_MISMATCH)
+                continue
+            }
             // The broken v1 records had their sizes in percentages: they cannot be trusted.
-            if (rec.schema < PatchRetention.GEOMETRY_SCHEMA) continue
+            val legacy = PatchRetention.legacyReason(rec.schema)
+            if (legacy != null) {
+                skipped(RetentionReason.LEGACY_GEOMETRY_INVALID)
+                continue
+            }
             // A different shape means a different picture: the record is skipped.
             val savedRatio = if (rec.imgW > 0f && rec.imgH > 0f) rec.imgH / rec.imgW else 0f
             val nowRatio = h / w
-            if (savedRatio <= 0f || abs(nowRatio - savedRatio) > 0.02f * savedRatio) continue
+            if (savedRatio <= 0f || abs(nowRatio - savedRatio) > 0.02f * savedRatio) {
+                skipped(RetentionReason.ASPECT_MISMATCH)
+                continue
+            }
 
             val norm = Geometry.NormalizedRect(rec.nx, rec.ny, rec.nw, rec.nh)
-            val page = Geometry.pageRectFromNormalized(norm, img, layout) ?: continue
+            val page = Geometry.pageRectFromNormalized(norm, img, layout)
+            if (page == null) {
+                skipped(RetentionReason.OUTSIDE_WINDOW)
+                continue
+            }
             // Only what is near the viewport comes back.
             val topPx = page.topCss * scale
             val bottomPx = page.bottomCss * scale
-            if (bottomPx < layout.scrollY - restoreMarginPx) continue
-            if (topPx > layout.scrollY + viewportH + restoreMarginPx) continue
+            if (bottomPx < layout.scrollY - restoreMarginPx || topPx > layout.scrollY + viewportH + restoreMarginPx) {
+                skipped(RetentionReason.OUTSIDE_WINDOW)
+                continue
+            }
 
+            val image = decode(rec.webp)
+            if (image == null) {
+                skipped(RetentionReason.DECODE_FAILED)
+                continue
+            }
             val patch = ScreenPatch(
-                image = decode(rec.webp) ?: continue,
+                image = image,
                 left = page.leftCss, top = page.topCss, width = page.widthCss, height = page.heightCss,
                 // The anchor carries the fraction of the image as well as the CSS offset, so a later reanchor
                 // moves and resizes the bubble by the same rule the restore used.
@@ -164,9 +185,21 @@ object RetentionCoordinator {
                 ),
             )
             // The screen may already have this bubble: it was translated again in the meantime.
-            if (existing.any { patch.duplicates(it, DUPLICATE_OVERLAP) }) continue
+            if (existing.any { patch.duplicates(it, DUPLICATE_OVERLAP) }) {
+                skipped(RetentionReason.DUPLICATE)
+                continue
+            }
             out += patch
         }
         return out
+    }
+
+    /**
+     * One record was not shown, and the reason is said.
+     *
+     * The reason is a name and a count: never the record, never the key, never the text.
+     */
+    private fun skipped(reason: RetentionReason) {
+        RetentionDiagnosticsHub.record(RetentionEvent(reason, 1))
     }
 }

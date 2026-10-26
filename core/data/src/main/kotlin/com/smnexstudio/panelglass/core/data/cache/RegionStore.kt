@@ -154,7 +154,8 @@ class RegionStore(
             // The check is inside the lock that serialises the writes: a write that is waiting for it sees the
             // new epoch and is refused, so a clear is never undone by a write that was already on its way.
             if (epoch != currentEpoch(scope)) {
-                android.util.Log.d("RegionStore", "stale write rejected")
+                // The write belongs to a state that no longer exists: the clear that came after it won.
+                log("stale write rejected")
                 return@withLock
             }
             ensureScanned()
@@ -172,7 +173,7 @@ class RegionStore(
             // throwing the oldest away while the disk has room is a silent loss. What is over the budget is not
             // dropped in silence: it is said, and the store's own byte budget evicts whole files.
             val capped = if (merged.size > MAX_REGIONS) {
-                android.util.Log.d("RegionStore", "record budget reached: ${merged.size} -> $MAX_REGIONS")
+                log("record budget reached: ${merged.size} -> $MAX_REGIONS")
                 merged.takeLast(MAX_REGIONS)
             } else merged
             val previous = if (f.isFile) f.length() else 0L
@@ -230,6 +231,20 @@ class RegionStore(
 
     /** How much disk the saved translations use. */
     suspend fun sizeBytes(): Long = withContext(Dispatchers.IO) { mutex.withLock { ensureScanned(); totalBytes } }
+
+    /**
+     * How much disk the saved translations use, and how much of it is really there.
+     *
+     * The two must be the same number: a count that is too large makes the store throw away files that are
+     * still there.
+     */
+    suspend fun sizeBytesAndActual(): Pair<Long, Long> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            ensureScanned()
+            val actual = dir.walkTopDown().filter { it.isFile && !it.isTemporary() }.sumOf { it.length() }
+            totalBytes to actual
+        }
+    }
 
     // ---- the file -------------------------------------------------------------------------------
 
@@ -389,6 +404,20 @@ class RegionStore(
         if (inter / smaller < 0.6f) return false
         val ratio = maxOf(areaA, areaB) / smaller
         return ratio <= 2.5f
+    }
+
+    /**
+     * A line in the log, if there is a log.
+     *
+     * A unit test has no Android framework, and a diagnostic that crashes the app it is meant to explain is
+     * worse than no diagnostic. The line holds a number and a word: never a key, never a URL, never text.
+     */
+    private fun log(message: String) {
+        try {
+            android.util.Log.d("RegionStore", message)
+        } catch (_: Throwable) {
+            // No framework: nothing to log to, and nothing to do about it.
+        }
     }
 
     /** A file that is not a committed record: a write in progress, or one that was put aside. */

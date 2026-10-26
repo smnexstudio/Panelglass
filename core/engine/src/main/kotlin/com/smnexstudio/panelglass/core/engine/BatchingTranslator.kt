@@ -67,7 +67,7 @@ class Reading(val text: String, val source: String?, val speaker: String? = null
  */
 @Singleton
 class BatchingTranslator @Inject constructor(
-    private val registry: EngineRegistry,
+    private val registry: EngineResolver,
     private val sfxDictionary: SfxDictionary,
     private val sfxCache: SfxCacheRepository,
 ) {
