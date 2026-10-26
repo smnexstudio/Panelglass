@@ -25,6 +25,7 @@ import com.smnexstudio.panelglass.core.ocr.MangaOcrStore
 import com.smnexstudio.panelglass.core.ocr.LamaStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.EngineException
+import com.smnexstudio.panelglass.core.data.cache.RegionStore
 import com.smnexstudio.panelglass.core.model.DialogueContext
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -33,6 +34,7 @@ import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.QwenBackend
 import com.smnexstudio.panelglass.core.model.RegionItem
 import com.smnexstudio.panelglass.core.model.RegionKind
+import com.smnexstudio.panelglass.core.model.SavedTranslations
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.TranslateRequest
 import com.smnexstudio.panelglass.core.model.UserModel
@@ -110,6 +112,7 @@ class SettingsViewModel @Inject constructor(
     private val updates: AppUpdates,
     private val userModels: UserModelLibrary,
     private val catalog: HfCatalog,
+    private val regions: RegionStore,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
     val keys: StateFlow<Set<EngineId>> = registry.observeKeys().stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
@@ -269,6 +272,21 @@ class SettingsViewModel @Inject constructor(
 
     /** How much of the conversation around a bubble the reader sends to the model. */
     fun setDialogueContext(v: DialogueContext) = viewModelScope.launch { repo.setDialogueContext(v) }
+
+    /** The screens of overlays kept around the viewport; 0 means Auto. */
+    fun setOverlayScreens(v: Int) = viewModelScope.launch { repo.setOverlayScreens(v) }
+
+    /** The decoded memory the overlays may use, in MB; 0 means Auto. */
+    fun setOverlayMemoryMb(v: Int) = viewModelScope.launch { repo.setOverlayMemoryMb(v) }
+
+    /** How long a finished translation is kept on disk. */
+    fun setSavedTranslations(v: SavedTranslations) = viewModelScope.launch { repo.setSavedTranslations(v) }
+
+    /** The disk the saved translations may use, in MB. */
+    fun setSavedTranslationsMb(v: Int) = viewModelScope.launch { repo.setSavedTranslationsMb(v) }
+
+    /** Frees the storage the saved translations took. The pages will be translated again. */
+    fun clearSavedTranslations() = viewModelScope.launch { regions.clear() }
 
     /** Settings › About: the installed version, and a check for a newer release (shown by the app-wide dialog). */
     val appVersion: String get() = updates.currentVersion

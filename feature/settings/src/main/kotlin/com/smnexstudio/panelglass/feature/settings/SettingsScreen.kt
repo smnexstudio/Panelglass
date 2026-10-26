@@ -71,6 +71,8 @@ import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.DialogueContext
+import com.smnexstudio.panelglass.core.model.RetentionLimits
+import com.smnexstudio.panelglass.core.model.SavedTranslations
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.Lang
@@ -153,6 +155,11 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     var notesDialog by remember { mutableStateOf(false) }
     var sfxPicker by remember { mutableStateOf(false) }
     var dialoguePicker by remember { mutableStateOf(false) }
+    var overlayScreensPicker by remember { mutableStateOf(false) }
+    var overlayMemoryPicker by remember { mutableStateOf(false) }
+    var savedTranslationsPicker by remember { mutableStateOf(false) }
+    var savedStoragePicker by remember { mutableStateOf(false) }
+    var clearSavedConfirm by remember { mutableStateOf(false) }
     val sfxNames = mapOf(
         SfxMode.SKIP to stringResource(UiR.string.studio_sfx_keep), SfxMode.REPLACE to stringResource(UiR.string.studio_sfx_replace),
     )
@@ -162,6 +169,39 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
         DialogueContext.DEEP to stringResource(UiR.string.dialogue_deep),
     )
     val dialogueDesc = stringResource(UiR.string.settings_dialogue_context_desc)
+    val auto = stringResource(UiR.string.settings_memory_auto)
+    val overlayScreensNames = mapOf(
+        0 to auto,
+        1 to stringResource(UiR.string.settings_memory_screens, 1),
+        2 to stringResource(UiR.string.settings_memory_screens_plural, 2),
+        3 to stringResource(UiR.string.settings_memory_screens_plural, 3),
+        4 to stringResource(UiR.string.settings_memory_screens_plural, 4),
+        5 to stringResource(UiR.string.settings_memory_screens_plural, 5),
+        10 to stringResource(UiR.string.settings_memory_screens_plural, 10),
+    )
+    val overlayMemoryNames = mapOf(
+        0 to auto,
+        32 to stringResource(UiR.string.settings_memory_mb, 32),
+        64 to stringResource(UiR.string.settings_memory_mb, 64),
+        128 to stringResource(UiR.string.settings_memory_mb, 128),
+        256 to stringResource(UiR.string.settings_memory_mb, 256),
+    )
+    val savedTranslationsNames = mapOf(
+        SavedTranslations.OFF to stringResource(UiR.string.settings_saved_translations_off),
+        SavedTranslations.CHAPTER to stringResource(UiR.string.settings_saved_translations_chapter),
+        SavedTranslations.WEEK to stringResource(UiR.string.settings_saved_translations_week),
+    )
+    val overlayScreensDesc = stringResource(UiR.string.settings_overlay_screens_desc)
+    val overlayMemoryDesc = stringResource(UiR.string.settings_overlay_memory_desc)
+    val savedTranslationsDesc = stringResource(UiR.string.settings_saved_translations_desc)
+    val savedStorageDesc = stringResource(UiR.string.settings_saved_translations_storage_desc)
+    val savedStorageNames = mapOf(
+        50 to stringResource(UiR.string.settings_memory_mb, 50),
+        100 to stringResource(UiR.string.settings_memory_mb, 100),
+        200 to stringResource(UiR.string.settings_memory_mb, 200),
+        500 to stringResource(UiR.string.settings_memory_mb, 500),
+        1000 to stringResource(UiR.string.settings_memory_gb, 1),
+    )
     val studioStorage by vm.studioStorage.collectAsStateWithLifecycle()
     var deletingManga by remember { mutableStateOf<MangaStorage?>(null) }
     LaunchedEffect(Unit) { vm.loadStudioStorage() }
@@ -222,6 +262,41 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
                 dialogueNames.getValue(s.dialogueContext),
                 onClick = { dialoguePicker = true },
             ) { }
+        }
+
+        // ---- translation memory -----------------------------------------------------------------------
+        SectionLabel(stringResource(UiR.string.settings_memory_title))
+        TokenCard(Modifier.padding(horizontal = 16.dp)) {
+            ValueRow(
+                stringResource(UiR.string.settings_overlay_screens),
+                overlayScreensNames.getValue(s.overlayScreens),
+                onClick = { overlayScreensPicker = true },
+            )
+            CardDivider()
+            ValueRow(
+                stringResource(UiR.string.settings_overlay_memory),
+                overlayMemoryNames.getValue(s.overlayMemoryMb),
+                onClick = { overlayMemoryPicker = true },
+            )
+            CardDivider()
+            ValueRow(
+                stringResource(UiR.string.settings_saved_translations),
+                savedTranslationsNames.getValue(s.savedTranslations),
+                onClick = { savedTranslationsPicker = true },
+            )
+            CardDivider()
+            ValueRow(
+                stringResource(UiR.string.settings_saved_translations_storage),
+                savedStorageNames.getValue(s.savedTranslationsMb),
+                onClick = { savedStoragePicker = true },
+            )
+            CardDivider()
+            ActionRow(
+                stringResource(UiR.string.settings_clear_saved_translations),
+                stringResource(UiR.string.settings_saved_translations_desc),
+                stringResource(UiR.string.action_delete),
+                onAction = { clearSavedConfirm = true },
+            )
         }
 
         // ---- try -------------------------------------------------------------------------------
@@ -419,6 +494,34 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
         // The same description under every option: what the setting does, not what this option does.
         subtitle = { dialogueDesc },
         onPick = { vm.setDialogueContext(it) }, onDismiss = { dialoguePicker = false },
+    )
+    if (overlayScreensPicker) ChoiceSheet(
+        stringResource(UiR.string.settings_overlay_screens), RetentionLimits.SCREEN_CHOICES, s.overlayScreens,
+        render = { overlayScreensNames.getValue(it) },
+        subtitle = { overlayScreensDesc },
+        onPick = { vm.setOverlayScreens(it) }, onDismiss = { overlayScreensPicker = false },
+    )
+    if (overlayMemoryPicker) ChoiceSheet(
+        stringResource(UiR.string.settings_overlay_memory), RetentionLimits.OVERLAY_MB_CHOICES, s.overlayMemoryMb,
+        render = { overlayMemoryNames.getValue(it) },
+        subtitle = { overlayMemoryDesc },
+        onPick = { vm.setOverlayMemoryMb(it) }, onDismiss = { overlayMemoryPicker = false },
+    )
+    if (savedTranslationsPicker) ChoiceSheet(
+        stringResource(UiR.string.settings_saved_translations), SavedTranslations.entries, s.savedTranslations,
+        render = { savedTranslationsNames.getValue(it) },
+        subtitle = { savedTranslationsDesc },
+        onPick = { vm.setSavedTranslations(it) }, onDismiss = { savedTranslationsPicker = false },
+    )
+    if (savedStoragePicker) ChoiceSheet(
+        stringResource(UiR.string.settings_saved_translations_storage), RetentionLimits.STORAGE_MB_CHOICES, s.savedTranslationsMb,
+        render = { savedStorageNames.getValue(it) },
+        subtitle = { savedStorageDesc },
+        onPick = { vm.setSavedTranslationsMb(it) }, onDismiss = { savedStoragePicker = false },
+    )
+    if (clearSavedConfirm) ClearSavedTranslationsDialog(
+        onDismiss = { clearSavedConfirm = false },
+        onConfirm = { vm.clearSavedTranslations(); clearSavedConfirm = false },
     )
     if (notesDialog) TranslationNotesDialog(s.translationNotes, onDismiss = { notesDialog = false }) { vm.setTranslationNotes(it); notesDialog = false }
 
@@ -1191,6 +1294,33 @@ private fun DeleteMangaDialog(m: MangaStorage, onDismiss: () -> Unit, onConfirm:
                 pluralStringResource(UiR.plurals.studio_pages, m.pages, m.pages),
                 android.text.format.Formatter.formatShortFileSize(context, m.bytes),
             ),
+            style = MaterialTheme.typography.bodyMedium, color = Tokens.InkSoft,
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onDismiss)
+            Spacer(Modifier.width(8.dp))
+            PrimaryPill(stringResource(UiR.string.action_delete).uppercase(), letterSpaced = true, onClick = onConfirm)
+        }
+    }
+}
+
+/**
+ * The confirmation for emptying the store of saved translations.
+ *
+ * The pages will be translated again, and a cloud engine will bill for them: that is worth saying before the
+ * storage is freed.
+ */
+@Composable
+private fun ClearSavedTranslationsDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    StickerDialog(onDismiss) {
+        Text(
+            stringResource(UiR.string.settings_clear_saved_translations),
+            fontFamily = Jakarta, fontWeight = FontWeight.W800, fontSize = 20.sp, color = Tokens.Ink,
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            stringResource(UiR.string.settings_clear_saved_translations_confirm),
             style = MaterialTheme.typography.bodyMedium, color = Tokens.InkSoft,
         )
         Spacer(Modifier.height(16.dp))

@@ -234,8 +234,37 @@ Key points:
   viewport 1.2 s later, once the page has laid itself out again.
 - **A steady bottom bar.** The bar keeps one height (64 dp) whether idle or translating: a bar that changed height
   resized the WebView, and a reader that centres its page then moved the art under patches already made.
-- **Memory bound:** patches more than three screens above or below the viewport are pruned and re-made on return.
+- **Memory bound:** patches more than three screens above or below the viewport are pruned, and the decoded bitmaps
+  may not use more than the user's memory cap. A patch that is on screen is never dropped for the cap: the user is
+  looking at it. Settings › Translation memory says how many screens are kept and how much memory they may use.
 - A new page load clears the patches; the next settled viewport translates again.
+
+### Three lifetimes
+
+A translation has three lives, and they are separate:
+
+| Lifetime | What | Where |
+|---|---|---|
+| **Decoded overlay** | the bitmap Compose draws | RAM, bounded by the screen count and the memory cap |
+| **Saved translation** | the rendered bubble as WEBP, its box as a fraction of the image, and a fingerprint | disk (`RegionStore`), its own budget and its own retention |
+| **Whole-viewport cache** | the patches of one captured screen | disk (`PatchCache`), unchanged |
+
+**Pruning only drops the decoded bitmap.** The saved record stays, so the translation is not lost — and not paid for
+again.
+
+**The restore step.** On every capture, before the region of interest is built, the saved records of the images now
+on screen are read, decoded and put back. The region of interest is built from the patches on the screen, so a
+restored bubble is in the "already done" list: the pipeline does not detect it, does not read it and does not call
+the engine for it. The restore window is 75% of the prune distance, so a restored patch is not pruned again at once.
+
+**The guarantee, exactly.** A saved, fingerprint-valid, confidently matched translation is restored with **zero**
+detector, OCR and engine calls. After "Clear saved translations", after the record expires, after it is evicted by
+the storage budget, after a change of language, engine, model, endpoint, font or glossary, or when the image cannot
+be matched, there is no such guarantee and the old behaviour applies: the page is translated again.
+
+**What may be kept.** A record exists only for a patch that lies on an image whose key may be kept: a `canvas#` page
+is never restored (a paged canvas reader reuses the key for every page), and neither is a picture the page drew
+itself (a `data:` key, which `mt.js` shortens). The same image URL twice on one page is one image.
 
 ## Whole-page scan
 

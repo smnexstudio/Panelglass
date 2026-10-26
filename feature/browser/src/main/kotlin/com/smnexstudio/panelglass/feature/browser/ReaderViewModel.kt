@@ -9,6 +9,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.smnexstudio.panelglass.core.data.cache.RegionStore
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
@@ -23,10 +24,13 @@ import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.ImageSource
+import com.smnexstudio.panelglass.core.model.Patch
 import com.smnexstudio.panelglass.core.model.IntRect
 import com.smnexstudio.panelglass.core.model.Lang
 import androidx.compose.ui.graphics.ImageBitmap
 import com.smnexstudio.panelglass.core.pipeline.RegionOfInterest
+import com.smnexstudio.panelglass.core.pipeline.SeriesResolver
+import com.smnexstudio.panelglass.core.model.SavedTranslations
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.Site
 import com.smnexstudio.panelglass.core.model.TranslateConfig
@@ -48,8 +52,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import org.json.JSONTokener
@@ -200,6 +208,7 @@ class ReaderViewModel @Inject constructor(
     private val packs: LanguagePackStore,
     val warmup: ReaderWarmup,
     private val glossary: GlossaryRepository,
+    private val regions: RegionStore,
 ) : ViewModel(), MangaWebViewClient.Listener {
 
     private val _ui = MutableStateFlow(ReaderUiState())
@@ -210,6 +219,18 @@ class ReaderViewModel @Inject constructor(
     private val memory = ChapterMemory()
     /** The user's character sheet for the page being read, in the page's own host. */
     @Volatile private var castText = ""
+
+    // ---- the saved translations -------------------------------------------------------------------
+    /** Bumped at every change of page: a save or a restore that started before it must not touch the new page. */
+    @Volatile private var pageGen = 0
+    /** The last capture's viewport height, in pixels; the memory trim needs it. */
+    @Volatile private var viewportHeight = 0
+    /** The scope the saved translations belong to: the chapter the reader is in. */
+    @Volatile private var scope: String = ""
+    /** The fingerprint of the settings the current translations were made with. */
+    @Volatile private var fingerprint: String = ""
+    /** The work of saving and restoring, off the main thread. */
+    private val storeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // ---- the series' names, pronouns and notes (⋮ › Glossary & pronouns) ------------------------------------
 
@@ -328,6 +349,7 @@ class ReaderViewModel @Inject constructor(
         screenJob?.cancel(); screenJob = null
         capture = null
         android.util.Log.d("ScreenSession", "clear reason=stop")
+        pageGen++
         _screen.value = ScreenSession()
     }
 
@@ -404,12 +426,19 @@ class ReaderViewModel @Inject constructor(
         _zoom.value = c.scale
         _screen.update { it.copy(working = true, error = null, failure = null) }
         val w = c.bitmap.width; val h = c.bitmap.height
+        // The viewport's height, for the memory trim: what is on screen is what the user is looking at.
+        viewportHeight = h
+        // The saved translations come back first: they are in the "already done" list below, so the pipeline
+        // never detects, reads or translates them again.
+        promoteSaved(c)
         // Bubbles an earlier capture already patched (at any zoom) are not read or translated again (the slow
         // part of a scroll).
         val done = _screen.value.patches.map { it.rectAt(c.scale).offset(-c.scrollX, -c.scrollY) }
         val disc = StatusDiscSpec.rectIn(w, context.resources.displayMetrics.density)
         val roi = RegionOfInterest(include = c.images, exclude = c.overlays + disc, done = done)
         val bypass = bypassCacheOnce; bypassCacheOnce = false
+        // The page generation at the start of this capture: a save that finishes after the page changed is dropped.
+        val gen = pageGen
         var failure: EngineFailure? = null
         // The dialogue-context level is read NOW, not taken from the config that was captured when the page opened:
         // a change in Settings must take effect without reopening the page.
@@ -446,6 +475,8 @@ class ReaderViewModel @Inject constructor(
                     else {
                         val kept = keepPatches(s.patches.filter { !it.duplicates(sp, DUPLICATE_OVERLAP) } + sp, c.scrollY, h, c.scale)
                         android.util.Log.d("ScreenSession", "retain patches=${kept.size} bytes=${kept.sumOf { it.bytes }}")
+                        // The translation is saved, so that coming back to it costs no engine call.
+                        savePatch(patch, sp.anchor, gen)
                         s.copy(patches = kept)
                     }
                 }
@@ -845,7 +876,139 @@ class ReaderViewModel @Inject constructor(
         android.util.Log.d("ScreenSession", "clear reason=retranslate")
         _screen.update { it.copy(patches = emptyList(), regions = 0, error = null, failure = null) }
         bypassCacheOnce = true
+        // A fresh translation must replace the saved one, not be replaced by it.
+        val gen = pageGen
+        val sc = scope
+        storeScope.launch { if (gen == pageGen && sc.isNotEmpty()) regions.clearScope(sc) }
         translateViewport()
+    }
+
+    // ---- the saved translations: the scope, the fingerprint, saving and restoring -----------------------
+
+    /**
+     * The scope the saved translations belong to, and the fingerprint of the settings they were made with.
+     *
+     * The scope is the chapter: the page's URL without its fragment. The fingerprint says what the translation was
+     * made with, so a translation made under other settings is never shown again.
+     */
+    private suspend fun prepareStore(url: String, cfg: TranslateConfig) {
+        val s = settings.value
+        val newScope = PageScanPlan.pageKey(url)
+        if (newScope != scope) {
+            scope = newScope
+            when (s.savedTranslations) {
+                SavedTranslations.OFF -> regions.clear()
+                SavedTranslations.CHAPTER -> regions.clearScopesExcept(newScope)
+                SavedTranslations.WEEK -> Unit
+            }
+        }
+        fingerprint = PatchRetention.fingerprint(cfg, modelTag(cfg), SeriesResolver.digest(cfg), TranslationPipeline.PIPELINE_VERSION)
+    }
+
+    /**
+     * What the engine's model is: the model the user chose, and for the user's own server the address too.
+     *
+     * Two servers on one host are two servers, so the whole address is in the tag, not just the host.
+     */
+    private suspend fun modelTag(cfg: TranslateConfig): String {
+        val s = settings.value
+        val parts = ArrayList<String>(2)
+        if (cfg.engineId.hasModel) {
+            val model = s.modelFor(cfg.engineId).trim()
+            if (model.isNotEmpty()) parts += model
+        }
+        when (cfg.engineId) {
+            EngineId.CUSTOM -> {
+                val address = s.customBaseUrl.trim()
+                if (address.isNotEmpty()) {
+                    parts += RegionStore.sha256Hex(address.toByteArray()).take(12)
+                }
+            }
+            EngineId.LOCAL_USER -> {
+                val model = s.activeUserModelId.trim()
+                if (model.isNotEmpty()) parts += model
+            }
+            else -> Unit
+        }
+        return parts.joinToString("|")
+    }
+
+    /** The saved translations' budget, in bytes. */
+    private fun storeBudget(): Long = settings.value.savedTranslationsMb * 1024L * 1024L
+
+    /** How long a saved translation lives, in milliseconds; null when it lives until the chapter ends. */
+    private fun storeMaxAge(): Long? = when (settings.value.savedTranslations) {
+        SavedTranslations.OFF -> null
+        SavedTranslations.CHAPTER -> null
+        SavedTranslations.WEEK -> 7L * 24 * 60 * 60 * 1000
+    }
+
+    /**
+     * Saves one patch, off the main thread.
+     *
+     * The patch's bytes are encoded here and never on the main thread: encoding a lossless WEBP costs every patch
+     * more than drawing it does.
+     */
+    private fun savePatch(patch: Patch, anchor: Anchor?, gen: Int) {
+        val mode = settings.value.savedTranslations
+        if (mode == SavedTranslations.OFF) return
+        val key = anchor?.key ?: return
+        if (!PatchRetention.retainable(key)) return
+        storeScope.launch {
+            try {
+                val webp = patch.webp
+                val p = ScreenPatch(
+                    image = decodePatch(patch) ?: return@launch,
+                    left = 0f, top = 0f, width = patch.wPct, height = patch.hPct, anchor = anchor,
+                )
+                val saved = PatchRetention.toSaved(p, fingerprint, System.currentTimeMillis(), webp) ?: return@launch
+                if (gen != pageGen) return@launch
+                regions.upsert(scope, saved.first, saved.second, storeBudget())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // The class name only: never the text, never the key.
+                android.util.Log.w("ScreenSession", "save failed: ${e::class.simpleName}")
+            }
+        }
+    }
+
+    /**
+     * Puts the saved translations of the images now on screen back onto the screen.
+     *
+     * It runs before the region of interest is built, so the restored bubbles are in the "already done" list and
+     * the pipeline never detects, reads or translates them again.
+     */
+    private suspend fun promoteSaved(c: ViewportCapture): Int {
+        if (settings.value.savedTranslations == SavedTranslations.OFF) return 0
+        if (bypassCacheOnce) return 0
+        val gen = pageGen
+        val layout = ImageLayout(c.images, c.imageKeys, c.scrollX, c.scrollY, c.scale)
+        val fp = fingerprint
+        val limit = storeMaxAge()
+        val margin = PatchRetention.restoreMargin(retentionLimits().screens, c.bitmap.height)
+        val existing = _screen.value.patches
+        val restored = ArrayList<ScreenPatch>()
+        withContext(Dispatchers.IO) {
+            for (key in c.imageKeys.distinct()) {
+                if (!PatchRetention.retainable(key)) continue
+                val saved = regions.load(scope, key, limit)
+                if (saved.isEmpty()) continue
+                restored += PatchRetention.restore(
+                    saved, key, layout, c.bitmap.height, margin, fp, existing + restored,
+                    decode = { bytes -> decodePatch(Patch(0f, 0f, 0f, 0f, bytes)) },
+                )
+            }
+        }
+        if (restored.isEmpty()) return 0
+        // The page may have changed while the files were read.
+        if (gen != pageGen) return 0
+        _screen.update { s ->
+            val merged = s.patches + restored.filter { p -> s.patches.none { p.duplicates(it, DUPLICATE_OVERLAP) } }
+            s.copy(patches = keepPatches(merged, c.scrollY, c.bitmap.height, c.scale))
+        }
+        android.util.Log.d("ScreenSession", "restore added=${restored.size}")
+        return restored.size
     }
 
     /**
@@ -866,12 +1029,35 @@ class ReaderViewModel @Inject constructor(
     fun castSheet(): String = castText
 
     /**
+     * Drops the overlays that are not on screen, keeping the ones the user is looking at.
+     *
+     * This is what the app does when the memory is tight: the decoded bitmaps go first, the saved translations on
+     * disk stay.
+     */
+    fun trimOverlays() {
+        val s = _screen.value
+        if (!s.active) return
+        val scroll = lastCaptureScroll?.second ?: return
+        val scale = _zoom.value
+        val height = viewportHeight.takeIf { it > 0 } ?: return
+        _screen.update { cur ->
+            val visible = cur.patches.filter { p ->
+                val r = p.rectAt(scale)
+                r.bottom >= scroll && r.top <= scroll + height
+            }
+            cur.copy(patches = visible)
+        }
+    }
+
+    /**
      * Layout changed underneath (new page): forget page-space patches; the next settle re-translates.
      *
      * [reason] says why, for the log: which of the things that legitimately clear the patches happened.
      */
     fun clearScreenPatches(reason: String = "page") {
         android.util.Log.d("ScreenSession", "clear reason=$reason")
+        // A new page: a save or a restore that started before this must not touch the new page.
+        if (reason != "glossary" && reason != "retranslate") pageGen++
         cancelScan(restore = false)
         holdPage = false
         screenJob?.cancel()
@@ -1070,6 +1256,11 @@ class ReaderViewModel @Inject constructor(
 
     override fun onPageStarted(url: String) {
         clearScreenPatches("page")
+        // The saved translations belong to this chapter, and were made with these settings.
+        storeScope.launch {
+            val cfg = _ui.value.config
+            if (cfg != null) prepareStore(url, cfg)
+        }
         pageText.onPageStarted()
         _ui.update { it.copy(url = url, stripDismissed = false, canGoBack = web?.canGoBack() == true, progress = minOf(it.progress, 10)) }
         viewModelScope.launch {

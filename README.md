@@ -326,6 +326,10 @@ signed with a different key from the published releases, so uninstall one before
   to the server you named, never an image.
 - **https only**: the app sends nothing in clear text. An `http://` address or link is opened as `https://`, and a
   site that only serves plain http will not load.
+- **Translations are not thrown away when you scroll.** A finished translation is kept on disk, so scrolling far
+  down and back brings it back with no detector, no OCR and no AI call — and no bill. **Settings › Translation
+  memory** controls how many screens are kept in memory, how long the saved ones live, and how much disk they may
+  take.
 - **Links from other apps** open in the reader but are never translated automatically, even with
   translate-on-open on: you tap Start yourself.
 - **Logs** contain timings and failure types only: no keys, page URLs or page text.

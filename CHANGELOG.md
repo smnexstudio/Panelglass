@@ -7,6 +7,16 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Translations no longer vanish while you scroll.** The reader kept three screens of finished translations in
+  memory and threw the rest away, so scrolling far down and back meant detecting, reading and paying for every
+  bubble a second time. A finished translation is now also kept on disk, as the rendered bubble, its place on the
+  image and a fingerprint of the settings it was made with. Coming back to it costs no detector, no OCR and no AI
+  call at all. Settings › **Translation memory** says how many screens are kept in memory, how much memory they may
+  use, how long the saved ones live (off, this chapter, or seven days) and how much disk they may take; a **Clear
+  saved translations** button empties the store.
+
 ### Added
 
 - **Dialogue context.** Settings › Translation gains a three-way choice: *Off* (as before), *Standard* (six lines) or
