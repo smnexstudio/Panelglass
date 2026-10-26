@@ -297,7 +297,7 @@ the picker and refused by the registry.
 | Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality) | DataStore | Includes remembered Gemini request options per model, and the Custom AI server address |
 | API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
 | Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine, `PIPELINE_VERSION`, font, and a digest of the glossary and notes |
-| Saved translations | `RegionStore` (disk, per image) | One file per image, named by hash. The box is a fraction of the image's size, so it survives a zoom or a rotation; a fingerprint says what it was made with. Its own byte budget and its own time-to-live |
+| Saved translations | `RegionStore` (disk, per image) | One file per image, named by hash. The box is a fraction of the image's size, so it survives a zoom or a rotation; a fingerprint says what it was made with. Its own byte budget and its own time-to-live. Each scope has an invalidation epoch: a clear advances it, and a write that carries the older epoch is refused inside the store's lock. The file's own version (2) is separate from a record's geometry version (2) |
 | Detector models | `assets/` | Bundled: comic detector 11 MB, PP-OCRv6 tiny 1.8 MB |
 | LLMs, manga-ocr, LaMa | App-specific external storage | Downloaded by DownloadManager, SHA-256 verified |
 | Update APK | App-specific external storage, `updates/` | Only the release being installed is kept |
@@ -319,6 +319,13 @@ phone, and everything is removed on uninstall.
   calls, and they cost no memory to keep. A patch that is on screen is never dropped for the byte cap.
 - Patches more than three screens away from the viewport are dropped from memory; the saved record stays, so the
   translation comes back without an engine call.
+- **The geometry has one owner.** `Geometry` holds the capture's numbers (the viewport's size, the scroll offset
+  and the zoom) and the conversions between the four coordinate spaces: percentage, view pixel, page CSS and
+  normalized image. The live placement, the record, the restore and the reanchor all read it, so they cannot
+  disagree about where a bubble is or how big it is. `RetentionCoordinator` is the production coordinator the
+  reader uses; the tests drive it, not a copy of it.
+- **The store's count is the truth.** Every mutation that removes files measures the store again, exactly. A count
+  that was too large made the store believe it was over its budget and evict files that were still there.
 - `PanelglassApp.onTrimMemory` releases idle on-device models and manga-ocr sessions under memory pressure
   (`TRIM_MEMORY_RUNNING_LOW` and above), and logs that it did. When the UI is hidden (`TRIM_MEMORY_UI_HIDDEN`), a
   translator still busy is released 5 s after its last call (`LocalEngines.onHidden`), unless the app comes back
@@ -327,7 +334,9 @@ phone, and everything is removed on uninstall.
 ## Security and privacy
 
 - **Keys.** Stored only in `SecureKeyStore`; never logged. HTTP bodies are never logged (they can echo a key).
-- **Logs.** Timings and failure types only: no keys, page URLs, page text or user IDs.
+- **Logs.** Timings and failure types only: no keys, page URLs, page text or user IDs. The retention diagnostics
+  are enum names and counts: `RetentionReason` says why a translation did or did not come back, and the event
+  holds numbers only.
 - **Exported activity.** `MainActivity` accepts a `url` from other apps but loads only `https` (`http` is
   upgraded). The scripted-run extras (`engine`, `src`, `tgt`, `start`) are honoured only in debuggable builds.
 - **Debug and release side by side.** Debug builds use the application ID `com.smnexstudio.panelglass.debug` and the

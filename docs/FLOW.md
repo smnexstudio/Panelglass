@@ -252,19 +252,47 @@ A translation has three lives, and they are separate:
 **Pruning only drops the decoded bitmap.** The saved record stays, so the translation is not lost — and not paid for
 again.
 
-**The restore step.** On every capture, before the region of interest is built, the saved records of the images now
-on screen are read, decoded and put back. The region of interest is built from the patches on the screen, so a
-restored bubble is in the "already done" list: the pipeline does not detect it, does not read it and does not call
-the engine for it. The restore window is 75% of the prune distance, so a restored patch is not pruned again at once.
+**The restore step.** The saved records of the images now on screen are read, decoded and put back **before** the
+region of interest is built, so a restored bubble is in the "already done" list: the pipeline does not detect it,
+does not read it and does not call the engine for it. The restore window is 75% of the prune distance, so a
+restored patch is not pruned again at once.
+
+The restore runs on its own, not only inside a capture. When the page settles after a scroll, the reader asks the
+page where its images are (the same small map the capture uses), reads the records of those images and puts the
+matching ones back. No screenshot, no detector, no OCR, no engine call. A capture is then made only for what is
+still missing.
 
 **The guarantee, exactly.** A saved, fingerprint-valid, confidently matched translation is restored with **zero**
 detector, OCR and engine calls. After "Clear saved translations", after the record expires, after it is evicted by
-the storage budget, after a change of language, engine, model, endpoint, font or glossary, or when the image cannot
-be matched, there is no such guarantee and the old behaviour applies: the page is translated again.
+the storage budget, after a change of language, engine, model, endpoint, font, glossary, dialogue level or character
+sheet, or when the image cannot be matched, there is no such guarantee and the old behaviour applies: the page is
+translated again.
 
 **What may be kept.** A record exists only for a patch that lies on an image whose key may be kept: a `canvas#` page
 is never restored (a paged canvas reader reuses the key for every page), and neither is a picture the page drew
-itself (a `data:` key, which `mt.js` shortens). The same image URL twice on one page is one image.
+itself (a `data:` key, which `mt.js` shortens).
+
+**The same image URL twice on one page is two images.** A record says which occurrence of the key it belongs to, so
+a translation cannot land on the wrong picture. The anchor says the same, so a bubble does not jump to the first
+picture when the page is laid out again.
+
+**The geometry has one owner.** A capture's numbers — the viewport's size, the scroll offset and the zoom — are
+taken once, and the same conversion serves the live placement, the record, the restore and the reanchor. A patch's
+percentages become view pixels with the snapshot's own size, and view pixels become page CSS with the snapshot's
+own zoom. Nothing is re-derived from a rounded rectangle, and a bubble is moved and resized by the same rule: it
+is a fraction of its image, and it stays that fraction.
+
+**The records of the broken version.** An older version stored the patch's *percentages* where the CSS pixels
+belonged, so every translation it saved came back a fraction of its proper size. Those records cannot be
+repaired: the viewport's size and the zoom they were made with are gone, and the WEBP's pixels are the rendered
+text, not the layout. They are kept on disk, they are never drawn, and the reason is said
+(`LEGACY_GEOMETRY_INVALID`). A page that had them is translated again once, by the reader's own choice.
+
+**The order of the writes.** A translation is written after it is drawn, on a background thread, so a clear can land
+while a write is on its way. Every scope has an invalidation epoch; a clear advances it, and a write that carries
+the older epoch is refused **inside the store's own lock**. A write that was already on its way cannot undo a
+clear, and a clear does not delete what came after it. The end of a whole-page scan waits for the writes it
+started, so the scroll back to the top finds the translations it made.
 
 ## Whole-page scan
 

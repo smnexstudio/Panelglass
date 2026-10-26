@@ -9,6 +9,24 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ### Fixed
 
+- **Restored translations come back at the right size and in the right place.** A finished translation that had
+  been kept on disk came back a fraction of its proper size and slightly to the left: the save path had stored the
+  patch's *percentages* where the CSS pixels belonged, and the bubble was moved by one rule and resized by
+  another. The geometry now has one owner — a capture's viewport size, scroll offset and zoom are taken once, and
+  the same conversion serves the live placement, the record, the restore and the reanchor. A bubble is a fraction
+  of its image and stays that fraction, whatever width the page is laid out at.
+- **The same picture twice on one page no longer steals each other's translations.** A record says which
+  occurrence of the image it belongs to, so a translation cannot land on the wrong picture.
+- **Scrolling back brings the saved translations back at once.** They used to come back only with a new capture,
+  and only when the page had moved far enough. They are now restored as soon as the page settles, with no
+  screenshot, no detection, no OCR and no AI call.
+- **A whole-page scan no longer scrolls back before its translations are written.** The end of the scan waits for
+  the writes it started, so the return to the top finds them.
+- **The saved translations are no longer thrown away for nothing.** The store's own count of what it held survived
+  a clear, so it believed it was over its budget and evicted files that were still there. It is measured again
+  after every change.
+- **A clear is no longer undone by a write that was already on its way.** Every scope has an invalidation epoch,
+  and a write that carries an older one is refused inside the store's own lock.
 - **Translations no longer vanish while you scroll.** The reader kept three screens of finished translations in
   memory and threw the rest away, so scrolling far down and back meant detecting, reading and paying for every
   bubble a second time. A finished translation is now also kept on disk, as the rendered bubble, its place on the
