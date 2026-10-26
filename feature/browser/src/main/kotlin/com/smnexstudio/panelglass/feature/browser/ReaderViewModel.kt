@@ -121,6 +121,23 @@ class Anchor(
     val key: String, val dx: Float, val dy: Float,
     /** The image's CSS size when the anchor was made; 0 when it is not known. */
     val imgW: Float = 0f, val imgH: Float = 0f,
+    /**
+     * Which occurrence of [key] this anchor belongs to: 0 is the first picture with that key, 1 the second.
+     *
+     * The same picture twice on one page is two images, and a patch belongs to the one it was found on. The old
+     * code always took the **first** match, which moved a patch on the second picture to the first one — a
+     * leftward shift of the whole bubble.
+     */
+    val occurrence: Int = 0,
+    /**
+     * The patch's size as a fraction of the image's own size.
+     *
+     * The reanchor needs it: when the image is laid out at another width, the bubble's size has to follow the
+     * image, and a fixed CSS size does not.
+     */
+    val nw: Float = 0f, val nh: Float = 0f,
+    /** The patch's place as a fraction of the image's own size: left/width, top/height. */
+    val nx: Float = 0f, val ny: Float = 0f,
 )
 
 /**
@@ -136,7 +153,15 @@ internal fun anchorFor(
     // The image's CSS size: a saved translation is a fraction of it, so it survives a change of zoom or width.
     val imgW = img.width / scale
     val imgH = img.height / scale
-    return Anchor(keys[i], (left - img.left) / scale, (top - img.top) / scale, imgW, imgH)
+    // The fraction of the image the patch takes, so a later reanchor can resize it with the image.
+    val nx = (left - img.left) / scale / imgW
+    val ny = (top - img.top) / scale / imgH
+    val nw = width / scale / imgW
+    val nh = height / scale / imgH
+    return Anchor(
+        keys[i], (left - img.left) / scale, (top - img.top) / scale, imgW, imgH,
+        occurrenceOf(i, keys), nw, nh, nx, ny,
+    )
 }
 
 /**
@@ -173,9 +198,37 @@ internal fun occurrenceOf(index: Int, keys: List<String>): Int {
  * screen while the scroll offset jumped 94 px), or a zoom.
  */
 internal fun anchoredPosition(anchor: Anchor, now: ImageLayout): Pair<Float, Float>? {
-    val i = now.keys.indexOf(anchor.key).takeIf { it >= 0 } ?: return null
+    val i = now.occurrenceIndex(anchor.key, anchor.occurrence).takeIf { it >= 0 } ?: return null
     val img = now.images[i]
     return Pair((now.scrollX + img.left) / now.scale + anchor.dx, (now.scrollY + img.top) / now.scale + anchor.dy)
+}
+
+/**
+ * The box of a patch anchored to an image, from where that image is [now]: where it is and how big it is.
+ *
+ * Both come from the same normalized geometry, so they cannot disagree: a patch that is a fraction of its image
+ * stays that fraction of it, whatever width the page is laid out at. The old code moved the patch by its old CSS
+ * offset but never resized it, so a page that was laid out again left the bubble at the old place and the old size.
+ */
+internal fun anchoredRect(anchor: Anchor, now: ImageLayout): Geometry.PageRect? {
+    val i = now.occurrenceIndex(anchor.key, anchor.occurrence).takeIf { it >= 0 } ?: return null
+    val img = now.images[i]
+    if (!now.scale.isFinite() || now.scale <= 0f) return null
+    val imgWCss = img.width / now.scale
+    val imgHCss = img.height / now.scale
+    if (imgWCss <= 0f || imgHCss <= 0f) return null
+    // The fraction, when it is known: it survives a change of width. The CSS offset, when it is not.
+    val nx = if (anchor.nw > 0f) anchor.nx else anchor.dx / imgWCss
+    val ny = if (anchor.nh > 0f) anchor.ny else anchor.dy / imgHCss
+    val nw = if (anchor.nw > 0f) anchor.nw else 0f
+    val nh = if (anchor.nh > 0f) anchor.nh else 0f
+    val leftCss = (now.scrollX + img.left) / now.scale + nx * imgWCss
+    val topCss = (now.scrollY + img.top) / now.scale + ny * imgHCss
+    return Geometry.PageRect(
+        leftCss = leftCss, topCss = topCss,
+        widthCss = if (nw > 0f) nw * imgWCss else 0f,
+        heightCss = if (nh > 0f) nh * imgHCss else 0f,
+    )
 }
 
 /**
@@ -518,10 +571,15 @@ class ReaderViewModel @Inject constructor(
                 val imageBox = if (imageIndex >= 0) c.images[imageIndex] else null
                 val imageKey = if (imageIndex >= 0) c.imageKeys.getOrNull(imageIndex).orEmpty() else ""
                 val anchor = if (imageIndex >= 0) {
+                    // The anchor carries the CSS offset (for the ordinary scroll) **and** the fraction of the
+                    // image (for a page that is laid out again at another width). Both are the same geometry,
+                    // measured once.
+                    val norm = Geometry.normalizedRect(view, imageBox!!, geo)
                     Anchor(
                         imageKey,
-                        (view.left - imageBox!!.left) / c.scale, (view.top - imageBox.top) / c.scale,
+                        (view.left - imageBox.left) / c.scale, (view.top - imageBox.top) / c.scale,
                         imageBox.width / c.scale, imageBox.height / c.scale,
+                        occurrence, norm?.nw ?: 0f, norm?.nh ?: 0f, norm?.nx ?: 0f, norm?.ny ?: 0f,
                     )
                 } else null
                 val sp = ScreenPatch(
@@ -829,10 +887,22 @@ class ReaderViewModel @Inject constructor(
         var moved = 0
         _screen.update { s ->
             s.copy(patches = s.patches.map { p ->
-                val pos = p.anchor?.let { anchoredPosition(it, now) } ?: return@map p
+                val rect = p.anchor?.let { anchoredRect(it, now) } ?: return@map p
                 // Under a pixel at the current zoom is rounding in the image rects, not a move.
-                if (abs(pos.first - p.left) * now.scale < 1f && abs(pos.second - p.top) * now.scale < 1f) p
-                else { moved++; p.at(pos.first, pos.second) }
+                val samePlace = abs(rect.leftCss - p.left) * now.scale < 1f && abs(rect.topCss - p.top) * now.scale < 1f
+                val sameSize = rect.widthCss <= 0f || abs(rect.widthCss - p.width) * now.scale < 1f
+                if (samePlace && sameSize) p
+                else {
+                    moved++
+                    // The size follows the image too: a page that was laid out at another width gets its bubbles
+                    // resized with it, not only moved.
+                    ScreenPatch(
+                        p.image, rect.leftCss, rect.topCss,
+                        if (rect.widthCss > 0f) rect.widthCss else p.width,
+                        if (rect.heightCss > 0f) rect.heightCss else p.height,
+                        p.anchor,
+                    )
+                }
             })
         }
         if (moved > 0) android.util.Log.d("ScreenSession", "layout moved: $moved patches back on their images")

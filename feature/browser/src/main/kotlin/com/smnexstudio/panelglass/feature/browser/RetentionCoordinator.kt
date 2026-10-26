@@ -156,7 +156,12 @@ object RetentionCoordinator {
             val patch = ScreenPatch(
                 image = decode(rec.webp) ?: continue,
                 left = page.leftCss, top = page.topCss, width = page.widthCss, height = page.heightCss,
-                anchor = Anchor(key, norm.nx * w, norm.ny * h, w, h),
+                // The anchor carries the fraction of the image as well as the CSS offset, so a later reanchor
+                // moves and resizes the bubble by the same rule the restore used.
+                anchor = Anchor(
+                    key, norm.nx * w, norm.ny * h, w, h, occurrence,
+                    norm.nw, norm.nh, norm.nx, norm.ny,
+                ),
             )
             // The screen may already have this bubble: it was translated again in the meantime.
             if (existing.any { patch.duplicates(it, DUPLICATE_OVERLAP) }) continue
