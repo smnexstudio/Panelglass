@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.feature.browser
 
 import android.annotation.SuppressLint
+import android.content.ComponentCallbacks2
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -194,6 +195,25 @@ fun ReaderScreen(
     // Off screen (Settings on top) the page keeps loading but its timers and media stop; the view model destroys it
     // when the reader is closed for good.
     DisposableEffect(Unit) { onDispose { vm.cancelScan(restore = false); webView.onPause() } }
+
+    // Under memory pressure the decoded overlays go first: the bitmaps the reader is not looking at are released,
+    // and the translations on disk stay. The saved ones are what save the AI calls.
+    val appContext = context.applicationContext
+    DisposableEffect(vm) {
+        val callbacks = object : ComponentCallbacks2 {
+            override fun onTrimMemory(level: Int) {
+                if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) vm.trimOverlays()
+            }
+
+            override fun onConfigurationChanged(newConfig: android.content.res.Configuration) = Unit
+
+            override fun onLowMemory() {
+                vm.trimOverlays()
+            }
+        }
+        appContext.registerComponentCallbacks(callbacks)
+        onDispose { appContext.unregisterComponentCallbacks(callbacks) }
+    }
 
     // Translate-on-open (settings or the site): start once; Stop is then the user's to keep.
     LaunchedEffect(autoStart, ui.config != null) {
