@@ -5,6 +5,8 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -207,7 +209,11 @@ class SettingsScreenTest {
         }
         screen()
         eventually { shown("Stardust") }
-        compose.onNodeWithText(s(UiR.string.action_delete)).tap()
+        compose.onNode(
+            hasText(s(UiR.string.action_delete)) and hasAnySibling(
+                hasText("Stardust") or hasAnyDescendant(hasText("Stardust")),
+            ),
+        ).tap()
         eventually { shown(s(UiR.string.settings_studio_delete_title, "Stardust")) }
         compose.onNodeWithText(s(UiR.string.action_delete).uppercase()).tap()
         eventually { runBlocking { rig.studio.allMangas().isEmpty() } }
