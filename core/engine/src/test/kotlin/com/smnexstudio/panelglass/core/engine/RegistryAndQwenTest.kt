@@ -401,4 +401,15 @@ class RegistryAndQwenTest {
         assertTrue(LocalModel.entries.none { it.maxTokens > 4096 })
         assertEquals(LocalModel.GEMMA4, LocalModel.of(EngineId.GEMMA4_LOCAL))
     }
+
+    @Test fun customEndpointsOnDifferentPathsNeverShareACacheTag() = runBlocking {
+        settings.setModel(EngineId.CUSTOM, "invented-model")
+        settings.setCustomBaseUrl("https://example.com/service-a/v1")
+        val first = registry().cacheTag(EngineId.CUSTOM)
+        settings.setCustomBaseUrl("https://example.com/service-b/v1")
+        val second = registry().cacheTag(EngineId.CUSTOM)
+        assertTrue(first != second)
+        settings.setCustomBaseUrl("https://example.com/service-a/v1/chat/completions")
+        assertEquals(first, registry().cacheTag(EngineId.CUSTOM))
+    }
 }

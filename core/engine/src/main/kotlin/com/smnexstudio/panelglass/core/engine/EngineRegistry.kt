@@ -75,8 +75,9 @@ class EngineRegistry @Inject constructor(
             EngineId.CUSTOM -> {
                 val address = s.customBaseUrl.trim()
                 if (address.isNotEmpty()) {
-                    val label = (CustomEndpoint.parse(address) as? CustomEndpoint.Parsed.Ok)?.label
-                        ?: address.substringAfter("://", address).substringBefore('/')
+                    val normalized = CustomEndpoint.normalize(address) ?: address
+                    val label = java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(normalized.toByteArray()).joinToString("") { "%02x".format(it) }
                     if (label.isNotEmpty()) parts += label
                 }
             }
