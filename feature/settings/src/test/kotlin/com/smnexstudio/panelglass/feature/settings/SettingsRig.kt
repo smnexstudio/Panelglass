@@ -56,6 +56,10 @@ internal class SettingsRig(private val context: Context) {
             Json { ignoreUnknownKeys = true },
         )
         val downloads = SystemDownloads(context)
+        val stores = ModelStores(context, downloads)
+        val localEngines = LocalEngines(context, stores)
+        val catalog = com.smnexstudio.panelglass.core.engine.local.HfCatalog(offline)
+        val library = com.smnexstudio.panelglass.core.engine.local.UserModelLibrary(context, settings, stores, localEngines, downloads, catalog)
         val gemini = GeminiEngine(offline, keys, settings)
         val google = GoogleTranslateEngine().apply {
             translatorFactory = { _, _ -> object : PairTranslator {
@@ -64,14 +68,14 @@ internal class SettingsRig(private val context: Context) {
             } }
         }
         registry = EngineRegistry(
-            LocalEngines(context, ModelStores(context, downloads)), gemini, ClaudeEngine(offline, keys, settings),
+            localEngines, gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(offline, keys, settings), ClaudeEngine(offline, keys, settings),
             OpenAiEngine(offline, keys, settings), DeepLEngine(offline, keys), PapagoEngine(offline, keys), DeepSeekEngine(offline, keys),
             google, OpenRouterEngine(offline, keys, settings), keys, settings,
         )
         val packs = LanguagePackStore().apply { manager = NoPacks }
         return models.keep(SettingsViewModel(
             settings, history, registry, gemini, context, ModelStores(context, downloads), packs,
-            MangaOcrStore(context, downloads), LamaStore(context, downloads), studio, AppUpdates(context, downloads, settings),
+            MangaOcrStore(context, downloads), LamaStore(context, downloads), studio, AppUpdates(context, downloads, settings), library, catalog,
         ))
     }
 

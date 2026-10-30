@@ -63,6 +63,9 @@ fun StickerDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
 /**
  * "<Provider> Key": the key (masked), and for providers that take one, the model id (a deliberate addition to
  * the mock — OpenRouter is unusable without it). Save hands back `null` for the key when the saved one is kept.
+ *
+ * The "Custom AI" engine also needs its server's address, so its sheet carries a third field and the save callback
+ * gains a base-URL argument; every other engine passes `null` for it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +73,7 @@ fun ApiKeyDialog(
     engine: EngineId,
     hasKey: Boolean,
     currentModel: String,
-    onSave: (key: String?, model: String?) -> Unit,
+    onSave: (key: String?, model: String?, baseUrl: String?) -> Unit,
     onRemove: (() -> Unit)?,
     onDismiss: () -> Unit,
     /** (id, display name) pairs for the model dropdown; empty leaves the field as plain text. */
@@ -79,12 +82,16 @@ fun ApiKeyDialog(
     modelsError: String? = null,
     /** Asks for the provider's model list, with the key typed so far (null = the saved key). Null: no listing. */
     onLoadModels: ((typedKey: String?) -> Unit)? = null,
+    /** The server's address, for the "Custom AI" engine; null for every other engine. */
+    currentBaseUrl: String = "",
 ) {
     var key by remember(engine) { mutableStateOf("") }
     var model by remember(engine) { mutableStateOf(currentModel) }
+    var baseUrl by remember(engine) { mutableStateOf(currentBaseUrl) }
     var menuOpen by remember(engine) { mutableStateOf(false) }
     LaunchedEffect(engine) { if (hasKey) onLoadModels?.invoke(null) }
-    val canSave = (key.isNotBlank() || hasKey) && (!engine.hasModel || model.isNotBlank())
+    val wantsBaseUrl = engine == EngineId.CUSTOM
+    val canSave = apiKeyCanSave(engine, hasKey, key, model, baseUrl)
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Tokens.Ink, unfocusedBorderColor = Tokens.Border,
         focusedTextColor = Tokens.Ink, unfocusedTextColor = Tokens.Ink, cursorColor = Tokens.Ink,
@@ -154,6 +161,23 @@ fun ApiKeyDialog(
                 }
             }
         }
+        if (wantsBaseUrl) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = baseUrl, onValueChange = { baseUrl = it },
+                placeholder = { Text(stringResource(R.string.key_base_url_hint)) },
+                label = { Text(stringResource(R.string.key_base_url)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
+                shape = RoundedCornerShape(14.dp), colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.key_base_url_note),
+                fontFamily = Jakarta, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.InkFaint,
+            )
+        }
         Spacer(Modifier.height(10.dp))
         Text(
             stringResource(R.string.key_note, engine.uiName()),
@@ -165,7 +189,7 @@ fun ApiKeyDialog(
             TextAction(stringResource(R.string.action_cancel), Tokens.InkSoft, onDismiss)
             Spacer(Modifier.width(8.dp))
             PrimaryPill(stringResource(R.string.action_save).uppercase(), enabled = canSave, letterSpaced = true, onClick = {
-                onSave(key.trim().ifEmpty { null }, if (engine.hasModel) model.trim() else null); onDismiss()
+                onSave(key.trim().ifEmpty { null }, if (engine.hasModel) model.trim() else null, if (wantsBaseUrl) baseUrl.trim() else null); onDismiss()
             })
         }
     }

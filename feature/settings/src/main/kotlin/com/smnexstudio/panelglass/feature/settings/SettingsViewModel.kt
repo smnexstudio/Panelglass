@@ -15,8 +15,10 @@ import com.smnexstudio.panelglass.core.model.SfxMode
 import com.smnexstudio.panelglass.core.data.update.AppUpdates
 import android.content.Context
 import com.smnexstudio.panelglass.core.engine.local.DeviceMemory
+import com.smnexstudio.panelglass.core.engine.local.HfCatalog
 import com.smnexstudio.panelglass.core.engine.local.LocalModel
 import com.smnexstudio.panelglass.core.engine.local.ModelStores
+import com.smnexstudio.panelglass.core.engine.local.UserModelLibrary
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ocr.MangaOcrStore
@@ -25,12 +27,14 @@ import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.QwenBackend
 import com.smnexstudio.panelglass.core.model.RegionItem
 import com.smnexstudio.panelglass.core.model.RegionKind
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.TranslateRequest
+import com.smnexstudio.panelglass.core.model.UserModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,6 +86,14 @@ data class ModelChoices(
     val error: String? = null,
 )
 
+/** What the browse sheet shows: a search result, or one repository's files. */
+data class BrowseState(
+    val loading: Boolean = false,
+    val error: String? = null,
+    val repos: List<HfCatalog.HfRepo> = emptyList(),
+    val listing: HfCatalog.HfListing? = null,
+)
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repo: SettingsRepository,
@@ -95,6 +107,8 @@ class SettingsViewModel @Inject constructor(
     private val lamaStore: LamaStore,
     private val studio: StudioRepository,
     private val updates: AppUpdates,
+    private val userModels: UserModelLibrary,
+    private val catalog: HfCatalog,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
     val keys: StateFlow<Set<EngineId>> = registry.observeKeys().stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
@@ -109,6 +123,119 @@ class SettingsViewModel @Inject constructor(
     val lamaFits: Boolean get() = lamaStore.fitsThisPhone
     val packState: StateFlow<PackState> = packStore.state
     val engines: List<EngineId> get() = EngineId.entries.filter { it.offered && it !in hiddenEngines }
+
+    // ---- the user's own on-device models ------------------------------------------------------
+
+    /** The user's model library, as saved. */
+    val userModelList: StateFlow<List<UserModel>> = userModels.models
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** The state of a user's own model: missing, downloading, ready or failed. */
+    fun stateOf(m: UserModel): StateFlow<ModelState> = modelStores.forUser(m).state
+
+    /** The active user's own model, for the engine picker's row. */
+    val activeUserModel: UserModel?
+        get() = userModelList.value.firstOrNull { it.id == settings.value.activeUserModelId }
+
+    /** Starts a model's download. A model that came from a file has nothing to download. */
+    fun downloadUserModel(m: UserModel) {
+        if (m.url.isBlank()) return
+        modelStores.forUser(m).download()
+    }
+
+    /** Stops a model's download. */
+    fun cancelUserDownload(m: UserModel) = modelStores.forUser(m).cancel()
+
+    /** Removes a model from the library and gives its space back. */
+    fun deleteUserModel(m: UserModel) = viewModelScope.launch { userModels.remove(m) }
+
+    /** Makes a model the one the "Offline model" engine runs, and selects that engine. */
+    fun useUserModel(m: UserModel) = viewModelScope.launch {
+        userModels.setActive(m.id)
+        repo.setEngine(EngineId.LOCAL_USER)
+    }
+
+    /** The catalogue: what the browse sheet shows. */
+    private val _browse = MutableStateFlow(BrowseState())
+    val browse: StateFlow<BrowseState> = _browse
+
+    /** Searches the catalogue, or lists one repository when the query is an `owner/name`. */
+    fun browse(query: String) {
+        viewModelScope.launch {
+            _browse.value = BrowseState(loading = true)
+            try {
+                if (catalog.looksLikeRepoId(query)) {
+                    val listing = catalog.listing(query.trim())
+                    _browse.value = BrowseState(listing = listing)
+                } else {
+                    val repos = catalog.search(query)
+                    _browse.value = BrowseState(repos = repos)
+                }
+            } catch (e: EngineException) {
+                _browse.value = BrowseState(error = browseError(e.failure))
+            } catch (e: Exception) {
+                _browse.value = BrowseState(error = context.getString(UiR.string.browse_error))
+            }
+        }
+    }
+
+    /** Back from a repository's file list to the search results. */
+    fun backToResults() {
+        _browse.value = _browse.value.copy(listing = null)
+    }
+
+    /** Closes the browse sheet. */
+    fun clearBrowse() { _browse.value = BrowseState() }
+
+    /** A one-shot message for the screen (an import that failed, a model already added). */
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message
+
+    /** Clears the one-shot message. */
+    fun clearMessage() { _message.value = null }
+
+    /** Progress of an import, 0..1; null when none is running. */
+    private val _importProgress = MutableStateFlow<Float?>(null)
+    val importProgress: StateFlow<Float?> = _importProgress
+
+    /** Adds a model from the catalogue and starts its download. */
+    fun addFromHub(listing: HfCatalog.HfListing, file: HfCatalog.HfFile, label: String, maxTokens: Int) {
+        viewModelScope.launch {
+            userModels.addFromHub(listing, file, label, maxTokens)
+                .onFailure { _message.value = it.message ?: context.getString(UiR.string.browse_error) }
+        }
+    }
+
+    /** Imports a model from a file the user picked. */
+    fun importFile(uri: android.net.Uri, label: String, maxTokens: Int) {
+        viewModelScope.launch {
+            _importProgress.value = 0f
+            userModels.importFile(uri, label, maxTokens) { done, total ->
+                if (total > 0) _importProgress.value = (done.toFloat() / total).coerceIn(0f, 1f)
+            }
+                .onSuccess { _importProgress.value = null }
+                .onFailure { _importProgress.value = null; _message.value = it.message ?: context.getString(UiR.string.browse_error) }
+        }
+    }
+
+    /** The display name and size of a file the user picked; null when it is not a `.litertlm` file. */
+    fun importInfo(uri: android.net.Uri): Pair<String, Long>? {
+        val info = userModels.info(uri)
+        if (info == null || !info.first.endsWith(".litertlm")) {
+            _message.value = context.getString(UiR.string.browse_only_litertlm)
+            return null
+        }
+        return info
+    }
+
+    /** The message for a catalogue failure, without the provider's body. */
+    private fun browseError(f: EngineFailure): String = when (f) {
+        is EngineFailure.MissingKey -> context.getString(UiR.string.browse_gated)
+        is EngineFailure.Unavailable -> if (f.reason.contains("401") || f.reason.contains("403")) {
+            context.getString(UiR.string.browse_gated)
+        } else context.getString(UiR.string.browse_error)
+        else -> context.getString(UiR.string.browse_error)
+    }
 
     private val _tryState = MutableStateFlow(TryState())
     val tryState: StateFlow<TryState> = _tryState
@@ -177,16 +304,22 @@ class SettingsViewModel @Inject constructor(
     fun clearNeedsKey() { _needsKey.value = null }
 
     /**
-     * Saves what the engine sheet holds: a new key (null = keep the saved one) and, for multi-model providers,
-     * the model id. Completing the sheet for the engine the user was trying to select completes that selection.
+     * Saves what the engine sheet holds: a new key (null = keep the saved one), for multi-model providers the model
+     * id, and for the "Custom AI" engine its server address. Completing the sheet for the engine the user was trying
+     * to select completes that selection. One coroutine, so the three values land in order and never race.
      */
-    fun saveEngineConfig(id: EngineId, key: String?, model: String?) {
+    fun saveEngineConfig(id: EngineId, key: String?, model: String?, baseUrl: String? = null) {
+        // Validate before changing the key, model or pending engine selection.
+        val normalizedBaseUrl = if (id == EngineId.CUSTOM) {
+            CustomEndpoint.normalize(baseUrl ?: return) ?: return
+        } else null
         // Read the pending selection now: the sheet dismisses (and clears it) right after calling us.
         val completesSelection = _needsKey.value == id && (key != null || id in keys.value)
         _needsKey.value = null
         viewModelScope.launch {
             if (key != null) registry.setKey(id, key)
             if (model != null && id.hasModel) repo.setModel(id, model)
+            if (normalizedBaseUrl != null) repo.setCustomBaseUrl(normalizedBaseUrl)
             if (completesSelection) repo.setEngine(id)
         }
     }

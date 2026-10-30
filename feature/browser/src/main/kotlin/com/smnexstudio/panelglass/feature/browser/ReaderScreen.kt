@@ -16,6 +16,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.Lang
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -67,6 +69,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,8 +80,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.ui.PrimaryPill
 import com.smnexstudio.panelglass.core.ui.SeriesMemorySheet
+import com.smnexstudio.panelglass.core.ui.StickerDialog
 import com.smnexstudio.panelglass.core.ui.TextAction
 import com.smnexstudio.panelglass.core.ui.Tokens
+import com.smnexstudio.panelglass.core.ui.Jakarta
 import com.smnexstudio.panelglass.feature.browser.web.NewWindows
 import kotlinx.coroutines.launch
 
@@ -102,6 +107,9 @@ fun ReaderScreen(
     vm: ReaderViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val readerSettings by vm.settings.collectAsStateWithLifecycle()
+    val readerModels by vm.userModelList.collectAsStateWithLifecycle()
+    val readerModelLabel = readerModels.firstOrNull { it.id == readerSettings.activeUserModelId }?.label
     val screen by vm.screen.collectAsStateWithLifecycle()
     val scroll by vm.scroll.collectAsStateWithLifecycle()
     val zoom by vm.zoom.collectAsStateWithLifecycle()
@@ -116,6 +124,8 @@ fun ReaderScreen(
     var seriesSheet by remember { mutableStateOf(false) }
     val seriesTerms by vm.seriesTerms.collectAsStateWithLifecycle()
     val seriesNotes by vm.seriesNotes.collectAsStateWithLifecycle()
+    // The number of screens a whole-page scan would translate; not null means the confirm dialog is up.
+    var confirmScan by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(initialEngine) {
         if (!initialEngine.isNullOrBlank()) {
@@ -172,6 +182,8 @@ fun ReaderScreen(
             // A paged reader turns its page without scrolling: every finished gesture lets the view model look.
             @android.annotation.SuppressLint("ClickableViewAccessibility")
             setOnTouchListener { _, e ->
+                // A touch during a scan: the user took over, so the scan stops and the page is not scrolled back.
+                if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) vm.onUserTouch()
                 if (e.actionMasked == android.view.MotionEvent.ACTION_UP) vm.onGestureEnd()
                 false
             }
@@ -180,13 +192,46 @@ fun ReaderScreen(
     }
     // Off screen (Settings on top) the page keeps loading but its timers and media stop; the view model destroys it
     // when the reader is closed for good.
-    DisposableEffect(Unit) { onDispose { webView.onPause() } }
+    DisposableEffect(Unit) { onDispose { vm.cancelScan(restore = false); webView.onPause() } }
 
     // Translate-on-open (settings or the site): start once; Stop is then the user's to keep.
     LaunchedEffect(autoStart, ui.config != null) {
         if (autoStart && ui.config != null) {
             vm.consumeAutoStart()
             if (!screen.active) vm.startScreen { captureViewport(webView) }
+        }
+    }
+
+    // Starts a whole-page scan. An engine that needs a key or runs on the device may cost a lot, so it asks first.
+    val requestScan: suspend () -> Unit = {
+        val m = vm.measurePage()
+        val steps = m?.let { PageScanPlan.steps(it.pageHeight, it.viewportHeight) } ?: 1
+        val engine = ui.config?.engineId
+        if (engine != null && (engine.needsKey || engine.isLocalLlm)) confirmScan = steps
+        else vm.startFullPage { captureViewport(webView) }
+    }
+
+    // A whole-page scan may cost a lot (a provider's quota) or take a while (on the device): it asks first.
+    confirmScan?.let { steps ->
+        StickerDialog(onDismiss = { confirmScan = null }) {
+            Text(
+                stringResource(UiR.string.reader_scan_confirm_title),
+                fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 17.sp, color = Tokens.Ink,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(UiR.string.reader_scan_confirm_body, steps, vm.engineLabel().substringBefore(" ·")),
+                fontFamily = Jakarta, fontSize = 12.5.sp, lineHeight = 17.sp, color = Tokens.InkSoft,
+            )
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft) { confirmScan = null }
+                Spacer(Modifier.width(4.dp))
+                TextAction(stringResource(UiR.string.reader_scan_start), Tokens.Yellow) {
+                    confirmScan = null
+                    vm.startFullPage { captureViewport(webView) }
+                }
+            }
         }
     }
 
@@ -232,6 +277,8 @@ fun ReaderScreen(
                     DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_translate_page)) }, onClick = { menu = false; vm.pageText.open() })
                     // The series' names, characters' pronouns and notes: what the engine is told beyond the page.
                     if (ui.config != null) DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_series_memory)) }, onClick = { menu = false; seriesSheet = true })
+                    // The whole page: the app scrolls it by itself and translates every stop.
+                    DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_translate_whole_page)) }, onClick = { menu = false; scope.launch { requestScan() } })
                     if (ui.site == null) DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_add_to_sites)) }, onClick = { menu = false; scope.launch { vm.addCurrentSite() } })
                 }
             }
@@ -318,6 +365,7 @@ fun ReaderScreen(
                     Column(Modifier.weight(1f)) {
                         Text(
                             when {
+                                screen.scan != null -> stringResource(UiR.string.reader_scan_progress, screen.scan!!.step, screen.scan!!.steps)
                                 screen.working -> stringResource(UiR.string.reader_translating)
                                 screen.error != null -> screen.error!!
                                 else -> pluralStringResource(UiR.plurals.reader_patches, screen.patches.size, screen.patches.size)
@@ -325,9 +373,12 @@ fun ReaderScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (screen.error != null && !screen.working) Tokens.Error else Tokens.Bg,
                         )
-                        Text( vm.engineLabel(), style = MaterialTheme.typography.labelSmall, color = Tokens.InkFaint)
+                        Text( vm.engineLabel(readerModelLabel), style = MaterialTheme.typography.labelSmall, color = Tokens.InkFaint)
                     }
-                    TextAction(stringResource(UiR.string.reader_stop), Tokens.Yellow) { vm.stopScreen() }
+                    // A running scan has its own action: Cancel scan keeps the session and the patches, and scrolls
+                    // the page back to where the scan started. Without a scan the action is the plain Stop.
+                    if (screen.scan != null) TextAction(stringResource(UiR.string.reader_scan_cancel), Tokens.Yellow) { vm.cancelScan() }
+                    else TextAction(stringResource(UiR.string.reader_stop), Tokens.Yellow) { vm.stopScreen() }
                 }
             } else {
                 // idle: [ Start ] Gemini 2.5 Flash · JA → EN — the engine is chosen in Settings, the label only reports it.
@@ -338,7 +389,7 @@ fun ReaderScreen(
                     PrimaryPill(stringResource(UiR.string.reader_start), onClick = { vm.startScreen { captureViewport(webView) } })
                     Spacer(Modifier.size(16.dp))
                     Text(
-                        text = vm.engineLabel(),
+                        text = vm.engineLabel(readerModelLabel),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Tokens.InkFaint,
                         modifier = Modifier.weight(1f),

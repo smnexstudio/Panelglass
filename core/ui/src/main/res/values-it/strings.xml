@@ -111,6 +111,9 @@
     <string name="key_hint">Chiave API</string>
     <string name="key_hint_saved">Chiave API (salvata · lascia vuoto per mantenerla)</string>
     <string name="key_model">Modello</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">Caricamento modelli…</string>
     <plurals name="key_models_count">
         <item quantity="one">%d modello per questa chiave</item>
@@ -191,6 +194,15 @@
     <string name="settings_app_language">Lingua dell\'app</string>
     <string name="app_language">Lingua</string>
     <string name="reader_translate_page">Traduci pagina</string>
+    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
+    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
+    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
+    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
+    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
+    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
+    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
+    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
+    <string name="reader_scan_start" translatable="false">Translate</string>
     <string name="pt_detect">Rileva lingua</string>
     <string name="pt_detected">%1$s (rilevato)</string>
     <string name="pt_detecting">Rilevamento della lingua…</string>

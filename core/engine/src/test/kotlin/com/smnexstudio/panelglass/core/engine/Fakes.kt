@@ -31,3 +31,15 @@ fun testKeyStore(ds: DataStore<Preferences> = MemoryDataStore()) = SecureKeyStor
 fun testSettings(ds: DataStore<Preferences> = MemoryDataStore()) = SettingsRepository(ds)
 fun testSupport() = HttpEngineSupport(OkHttpClient(), Json { ignoreUnknownKeys = true; isLenient = true })
 
+/** The stores of the on-device models, for the tests that need one. */
+fun testModelStores(context: android.content.Context) =
+    com.smnexstudio.panelglass.core.engine.local.ModelStores(context, testDownloads(context))
+
+/** The download service, for the tests that need one. */
+fun testDownloads(context: android.content.Context) =
+    com.smnexstudio.panelglass.core.data.download.SystemDownloads(context)
+
+/** The on-device engines, for the tests that need one. */
+fun testLocalEngines(context: android.content.Context) =
+    com.smnexstudio.panelglass.core.engine.local.LocalEngines(context, testModelStores(context))
+

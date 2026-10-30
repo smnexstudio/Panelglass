@@ -166,7 +166,7 @@ Every module also depends on `:core:model`; those edges are left out for readabi
 |---|---|---|
 | `:core:model` | Pure Kotlin, no Android. The shared vocabulary. | `Lang`, `EngineId`, `EngineFailure`, `TextLine`, `TextRegion`, `RegionKind`, `TranslateConfig`, `Settings`, `Site`, `GlossaryEntry`, `Pronoun`, `SeriesNotes`, `TranslationNotes` |
 | `:core:data` | Persistence, secrets, downloads, updates. | `PanelglassDb` (Room), `SettingsRepository` (DataStore), `SecureKeyStore`, `PatchCache`, `SystemDownloads`, `GlossaryRepository`, `AppUpdates` |
-| `:core:engine` | Everything that turns source text into target text. | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `GoogleTranslateEngine`, `LocalLlmEngine` / `LocalPrompt`, `SfxDictionary` |
+| `:core:engine` | Everything that turns source text into target text. | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `CustomOpenAiEngine`, `GoogleTranslateEngine`, `LocalLlmEngine` / `LocalPrompt`, `SfxDictionary` |
 | `:core:ocr` | Finding and reading text in a bitmap. | `ComicTextDetector`, `MissedTextDetector` (+ `DbPostProcess`), `MangaOcrRecognizer`, `MlKitCropRecognizer` (+ `HighContrast`), `RegionBuilder`, `RegionClassifier`, `RegionClusterer` |
 | `:core:render` | Erasing source text and drawing the translation; the Studio's page layers. | `TextEraser`, `RegionRenderer`, `Placement`, `PatchEncoder`, `PageCleaner`, `StudioRenderer`, `SfxRenderer`, `StudioFonts` |
 | `:core:pipeline` | Orchestration: stages, limits, watchdogs, cache. | `TranslationPipeline`, `RegionOfInterest`, `PageSource`, `PipelineDump`, `TileDetection` |
@@ -245,12 +245,20 @@ flowchart LR
 | Engine | `EngineId` | Where it runs | Reads the crop itself |
 |---|---|---|---|
 | Gemini (and Gemma via the Gemini API) | `GEMINI` | Google API, user key | Yes: one call reads and translates |
+| Custom AI (any OpenAI-compatible server) | `CUSTOM` | The user's own server, user key | No |
 | Google Translate | `GOOGLE` | On device (ML Kit translation) | No |
 | Qwen 2.5 1.5B | `QWEN15_LOCAL` | On device (LiteRT-LM) | No |
 | Gemma 4 E2B | `GEMMA4_LOCAL` | On device (LiteRT-LM), 8 GB RAM devices | No |
+| The user's own model | `LOCAL_USER` | On device (LiteRT-LM), from the user's library | No |
 
 Claude, OpenAI, OpenRouter, DeepSeek, DeepL and Papago exist in code as `@PlannedEngine` placeholders: hidden from
 the picker and refused by the registry.
+
+- **Custom AI's address.** The user names the server's base address and the model in Settings; the key goes to the
+  key store, the address to the settings store (it is not a secret). `CustomEndpoint` reduces the address to its
+  base — a pasted `…/chat/completions` is stripped — and requires HTTPS; the engine then calls
+  `<base>/chat/completions`. No version segment is ever appended. The request is text only: the on-device OCR reads
+  the page, so no crop or montage is sent.
 
 - **Retries.** Only transient failures are retried, on the same engine and model (`EngineRetry`): rate limits up to
   3 times, overload (HTTP 500/502/503/504/529) up to 2 times, back-off capped at 4 s.
@@ -274,7 +282,7 @@ the picker and refused by the registry.
 | What | Where | Notes |
 |---|---|---|
 | Sites, history (last 15), SFX translations, glossary (with pronouns), series notes, Studio library | Room `PanelglassDb`, version 5 | Every schema change bumps the version and adds a `Migration` (`MIGRATION_3_4`, `MIGRATION_4_5`) |
-| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality) | DataStore | Includes remembered Gemini request options per model |
+| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality) | DataStore | Includes remembered Gemini request options per model, and the Custom AI server address |
 | API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
 | Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine, `PIPELINE_VERSION`, font, and a digest of the glossary and notes |
 | Detector models | `assets/` | Bundled: comic detector 11 MB, PP-OCRv6 tiny 1.8 MB |

@@ -3,6 +3,7 @@ package com.smnexstudio.panelglass.core.engine
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
+import com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
@@ -59,7 +60,8 @@ class RegistryAndQwenTest {
     private val qwen = locals[LocalModel.QWEN15]
 
     private fun registry() = EngineRegistry(
-        locals, GeminiEngine(support, keys, settings), ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
+        locals, GeminiEngine(support, keys, settings), CustomOpenAiEngine(support, keys, settings),
+        ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
         DeepLEngine(support, keys), PapagoEngine(support, keys), DeepSeekEngine(support, keys),
         GoogleTranslateEngine(), OpenRouterEngine(support, keys, settings), keys, settings,
     )
@@ -97,9 +99,10 @@ class RegistryAndQwenTest {
     }
 
     @Test
-    fun onlyGeminiGoogleAndOnDeviceModelsAreOfferedAndAPlannedEngineNeverResolves() = runBlocking {
+    fun onlyGeminiGoogleCustomAndOnDeviceModelsAreOfferedAndAPlannedEngineNeverResolves() = runBlocking {
         assertEquals(
-            setOf(EngineId.QWEN15_LOCAL, EngineId.GEMMA4_LOCAL, EngineId.GEMINI, EngineId.GOOGLE),
+            // The user's own model is offered too: it is the "Offline model" engine.
+            setOf(EngineId.QWEN15_LOCAL, EngineId.GEMMA4_LOCAL, EngineId.LOCAL_USER, EngineId.GEMINI, EngineId.GOOGLE, EngineId.CUSTOM),
             EngineId.entries.filter { it.offered }.toSet(),
         )
         // Selected in an older version, key and all: it says so instead of quietly becoming another engine.

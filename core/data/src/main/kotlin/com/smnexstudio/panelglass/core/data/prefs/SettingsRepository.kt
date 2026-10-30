@@ -17,9 +17,11 @@ import com.smnexstudio.panelglass.core.model.QwenBackend
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.SfxMode
 import com.smnexstudio.panelglass.core.model.TranslationNotes
+import com.smnexstudio.panelglass.core.model.UserModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,6 +31,9 @@ class SettingsRepository @Inject constructor(
 ) {
     /** Font ids never contain a space; one separates them in the stored list. */
     private val FAV_SEP = " "
+
+    /** The user's own model library is JSON; an unknown field from a newer version is ignored. */
+    private val json = Json { ignoreUnknownKeys = true }
 
     private object K {
         val src = stringPreferencesKey("defaultSourceLang")
@@ -56,6 +61,12 @@ class SettingsRepository @Inject constructor(
         val translationNotes = stringPreferencesKey("translationNotes")
         val updateCheckedAt = longPreferencesKey("updateCheckedAt")
         val autoUpdateCheck = booleanPreferencesKey("autoUpdateCheck")
+        /** The user's own OpenAI-compatible server for the "Custom AI" engine; an address, not a secret. */
+        val customBaseUrl = stringPreferencesKey("customBaseUrl")
+        /** The user's own LiteRT-LM models, as a JSON array. */
+        val userModels = stringPreferencesKey("userModels")
+        /** The id of the user's own model the "Offline model" engine runs. */
+        val activeUserModel = stringPreferencesKey("activeUserModel")
         fun model(id: EngineId) = stringPreferencesKey("model_" + id.name)
         fun profile(id: EngineId, model: String) = stringPreferencesKey("profile_" + id.name + "_" + model)
     }
@@ -83,6 +94,8 @@ class SettingsRepository @Inject constructor(
             qwenBackend = p[K.qwenBackend]?.let { enumOrNull<QwenBackend>(it) } ?: d.qwenBackend,
             translationNotes = p[K.translationNotes] ?: d.translationNotes,
             autoUpdateCheck = p[K.autoUpdateCheck] ?: d.autoUpdateCheck,
+            customBaseUrl = p[K.customBaseUrl] ?: d.customBaseUrl,
+            activeUserModelId = p[K.activeUserModel] ?: d.activeUserModelId,
         )
     }
 
@@ -158,6 +171,38 @@ class SettingsRepository @Inject constructor(
     suspend fun setModel(id: EngineId, model: String) {
         dataStore.edit { p -> model.trim().let { if (it.isEmpty()) p.remove(K.model(id)) else p[K.model(id)] = it } }
     }
+
+    /**
+     * The user's own OpenAI-compatible server for the "Custom AI" engine. An address, not a secret, so it lives here
+     * and not in the key store. Blank clears it; the address is stored as given (the Settings screen normalizes it).
+     */
+    suspend fun setCustomBaseUrl(v: String) {
+        dataStore.edit { p -> v.trim().let { if (it.isEmpty()) p.remove(K.customBaseUrl) else p[K.customBaseUrl] = it } }
+    }
+
+    /**
+     * The user's own on-device models, as saved. Corrupt JSON (an older version, a partial write) reads as an empty
+     * library rather than crashing the settings screen.
+     */
+    val userModels: Flow<List<UserModel>> = dataStore.data.map { p ->
+        val raw = p[K.userModels] ?: return@map emptyList()
+        runCatching { json.decodeFromString<List<UserModel>>(raw) }.getOrDefault(emptyList())
+    }
+
+    /** Saves the user's own model library. */
+    suspend fun saveUserModels(list: List<UserModel>) {
+        val raw = if (list.isEmpty()) "" else json.encodeToString(list)
+        dataStore.edit { p -> if (raw.isEmpty()) p.remove(K.userModels) else p[K.userModels] = raw }
+    }
+
+    /** The model the "Offline model" engine runs; blank clears it. */
+    suspend fun setActiveUserModel(id: String) {
+        dataStore.edit { p -> id.trim().let { if (it.isEmpty()) p.remove(K.activeUserModel) else p[K.activeUserModel] = it } }
+    }
+
+    /** The active user's own model, or null when none is chosen (or it is gone from the library). */
+    suspend fun activeUserModel(): UserModel? =
+        userModels.first().firstOrNull { it.id == current().activeUserModelId }
 
     private inline fun <reified T : Enum<T>> enumOrNull(name: String): T? =
         enumValues<T>().firstOrNull { it.name == name }

@@ -111,6 +111,9 @@
     <string name="key_hint">API कुंजी</string>
     <string name="key_hint_saved">API कुंजी (सेव है · बनाए रखने के लिए खाली छोड़ें)</string>
     <string name="key_model">मॉडल</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">मॉडल लोड हो रहे हैं…</string>
     <plurals name="key_models_count">
         <item quantity="one">इस कुंजी के लिए %d मॉडल</item>
@@ -191,6 +194,15 @@
     <string name="settings_app_language">ऐप की भाषा</string>
     <string name="app_language">भाषा</string>
     <string name="reader_translate_page">पेज का अनुवाद करें</string>
+    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
+    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
+    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
+    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
+    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
+    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
+    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
+    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
+    <string name="reader_scan_start" translatable="false">Translate</string>
     <string name="pt_detect">भाषा पहचानें</string>
     <string name="pt_detected">%1$s (पहचानी गई)</string>
     <string name="pt_detecting">भाषा पहचानी जा रही है…</string>

@@ -21,6 +21,11 @@ enum class EngineId(
     val offered: Boolean = true,
 ) {
     GEMINI("Gemini", KeyRequirement.USER_KEY, "gemini-flash-latest"),
+    /**
+     * A user-supplied OpenAI-compatible server: the user names the base address and the model in Settings. Text only:
+     * the on-device OCR feeds it, no image is ever sent.
+     */
+    CUSTOM("Custom AI", KeyRequirement.USER_KEY, ""),
     CLAUDE("Claude", KeyRequirement.USER_KEY, "claude-haiku-4-5", offered = false),
     OPENAI("OpenAI", KeyRequirement.USER_KEY, "gpt-4.1-mini", offered = false),
     DEEPL("DeepL", KeyRequirement.USER_KEY, offered = false),
@@ -32,10 +37,15 @@ enum class EngineId(
     /** On-device models on LiteRT-LM, translating the on-device OCR text (see `LocalModel` for the files). */
     QWEN15_LOCAL("Qwen 2.5 1.5B (on-device)", KeyRequirement.NONE),
     GEMMA4_LOCAL("Gemma 4 E2B (on-device)", KeyRequirement.NONE),
+    /**
+     * The user's own on-device model: whichever model of their library is active. It runs the on-device OCR text
+     * like the built-in models do, one LiteRT-LM file at a time.
+     */
+    LOCAL_USER("Offline model", KeyRequirement.NONE),
     ;
 
     /** An on-device LLM: one generation at a time on this device, fed in small groups of bubbles. */
-    val isLocalLlm: Boolean get() = this == QWEN15_LOCAL || this == GEMMA4_LOCAL
+    val isLocalLlm: Boolean get() = this == QWEN15_LOCAL || this == GEMMA4_LOCAL || this == LOCAL_USER
 
     val needsKey: Boolean get() = keyRequirement == KeyRequirement.USER_KEY
 

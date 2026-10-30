@@ -7,6 +7,7 @@
 <resources>
     <!-- Common actions -->
     <string name="action_cancel">Cancel</string>
+    <string name="action_back" translatable="false">Back</string>
     <string name="action_delete">Delete</string>
     <string name="action_retry">Retry</string>
     <string name="action_download">Download</string>
@@ -120,6 +121,27 @@
     <string name="picker_local">On this device · download the model in Settings</string>
     <string name="picker_local_ready">On this device · downloaded</string>
     <string name="picker_google">Free · on this device · language packs download once</string>
+    <!-- The user's own on-device models. Not translated yet: the 17 locales keep the English text. -->
+    <string name="picker_offline_ready" translatable="false">Offline model · %1$s</string>
+    <string name="picker_offline_empty" translatable="false">Add or import a model in Settings › Models</string>
+    <string name="models_user_title" translatable="false">Offline models</string>
+    <string name="models_browse" translatable="false">Browse models</string>
+    <string name="models_import" translatable="false">Import from file</string>
+    <string name="model_use" translatable="false">Use</string>
+    <string name="model_in_use" translatable="false">In use</string>
+    <string name="browse_search_hint" translatable="false">Search, or type owner/name</string>
+    <string name="browse_no_results" translatable="false">No models found</string>
+    <string name="browse_gated" translatable="false">This model needs Hugging Face access. Download it in a browser, then use Import from file.</string>
+    <string name="browse_ram_warning" translatable="false">This model may not fit in your phone\'s memory.</string>
+    <string name="browse_no_space" translatable="false">Not enough storage</string>
+    <string name="browse_only_litertlm" translatable="false">Only a .litertlm model file can be added</string>
+    <string name="browse_error" translatable="false">Could not reach Hugging Face</string>
+    <string name="add_model_title" translatable="false">Add model</string>
+    <string name="add_model_label" translatable="false">Name</string>
+    <string name="add_model_context" translatable="false">Context tokens</string>
+    <string name="add_model_download" translatable="false">Download</string>
+    <string name="add_model_import" translatable="false">Import</string>
+    <string name="add_model_experimental" translatable="false">Experimental: not every model runs on this app\'s runtime.</string>
     <string name="picker_custom_keys">Custom keys (no quota usage)</string>
     <string name="picker_set_key">Tap to set API key</string>
     <string name="picker_model_not_set">Model not set</string>
@@ -131,6 +153,9 @@
     <string name="key_hint">API key</string>
     <string name="key_hint_saved">API key (saved · leave empty to keep)</string>
     <string name="key_model">Model</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">Loading models…</string>
     <plurals name="key_models_count">
         <item quantity="one">%d model for this key</item>
@@ -218,6 +243,15 @@
     <string name="settings_app_language">App language</string>
     <string name="app_language">Language</string>
     <string name="reader_translate_page">Translate page</string>
+    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
+    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
+    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
+    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
+    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
+    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
+    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
+    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
+    <string name="reader_scan_start" translatable="false">Translate</string>
     <string name="pt_detect">Detect language</string>
     <string name="pt_detected">%1$s (detected)</string>
     <string name="pt_detecting">Detecting the language…</string>

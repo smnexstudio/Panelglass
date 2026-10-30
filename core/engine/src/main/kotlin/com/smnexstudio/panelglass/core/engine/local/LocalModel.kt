@@ -3,6 +3,7 @@ package com.smnexstudio.panelglass.core.engine.local
 import android.app.ActivityManager
 import android.content.Context
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.ModelSpec
 import com.smnexstudio.panelglass.core.model.QwenBackend
 
 /**
@@ -10,21 +11,21 @@ import com.smnexstudio.panelglass.core.model.QwenBackend
  * from Hugging Face on first use.
  */
 enum class LocalModel(
-    val engineId: EngineId,
-    val label: String,
-    val fileName: String,
-    val url: String,
-    val bytes: Long,
+    override val engineId: EngineId,
+    override val label: String,
+    override val fileName: String,
+    override val url: String,
+    override val bytes: Long,
     /**
      * SHA-256 of the file at the commit pinned in [url] (Hugging Face's `X-Linked-ETag`). A download or a file on
      * disk that does not match is deleted, never loaded. Changing [url] means changing this too.
      */
-    val sha256: String,
+    override val sha256: String,
     /** Token budget shared by prompt and reply; never above the KV cache the file was converted with (`ekv…`). */
-    val maxTokens: Int,
+    override val maxTokens: Int,
     /** Below this much RAM the model is not offered (Gallery's own minimum for the 2.6 GB Gemma 4 file). */
     val minRamGb: Int = 0,
-) {
+) : ModelSpec {
     QWEN15(
         EngineId.QWEN15_LOCAL, "Qwen 2.5 1.5B", "qwen2.5-1.5b-instruct-q8.litertlm",
         "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/19edb84c69a0212f29a6ef17ba0d6f278b6a1614/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
@@ -37,8 +38,8 @@ enum class LocalModel(
     ),
     ;
 
-    /** A partial or truncated file is refused: well over half the published size. */
-    val minValidBytes: Long get() = bytes * 7 / 10
+    /** The download bookkeeping key; unchanged from before, so a download in progress survives this change. */
+    override val key: String get() = "model:$name"
 
     companion object {
         fun of(id: EngineId): LocalModel? = entries.firstOrNull { it.engineId == id }
