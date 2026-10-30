@@ -56,12 +56,16 @@ class LocalEngines @Inject constructor(@ApplicationContext private val context: 
     operator fun get(model: LocalModel): LocalLlmEngine = all.first { it.model == model }
 
     /**
-     * Settings › Models › Qwen runs on, read at each load. Method-injected (Hilt calls it after construction) so the
+     * Settings › Models › Run models on, read at each load. Method-injected (Hilt calls it after construction) so the
      * unit tests can build the engines without a DataStore; without it every model may use the GPU.
      */
     @Inject
     fun bindSettings(settings: SettingsRepository) {
-        this[LocalModel.QWEN15].cpuOnly = { DeviceMemory.qwenOnCpu(context, settings.current().qwenBackend) }
+        all.forEach { engine ->
+            engine.cpuOnly = {
+                DeviceMemory.qwenOnCpu(context, com.smnexstudio.panelglass.core.model.QwenBackend.valueOf(settings.current().computeBackend.name))
+            }
+        }
     }
 
     /** Memory pressure: unload whatever is idle; each reloads lazily on its next call. */

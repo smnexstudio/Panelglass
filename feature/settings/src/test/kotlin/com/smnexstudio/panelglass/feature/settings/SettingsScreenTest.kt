@@ -168,8 +168,8 @@ class SettingsScreenTest {
 
     @Test fun qwenCanBeToldToRunOnTheCpu() {
         screen()
-        compose.onNodeWithText(s(UiR.string.qwen_backend)).tap()
-        compose.onNodeWithText(s(UiR.string.qwen_backend_cpu_note)).tap()
+        compose.onNodeWithText(s(UiR.string.compute_backend)).tap()
+        compose.onNodeWithText(s(UiR.string.compute_backend_cpu_note)).tap()
         eventually { current().qwenBackend == QwenBackend.CPU }
     }
 

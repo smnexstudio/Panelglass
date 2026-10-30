@@ -658,4 +658,7 @@
     <string name="update_install_permission">Si Android le demande, autorisez Panelglass à installer des applications, puis touchez à nouveau Installer.</string>
     <string name="update_failed_check">Impossible de rechercher des mises à jour. Vérifiez votre connexion et réessayez.</string>
     <string name="update_failed_download">La mise à jour n’a pas pu être téléchargée.</string>
+    <string name="compute_backend">Run models on</string>
+    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
+    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
 </resources>

@@ -7,6 +7,10 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- One Automatic / CPU / GPU setting now controls both built-in models, preserving the previous Qwen backend choice. No NPU support or proprietary libraries are included.
+
 ### Added
 
 - **Export clean pages** from the Studio: a new step in Export asks *Translated* (the lettered pages, as before) or

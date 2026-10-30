@@ -643,4 +643,7 @@
     <string name="update_install_permission">Android에서 요청하면 Panelglass의 앱 설치를 허용한 다음 다시 설치를 탭하세요.</string>
     <string name="update_failed_check">업데이트를 확인하지 못했습니다. 연결을 확인하고 다시 시도하세요.</string>
     <string name="update_failed_download">업데이트를 다운로드하지 못했습니다.</string>
+    <string name="compute_backend">Run models on</string>
+    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
+    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
 </resources>

@@ -7,6 +7,8 @@ Counts as of 2026-10-30: **667 unit tests** in 103 classes, all passing; **2 ins
 in CI). Line coverage of the JVM tests, measured by JaCoCo: 56.9% of all code (branch 41.7%): 66.9% of the logic and
 41.8% of the Compose UI; per module in the test report.
 
+This branch adds `ComputeBackendMigrationTest` (5 tests) for legacy migration, persisted choices and both built-in models following the setting. Fresh phone timings are still required before submitting the replacement PR; existing Qwen measurements do not establish Gemma performance.
+
 ## Contents
 
 - [Running the tests](#running-the-tests)

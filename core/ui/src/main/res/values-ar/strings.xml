@@ -718,4 +718,7 @@
     <string name="update_install_permission">إذا طلب Android ذلك، فاسمح لـ Panelglass بتثبيت التطبيقات، ثم انقر على تثبيت مرة أخرى.</string>
     <string name="update_failed_check">تعذّر التحقق من التحديثات. تحقّق من اتصالك وحاول مرة أخرى.</string>
     <string name="update_failed_download">تعذّر تنزيل التحديث.</string>
+    <string name="compute_backend">Run models on</string>
+    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
+    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
 </resources>

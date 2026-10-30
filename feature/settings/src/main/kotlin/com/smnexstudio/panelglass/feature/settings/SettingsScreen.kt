@@ -71,7 +71,7 @@ import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.ModelState
-import com.smnexstudio.panelglass.core.model.QwenBackend
+import com.smnexstudio.panelglass.core.model.ComputeBackend
 import com.smnexstudio.panelglass.core.model.TranslationNotes
 import com.smnexstudio.panelglass.core.model.SfxMode
 import androidx.compose.foundation.clickable
@@ -145,13 +145,13 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     val gpu = stringResource(UiR.string.qwen_backend_gpu); val cpu = stringResource(UiR.string.qwen_backend_cpu)
     // Automatic names what it picks on this phone ("Automatic · GPU").
     val backendNames = mapOf(
-        QwenBackend.AUTO to stringResource(UiR.string.qwen_backend_auto, if (vm.qwenAutoOnCpu) cpu else gpu),
-        QwenBackend.GPU to gpu, QwenBackend.CPU to cpu,
+        ComputeBackend.AUTO to stringResource(UiR.string.qwen_backend_auto, if (vm.qwenAutoOnCpu) cpu else gpu),
+        ComputeBackend.GPU to gpu, ComputeBackend.CPU to cpu,
     )
     val backendNotes = mapOf(
-        QwenBackend.AUTO to stringResource(UiR.string.qwen_backend_auto_note, DeviceMemory.AUTO_GPU_MIN_GB),
-        QwenBackend.GPU to stringResource(UiR.string.qwen_backend_gpu_note),
-        QwenBackend.CPU to stringResource(UiR.string.qwen_backend_cpu_note),
+        ComputeBackend.AUTO to stringResource(UiR.string.qwen_backend_auto_note, DeviceMemory.AUTO_GPU_MIN_GB),
+        ComputeBackend.GPU to stringResource(UiR.string.compute_backend_gpu_note),
+        ComputeBackend.CPU to stringResource(UiR.string.compute_backend_cpu_note),
     )
     val context = LocalContext.current
     val appLang = remember { AppLocale.current(context) }
@@ -248,7 +248,7 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
                     onDownload = { vm.downloadModel(m) },
                     onCancel = { vm.cancelDownload(m) }, onDelete = { vm.deleteModel(m) },
                 )
-                if (m == LocalModel.QWEN15) {
+                if (i == vm.localModels.lastIndex) {
                     CardDivider()
                     // Same shape as the model rows around it (ActionRow), plus the chevron of a row that opens choices.
                     Row(
@@ -256,11 +256,11 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(stringResource(UiR.string.qwen_backend), style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink)
-                            Text(backendNotes.getValue(s.qwenBackend), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(top = 2.dp))
+                            Text(stringResource(UiR.string.compute_backend), style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink)
+                            Text(backendNotes.getValue(s.computeBackend), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(top = 2.dp))
                         }
                         Text(
-                            backendNames.getValue(s.qwenBackend), fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 14.sp,
+                            backendNames.getValue(s.computeBackend), fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 14.sp,
                             color = Tokens.SkyDeep, maxLines = 1, modifier = Modifier.padding(start = 10.dp),
                         )
                         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Tokens.InkFaint, modifier = Modifier.padding(start = 2.dp).size(20.dp))
@@ -332,9 +332,9 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
 
     if (packsSheet) PacksSheet(packs, onDownload = { vm.downloadPack(it) }, onDelete = { vm.deletePack(it) }, onDismiss = { packsSheet = false })
     if (backendPicker) ChoiceSheet(
-        stringResource(UiR.string.qwen_backend), QwenBackend.entries, s.qwenBackend,
+        stringResource(UiR.string.compute_backend), ComputeBackend.entries, s.computeBackend,
         render = { backendNames.getValue(it) },
-        onPick = { vm.setQwenBackend(it) }, onDismiss = { backendPicker = false },
+        onPick = { vm.setComputeBackend(it) }, onDismiss = { backendPicker = false },
         subtitle = { backendNotes.getValue(it) },
     )
     if (srcPicker) ChoiceSheet(stringResource(UiR.string.lang_source), Lang.sourceChoices, s.defaultSourceLang, { it.uiName() }, onPick = { vm.setSrc(it) }, onDismiss = { srcPicker = false })

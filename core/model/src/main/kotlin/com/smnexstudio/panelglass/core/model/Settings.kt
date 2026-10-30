@@ -7,6 +7,9 @@ package com.smnexstudio.panelglass.core.model
  */
 enum class QwenBackend { AUTO, GPU, CPU }
 
+/** Backend choice for the built-in on-device models. */
+enum class ComputeBackend { AUTO, GPU, CPU }
+
 data class Settings(
     val defaultSourceLang: Lang = Lang.JA,
     val defaultTargetLang: Lang = Lang.EN,
@@ -33,6 +36,8 @@ data class Settings(
     val appTheme: AppTheme = AppTheme.DEFAULT,
     /** Where Qwen runs; [QwenBackend.AUTO] decides by the phone's RAM. */
     val qwenBackend: QwenBackend = QwenBackend.AUTO,
+    /** Defaults to the legacy Qwen choice when upgrading. */
+    val computeBackend: ComputeBackend = ComputeBackend.valueOf(qwenBackend.name),
     /** Notes for the AI engines on every series (tone, honorifics); a series adds its own in the reader. */
     val translationNotes: String = TranslationNotes.DEFAULT,
     /** Ask GitHub for a newer release once a day at start (Settings › About); the manual check works either way. */

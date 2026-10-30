@@ -658,4 +658,7 @@
     <string name="update_install_permission">अगर Android पूछे, तो Panelglass को ऐप इंस्टॉल करने की अनुमति दें, फिर दोबारा इंस्टॉल करें पर टैप करें।</string>
     <string name="update_failed_check">अपडेट नहीं देखे जा सके। अपना कनेक्शन जांचें और फिर से कोशिश करें।</string>
     <string name="update_failed_download">अपडेट डाउनलोड नहीं हो सका।</string>
+    <string name="compute_backend">Run models on</string>
+    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
+    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
 </resources>

@@ -658,4 +658,7 @@
     <string name="update_install_permission">Si Android lo pide, permite que Panelglass instale aplicaciones y vuelve a tocar Instalar.</string>
     <string name="update_failed_check">No se pudo buscar actualizaciones. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="update_failed_download">No se pudo descargar la actualización.</string>
+    <string name="compute_backend">Run models on</string>
+    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
+    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
 </resources>

@@ -52,6 +52,7 @@ class SettingsRepository @Inject constructor(
         val studioExportContent = stringPreferencesKey("studioExportContent")
         val fontFavourites = stringPreferencesKey("fontFavourites")
         val qwenBackend = stringPreferencesKey("qwenBackend")
+        val computeBackend = stringPreferencesKey("computeBackend")
         val automaticPacks = booleanPreferencesKey("automaticPacksDone")
         val translationNotes = stringPreferencesKey("translationNotes")
         val updateCheckedAt = longPreferencesKey("updateCheckedAt")
@@ -81,6 +82,10 @@ class SettingsRepository @Inject constructor(
             blockListUpdatedAt = p[K.blockListUpdatedAt] ?: d.blockListUpdatedAt,
             appTheme = p[K.theme]?.let { AppTheme.fromId(it) } ?: d.appTheme,
             qwenBackend = p[K.qwenBackend]?.let { enumOrNull<QwenBackend>(it) } ?: d.qwenBackend,
+            computeBackend = p[K.computeBackend]?.let { enumOrNull<com.smnexstudio.panelglass.core.model.ComputeBackend>(it) }
+                ?: com.smnexstudio.panelglass.core.model.ComputeBackend.valueOf(
+                    (p[K.qwenBackend]?.let { enumOrNull<QwenBackend>(it) } ?: d.qwenBackend).name,
+                ),
             translationNotes = p[K.translationNotes] ?: d.translationNotes,
             autoUpdateCheck = p[K.autoUpdateCheck] ?: d.autoUpdateCheck,
         )
@@ -97,6 +102,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setBlockListUpdatedAt(v: Long) { dataStore.edit { it[K.blockListUpdatedAt] = v } }
     suspend fun setAppTheme(v: AppTheme) { dataStore.edit { it[K.theme] = v.id } }
     suspend fun setQwenBackend(v: QwenBackend) { dataStore.edit { it[K.qwenBackend] = v.name } }
+    suspend fun setComputeBackend(v: com.smnexstudio.panelglass.core.model.ComputeBackend) {
+        dataStore.edit { p ->
+            p[K.computeBackend] = v.name
+            p[K.qwenBackend] = v.name
+        }
+    }
     /** When GitHub was last asked for a newer release (the daily check). */
     suspend fun updateCheckedAt(): Long = dataStore.data.first()[K.updateCheckedAt] ?: 0L
     suspend fun setUpdateCheckedAt(v: Long) { dataStore.edit { it[K.updateCheckedAt] = v } }
