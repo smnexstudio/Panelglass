@@ -54,7 +54,7 @@ class CustomOpenAiEngine @Inject constructor(
         support.warm(warmUrl)
     }
 
-    override suspend fun complete(apiKey: String, system: String, turns: List<Turn>): String {
+    override suspend fun complete(apiKey: String, system: String, turns: List<Turn>, maxOutputTokens: Int): String {
         val s = settings.current()
         val model = s.modelFor(id)
         if (model.isBlank()) throw EngineException(EngineFailure.Unavailable(id, "No model configured"))
@@ -67,20 +67,21 @@ class CustomOpenAiEngine @Inject constructor(
             "Content-Type" to "application/json",
         )
         val reply = try {
-            support.post(id, url, headers, body(model, system, turns, withTemperature = true))
+            support.post(id, url, headers, body(model, system, turns, maxOutputTokens, withTemperature = true))
         } catch (e: EngineException) {
             // A 400 that names the request (not the key) is the server refusing a field of ours: send it once more
             // without `temperature`, the one optional field some compatible servers refuse.
             val refused = e.failure as? EngineFailure.Unavailable
             if (refused == null || !refused.reason.startsWith("HTTP 400")) throw e
-            support.post(id, url, headers, body(model, system, turns, withTemperature = false))
+            support.post(id, url, headers, body(model, system, turns, maxOutputTokens, withTemperature = false))
         }
         return reply.str("choices", "0", "message", "content") ?: throw EngineException(EngineFailure.Malformed(id))
     }
 
     /** The Chat Completions request: the model, the system prompt, the turns as plain text messages. */
-    private fun body(model: String, system: String, turns: List<Turn>, withTemperature: Boolean) = buildJsonObject {
+    private fun body(model: String, system: String, turns: List<Turn>, maxOutputTokens: Int, withTemperature: Boolean) = buildJsonObject {
         put("model", s(model))
+        put("max_tokens", n(maxOutputTokens))
         if (withTemperature) put("temperature", n(0.2))
         put("messages", buildJsonArray {
             add(obj("role" to s("system"), "content" to s(system)))
