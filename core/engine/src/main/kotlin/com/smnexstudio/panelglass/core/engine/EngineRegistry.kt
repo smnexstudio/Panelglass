@@ -3,6 +3,7 @@ package com.smnexstudio.panelglass.core.engine
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.secure.SecureKeyStore
 import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
+import com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
@@ -14,6 +15,7 @@ import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.model.TranslateRequest
 import com.smnexstudio.panelglass.core.model.TranslatedItem
 import kotlinx.coroutines.delay
@@ -37,13 +39,13 @@ class TranslationOutcome(val engine: EngineId, val items: List<TranslatedItem>, 
  */
 @Singleton
 class EngineRegistry @Inject constructor(
-    locals: LocalEngines, gemini: GeminiEngine, claude: ClaudeEngine, openAi: OpenAiEngine,
+    locals: LocalEngines, gemini: GeminiEngine, custom: CustomOpenAiEngine, claude: ClaudeEngine, openAi: OpenAiEngine,
     deepL: DeepLEngine, papago: PapagoEngine, deepSeek: DeepSeekEngine, google: GoogleTranslateEngine, openRouter: OpenRouterEngine,
     private val keys: SecureKeyStore,
     private val settings: SettingsRepository,
 ) : EngineResolver {
     private val engines: Map<EngineId, TranslationEngine> =
-        (listOf(gemini, claude, openAi, deepL, papago, deepSeek, google, openRouter) + locals.all).associateBy { it.id }
+        (listOf(gemini, custom, claude, openAi, deepL, papago, deepSeek, google, openRouter) + locals.all).associateBy { it.id }
 
     val all: List<TranslationEngine> get() = EngineId.entries.mapNotNull { engines[it] }
 
@@ -64,6 +66,10 @@ class EngineRegistry @Inject constructor(
         if (id.needsKey && keys.get(id) == null) return EngineResolution.Failed(EngineFailure.MissingKey(id))
         if (id.hasModel && settings.current().modelFor(id).isBlank()) {
             return EngineResolution.Failed(EngineFailure.Unavailable(id, "No model configured"))
+        }
+        // The user's own server: without a usable HTTPS address there is nothing to call.
+        if (id == EngineId.CUSTOM && CustomEndpoint.normalize(settings.current().customBaseUrl) == null) {
+            return EngineResolution.Failed(EngineFailure.Unavailable(id, "No server address configured"))
         }
         return EngineResolution.Ready(engine)
     }

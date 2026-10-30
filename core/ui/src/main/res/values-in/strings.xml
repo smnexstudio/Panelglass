@@ -109,6 +109,9 @@
     <string name="key_hint">Kunci API</string>
     <string name="key_hint_saved">Kunci API (tersimpan · biarkan kosong untuk mempertahankan)</string>
     <string name="key_model">Model</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">Memuat model…</string>
     <plurals name="key_models_count">
         <item quantity="other">%d model untuk kunci ini</item>

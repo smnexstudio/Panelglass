@@ -367,13 +367,14 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
             engine = engine,
             hasKey = engine in keys,
             currentModel = s.modelFor(engine),
-            onSave = { key, model -> vm.saveEngineConfig(engine, key, model) },
+            onSave = { key, model, baseUrl -> vm.saveEngineConfig(engine, key, model, baseUrl) },
             onRemove = if (engine in keys) ({ vm.removeKey(engine) }) else null,
             onDismiss = { keyDialogFor = null; vm.clearNeedsKey() },
             modelChoices = choices.models,
             modelsLoading = choices.loading,
             modelsError = choices.error,
             onLoadModels = if (engine == EngineId.GEMINI) ({ typed -> vm.loadModels(engine, typed) }) else null,
+            currentBaseUrl = s.customBaseUrl,
         )
     }
 }

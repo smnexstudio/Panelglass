@@ -9,6 +9,11 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ### Added
 
+- **Custom AI**, a translation engine for your own OpenAI-compatible server. Name its address and the model in
+  Settings and paste your key: the app sends a plain text Chat Completions request to `<your address>/chat/completions`
+  and reads the text on the device, so no image ever leaves the phone. The address must be HTTPS; a pasted
+  `…/chat/completions` address is accepted and no `/v1` is added for you.
+
 - **Export clean pages** from the Studio: a new step in Export asks *Translated* (the lettered pages, as before) or
   *Clean* (text-free pages: the bubbles' text and replaced sound effects erased, nothing lettered), for lettering
   elsewhere. Clean chapters are named `… (Clean)`, so they never replace a translated export.

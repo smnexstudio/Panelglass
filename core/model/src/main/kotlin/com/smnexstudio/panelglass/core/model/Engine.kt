@@ -21,6 +21,11 @@ enum class EngineId(
     val offered: Boolean = true,
 ) {
     GEMINI("Gemini", KeyRequirement.USER_KEY, "gemini-flash-latest"),
+    /**
+     * A user-supplied OpenAI-compatible server: the user names the base address and the model in Settings. Text only:
+     * the on-device OCR feeds it, no image is ever sent.
+     */
+    CUSTOM("Custom AI", KeyRequirement.USER_KEY, ""),
     CLAUDE("Claude", KeyRequirement.USER_KEY, "claude-haiku-4-5", offered = false),
     OPENAI("OpenAI", KeyRequirement.USER_KEY, "gpt-4.1-mini", offered = false),
     DEEPL("DeepL", KeyRequirement.USER_KEY, offered = false),

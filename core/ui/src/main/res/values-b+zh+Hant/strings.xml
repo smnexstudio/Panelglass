@@ -109,6 +109,9 @@
     <string name="key_hint">API 金鑰</string>
     <string name="key_hint_saved">API 金鑰（已儲存 · 留空則保留）</string>
     <string name="key_model">模型</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">正在載入模型…</string>
     <plurals name="key_models_count">
         <item quantity="other">此金鑰可用 %d 個模型</item>

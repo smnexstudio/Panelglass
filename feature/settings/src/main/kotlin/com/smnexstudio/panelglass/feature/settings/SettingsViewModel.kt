@@ -25,6 +25,7 @@ import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.QwenBackend
 import com.smnexstudio.panelglass.core.model.RegionItem
@@ -177,16 +178,22 @@ class SettingsViewModel @Inject constructor(
     fun clearNeedsKey() { _needsKey.value = null }
 
     /**
-     * Saves what the engine sheet holds: a new key (null = keep the saved one) and, for multi-model providers,
-     * the model id. Completing the sheet for the engine the user was trying to select completes that selection.
+     * Saves what the engine sheet holds: a new key (null = keep the saved one), for multi-model providers the model
+     * id, and for the "Custom AI" engine its server address. Completing the sheet for the engine the user was trying
+     * to select completes that selection. One coroutine, so the three values land in order and never race.
      */
-    fun saveEngineConfig(id: EngineId, key: String?, model: String?) {
+    fun saveEngineConfig(id: EngineId, key: String?, model: String?, baseUrl: String? = null) {
+        // Validate before changing the key, model or pending engine selection.
+        val normalizedBaseUrl = if (id == EngineId.CUSTOM) {
+            CustomEndpoint.normalize(baseUrl ?: return) ?: return
+        } else null
         // Read the pending selection now: the sheet dismisses (and clears it) right after calling us.
         val completesSelection = _needsKey.value == id && (key != null || id in keys.value)
         _needsKey.value = null
         viewModelScope.launch {
             if (key != null) registry.setKey(id, key)
             if (model != null && id.hasModel) repo.setModel(id, model)
+            if (normalizedBaseUrl != null) repo.setCustomBaseUrl(normalizedBaseUrl)
             if (completesSelection) repo.setEngine(id)
         }
     }
