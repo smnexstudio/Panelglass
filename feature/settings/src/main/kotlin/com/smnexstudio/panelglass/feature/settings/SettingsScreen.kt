@@ -44,9 +44,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import com.smnexstudio.panelglass.core.engine.local.DeviceMemory
+import com.smnexstudio.panelglass.core.engine.local.HfCatalog
 import com.smnexstudio.panelglass.core.engine.local.LocalModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -71,6 +74,7 @@ import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.ModelState
+import com.smnexstudio.panelglass.core.model.UserModel
 import com.smnexstudio.panelglass.core.model.QwenBackend
 import com.smnexstudio.panelglass.core.model.TranslationNotes
 import com.smnexstudio.panelglass.core.model.SfxMode
@@ -124,10 +128,21 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     val packs by vm.packState.collectAsStateWithLifecycle()
     val tryState by vm.tryState.collectAsStateWithLifecycle()
     val needsKey by vm.needsKey.collectAsStateWithLifecycle()
+    val userModels by vm.userModelList.collectAsStateWithLifecycle()
+    val browseState by vm.browse.collectAsStateWithLifecycle()
+    val importProgress by vm.importProgress.collectAsStateWithLifecycle()
+    val userMessage by vm.message.collectAsStateWithLifecycle()
 
     var keyDialogFor by remember { mutableStateOf<EngineId?>(null) }
     var enginePicker by remember { mutableStateOf(false) }
     var fontPicker by remember { mutableStateOf(false) }
+    var browseSheet by remember { mutableStateOf(false) }
+    /** The file the user picked from the catalogue, waiting for the add dialog. */
+    var addFrom by remember { mutableStateOf<Pair<HfCatalog.HfListing, HfCatalog.HfFile>?>(null) }
+    /** The file the user picked from storage, waiting for the add dialog. */
+    var importFrom by remember { mutableStateOf<Pair<String, Long>?>(null) }
+    /** The URI of the picked file; the add dialog needs it when the user confirms. */
+    var pendingImport by remember { mutableStateOf<android.net.Uri?>(null) }
     val favourites by vm.fontFavourites.collectAsStateWithLifecycle()
     var srcPicker by remember { mutableStateOf(false) }
     var tgtPicker by remember { mutableStateOf(false) }
@@ -159,6 +174,13 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     // Picking a keyed engine without a key routes here: open the dialog, and the selection completes on save.
     LaunchedEffect(needsKey) { needsKey?.let { keyDialogFor = it } }
     LaunchedEffect(openKeyFor) { openKeyFor?.let { name -> runCatching { EngineId.valueOf(name) }.getOrNull()?.let { vm.selectEngine(it) } } }
+
+    // A model file from the phone's storage: the add dialog opens with its name and size.
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importInfo(uri)?.let { pendingImport = uri; importFrom = it }
+    }
+    // A one-shot message (an import that failed, a model already added) is shown once, then cleared.
+    LaunchedEffect(userMessage) { if (userMessage != null) { vm.clearMessage() } }
 
     Column(Modifier.fillMaxSize().themeBackground(LocalAppTheme.current).verticalScroll(rememberScrollState()).padding(bottom = 28.dp)) {
         Text(stringResource(UiR.string.settings_title), style = MaterialTheme.typography.headlineSmall, color = Tokens.Ink, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 0.dp))
@@ -270,6 +292,58 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
         }
         Spacer(Modifier.height(12.dp))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
+            // The user's own models: downloaded from Hugging Face or imported from a file.
+            userModels.forEachIndexed { i, m ->
+                if (i > 0) CardDivider()
+                val state by vm.stateOf(m).collectAsState()
+                if (state is ModelState.Ready) {
+                    val active = s.activeUserModelId == m.id
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(m.label, style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(UiR.string.model_ready, "LiteRT-LM", mb(m.bytes)), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft)
+                        }
+                        TextAction(
+                            stringResource(if (active) UiR.string.model_in_use else UiR.string.model_use),
+                            if (active) Tokens.InkFaint else Tokens.SkyDeep,
+                        ) { if (!active) vm.useUserModel(m) }
+                        TextAction(stringResource(UiR.string.action_delete), Tokens.Error) { vm.deleteUserModel(m) }
+                    }
+                } else ModelRow(
+                    title = m.label, name = "LiteRT-LM",
+                    sizeMb = (m.bytes / 1_048_576).toInt(), state = state,
+                    onDownload = { vm.downloadUserModel(m) },
+                    onCancel = { vm.cancelUserDownload(m) }, onDelete = { vm.deleteUserModel(m) },
+                )
+            }
+            if (userModels.isNotEmpty()) CardDivider()
+            ActionRow(
+                stringResource(UiR.string.models_browse),
+                stringResource(UiR.string.browse_search_hint),
+                stringResource(UiR.string.models_browse), Tokens.SkyDeep,
+                onAction = { browseSheet = true },
+            )
+            CardDivider()
+            ActionRow(
+                stringResource(UiR.string.models_import),
+                stringResource(UiR.string.add_model_experimental),
+                stringResource(UiR.string.models_import), Tokens.SkyDeep,
+                onAction = { filePicker.launch(arrayOf("*/*")) },
+            )
+            if (importProgress != null) {
+                CardDivider()
+                Text(
+                    stringResource(UiR.string.model_downloading, "model", "${(importProgress!! * 100).toInt()}%"),
+                    style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft,
+                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        TokenCard(Modifier.padding(horizontal = 16.dp)) {
             ModelRow(
                 stringResource(UiR.string.model_manga_ocr), "manga-ocr", 140, mangaOcr,
                 readyNote = stringResource(UiR.string.model_manga_ready), missingNote = stringResource(UiR.string.model_manga_missing),
@@ -348,6 +422,9 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     )
     val readyEngines = vm.localModels.filter { vm.modelStates.getValue(it).collectAsState().value is ModelState.Ready }
         .map { it.engineId }.toSet()
+    // The user's own model: ready when its file is there, and named in the picker's row.
+    val activeUser = vm.activeUserModel
+    val userReady = activeUser != null && vm.stateOf(activeUser).collectAsState().value is ModelState.Ready
     if (enginePicker) EnginePickerSheet(
         selected = s.engineId,
         keyed = { e -> KeyedEngineState(hasKey = e in keys, model = s.modelFor(e)) },
@@ -359,7 +436,8 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
         onConfigure = { e -> keyDialogFor = e },
         onDismiss = { enginePicker = false },
         hidden = vm.hiddenEngines,
-        ready = readyEngines,
+        ready = readyEngines + if (userReady) setOf(EngineId.LOCAL_USER) else emptySet(),
+        userModelLabel = activeUser?.label,
     )
     keyDialogFor?.let { engine ->
         val choices by vm.modelChoices.collectAsStateWithLifecycle()
@@ -367,13 +445,45 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
             engine = engine,
             hasKey = engine in keys,
             currentModel = s.modelFor(engine),
-            onSave = { key, model -> vm.saveEngineConfig(engine, key, model) },
+            onSave = { key, model, baseUrl -> vm.saveEngineConfig(engine, key, model, baseUrl) },
             onRemove = if (engine in keys) ({ vm.removeKey(engine) }) else null,
             onDismiss = { keyDialogFor = null; vm.clearNeedsKey() },
             modelChoices = choices.models,
             modelsLoading = choices.loading,
             modelsError = choices.error,
             onLoadModels = if (engine == EngineId.GEMINI) ({ typed -> vm.loadModels(engine, typed) }) else null,
+            currentBaseUrl = s.customBaseUrl,
+        )
+    }
+    if (browseSheet) BrowseModelsSheet(
+        state = browseState,
+        onSearch = { vm.browse(it) },
+        onBack = { vm.backToResults() },
+        onPickFile = { listing, file -> addFrom = listing to file },
+        onDismiss = { browseSheet = false; vm.clearBrowse() },
+    )
+    addFrom?.let { (listing, file) ->
+        val ramWarning = file.bytes * 5 / 2 > DeviceMemory.totalBytes(context)
+        AddModelDialog(
+            title = file.path.substringAfter('/').removeSuffix(".litertlm"),
+            sizeBytes = file.bytes,
+            suggestedTokens = UserModel.maxTokensFromFileName(file.path),
+            ramWarning = ramWarning,
+            actionLabel = stringResource(UiR.string.add_model_download),
+            onConfirm = { label, tokens -> vm.addFromHub(listing, file, label, tokens) },
+            onDismiss = { addFrom = null },
+        )
+    }
+    importFrom?.let { (name, size) ->
+        val ramWarning = size * 5 / 2 > DeviceMemory.totalBytes(context)
+        AddModelDialog(
+            title = name.removeSuffix(".litertlm"),
+            sizeBytes = size,
+            suggestedTokens = UserModel.maxTokensFromFileName(name),
+            ramWarning = ramWarning,
+            actionLabel = stringResource(UiR.string.add_model_import),
+            onConfirm = { label, tokens -> pendingImport?.let { vm.importFile(it, label, tokens) } },
+            onDismiss = { importFrom = null },
         )
     }
 }

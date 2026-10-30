@@ -2,7 +2,9 @@ package com.smnexstudio.panelglass.core.engine.local
 
 import android.content.Context
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
+import com.smnexstudio.panelglass.core.model.ModelSpec
 import com.smnexstudio.panelglass.core.model.ModelState
+import com.smnexstudio.panelglass.core.model.UserModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,12 +21,25 @@ import javax.inject.Singleton
 /** One [ModelStore] per on-device model. */
 @Singleton
 class ModelStores @Inject constructor(
-    @ApplicationContext context: Context,
-    downloads: SystemDownloads,
+    @ApplicationContext private val context: Context,
+    private val downloads: SystemDownloads,
 ) {
     private val stores = LocalModel.entries.associateWith { ModelStore(context, downloads, it) }
+    /** The user's own models: one store each, created when the model is first needed. */
+    private val userStores = HashMap<String, ModelStore>()
     operator fun get(model: LocalModel): ModelStore = stores.getValue(model)
     val all: Collection<ModelStore> get() = stores.values
+
+    /** The store of a user's own model; the same one every time, so its download is followed across screens. */
+    fun forUser(m: UserModel): ModelStore = synchronized(userStores) {
+        userStores.getOrPut(m.id) { ModelStore(context, downloads, m) }
+    }
+
+    /** Forgets a user's own model and gives its space back. */
+    fun dropUser(id: String) {
+        val store = synchronized(userStores) { userStores.remove(id) }
+        store?.delete()
+    }
 
     init {
         // Models that are no longer offered: give their space back (up to ~1.1 GB).
@@ -48,7 +63,7 @@ class ModelStores @Inject constructor(
 class ModelStore(
     private val context: Context,
     private val downloads: SystemDownloads,
-    val model: LocalModel,
+    val model: ModelSpec,
 ) {
     private val legacyFile: File get() = File(File(context.filesDir, "models"), model.fileName)
     private val relativePath: String get() = "models/" + model.fileName
@@ -59,7 +74,7 @@ class ModelStore(
     /** The model on disk: the older internal copy when there is one, else the downloaded one. */
     val modelFile: File get() = if (legacyFile.isFile) legacyFile else downloadedFile
     private val partFile: File get() = File((externalFile ?: legacyFile).path + ".part")
-    private val key: String get() = "model:" + model.name
+    private val key: String get() = model.key
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null

@@ -102,6 +102,9 @@ fun ReaderScreen(
     vm: ReaderViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val readerSettings by vm.settings.collectAsStateWithLifecycle()
+    val readerModels by vm.userModelList.collectAsStateWithLifecycle()
+    val readerModelLabel = readerModels.firstOrNull { it.id == readerSettings.activeUserModelId }?.label
     val screen by vm.screen.collectAsStateWithLifecycle()
     val scroll by vm.scroll.collectAsStateWithLifecycle()
     val zoom by vm.zoom.collectAsStateWithLifecycle()
@@ -325,7 +328,7 @@ fun ReaderScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (screen.error != null && !screen.working) Tokens.Error else Tokens.Bg,
                         )
-                        Text( vm.engineLabel(), style = MaterialTheme.typography.labelSmall, color = Tokens.InkFaint)
+                        Text( vm.engineLabel(readerModelLabel), style = MaterialTheme.typography.labelSmall, color = Tokens.InkFaint)
                     }
                     TextAction(stringResource(UiR.string.reader_stop), Tokens.Yellow) { vm.stopScreen() }
                 }
@@ -338,7 +341,7 @@ fun ReaderScreen(
                     PrimaryPill(stringResource(UiR.string.reader_start), onClick = { vm.startScreen { captureViewport(webView) } })
                     Spacer(Modifier.size(16.dp))
                     Text(
-                        text = vm.engineLabel(),
+                        text = vm.engineLabel(readerModelLabel),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Tokens.InkFaint,
                         modifier = Modifier.weight(1f),

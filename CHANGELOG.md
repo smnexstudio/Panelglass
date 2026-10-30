@@ -9,6 +9,16 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ### Added
 
+- **Offline models**: bring your own LiteRT-LM model. Settings › Models › **Browse models** searches the Hugging Face
+  catalogue (or type `owner/name` to list a repository directly) and downloads any `.litertlm` file; **Import from
+  file** adds one already on the phone. Keep several, delete them again, and tap **Use** to pick the one the new
+  **Offline model** engine runs. Only the LiteRT-LM format works — the one the bundled runtime loads. A gated model
+  has to be downloaded in a browser and imported.
+- **Custom AI**, a translation engine for your own OpenAI-compatible server. Name its address and the model in
+  Settings and paste your key: the app sends a plain text Chat Completions request to `<your address>/chat/completions`
+  and reads the text on the device, so no image ever leaves the phone. The address must be HTTPS; a pasted
+  `…/chat/completions` address is accepted and no `/v1` is added for you.
+
 - **Export clean pages** from the Studio: a new step in Export asks *Translated* (the lettered pages, as before) or
   *Clean* (text-free pages: the bubbles' text and replaced sound effects erased, nothing lettered), for lettering
   elsewhere. Clean chapters are named `… (Clean)`, so they never replace a translated export.

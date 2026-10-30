@@ -133,9 +133,11 @@ lettered pages, or the clean pages without any text.
   | Engine | Runs | Needs | Best for |
   |---|---|---|---|
   | **Gemini** | Google's API | Your own API key | Best quality and speed. Reads each balloon itself, so no on-device OCR is needed. Any Gemini or Gemma model your key can use. |
+  | **Custom AI** | Your own server | Your own API key | Any OpenAI-compatible text server: you name its address and the model. |
   | **Google Translate** | On device (ML Kit) | Nothing (~30 MB language packs) | Free and offline |
   | **Qwen 2.5 1.5B** | On device (LiteRT-LM; GPU, or CPU on phones under 6 GB) | One-time 1.6 GB download | Offline LLM translation |
   | **Gemma 4 E2B** | On device (LiteRT-LM, GPU when available) | One-time 2.6 GB download, 8 GB RAM | Offline LLM translation, higher quality |
+  | **Offline model** | On device (LiteRT-LM), your own file | The model you add | Any LiteRT-LM model you bring yourself |
 
 - **Built for comics.** A bundled comic text and bubble detector finds the lettering, and a second detector
   (PP-OCRv6) catches what it misses, above all brush-lettered sound effects; vertical Japanese is read by the optional
@@ -270,16 +272,27 @@ Panelglass is not on Google Play. Each release is published on GitHub:
      Google Translate language packs**, where each one can also be deleted.
    - **Gemini**: tap its name, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
      (a *flash* or *flash-lite* model is fastest) and save.
+   - **Custom AI**: your own OpenAI-compatible server. Tap its name, paste the API key, name the model and give the
+     server's address. The address is the one your provider documents (`https://api.example.com/v1`); a full
+     `…/chat/completions` address works too. It must be HTTPS, and no `/v1` is added for you — the path you type is
+     the path that is called. The request is text only: the text is read on the device and no image is sent.
    - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: download the model under **Models**. The engine picker then shows it as
      *downloaded*. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
      memory); **Settings → Models → Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).
 3. For Japanese with an offline engine, also download **Japanese manga OCR** (140 MB).
-4. Choose what happens to **Sound effects** (Keep or Replace) and, for Gemini or an on-device model,
+4. **Your own offline model.** Settings › Models › **Browse models** searches the Hugging Face catalogue of
+   LiteRT-LM models (or type `owner/name` to list a repository directly); pick a `.litertlm` file, confirm, and wait
+   for the download. **Import from file** adds a `.litertlm` file you already have on the phone. Tap **Use** on a
+   model, then pick **Offline model** in the engine picker. Only the LiteRT-LM format works (the format the bundled
+   runtime loads) — GGUF and llama.cpp files do not. A gated model needs a Hugging Face account: download it in a
+   browser and import the file. How well a model translates depends on the model itself; the context budget comes
+   from the file's own KV cache (`ekv…` in its name) and may only be lowered.
+5. Choose what happens to **Sound effects** (Keep or Replace) and, for Gemini or an on-device model,
    add a few **Translation notes** ([suggested notes](docs/TRANSLATION_QUALITY.md#translation-notes)).
-5. Check the setup with **Try a translation**, then add a site under **Sites**, open a chapter and press **Start**.
+6. Check the setup with **Try a translation**, then add a site under **Sites**, open a chapter and press **Start**.
    **Stop** ends translation; **⋮ → Re-translate** reads the current screen again from scratch; **⋮ → Glossary &
    pronouns** sets the series' character names and pronouns.
-6. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
+7. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
 
 ### Build from source
 
@@ -304,7 +317,8 @@ signed with a different key from the published releases, so uninstall one before
 - **Translate page** runs on the device (ML Kit language identification and translation); page text is never sent
   anywhere.
 - **With Gemini**, crops of the text on your screen are sent to Google to be read and translated. With Google
-  Translate, Qwen or Gemma 4, translation happens on the device.
+  Translate, Qwen or Gemma 4, translation happens on the device. **Custom AI** sends the text (read on the device)
+  to the server you named, never an image.
 - **https only**: the app sends nothing in clear text. An `http://` address or link is opened as `https://`, and a
   site that only serves plain http will not load.
 - **Links from other apps** open in the reader but are never translated automatically, even with
@@ -342,7 +356,7 @@ Start at the **[documentation map](docs/README.md)**, which sends you to the rig
 app/                  MainActivity, navigation, application class, update dialog
 core/model/           Pure Kotlin types: languages, engines, failures, regions, settings, glossary, notes
 core/data/            Room, DataStore settings, encrypted key store, patch cache, verified downloads, updates
-core/engine/          Engine registry and retry policy; Gemini, ML Kit translation, on-device LLMs, SFX dictionary
+core/engine/          Engine registry and retry policy; Gemini, Custom AI, ML Kit translation, on-device LLMs, SFX dictionary
 core/ocr/             Comic detector and PP-OCRv6 second pass (ONNX), manga-ocr and ML Kit recognizers, regions
 core/render/          Text erasing and fitting, WEBP patches; the Studio's cleaning, lettering and fonts
 core/pipeline/        TranslationPipeline: detect → read → translate → render, with per-stage watchdogs

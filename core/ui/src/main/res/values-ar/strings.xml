@@ -119,6 +119,9 @@
     <string name="key_hint">مفتاح API</string>
     <string name="key_hint_saved">مفتاح API (محفوظ · اتركه فارغًا للإبقاء عليه)</string>
     <string name="key_model">النموذج</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">جارٍ تحميل النماذج…</string>
     <plurals name="key_models_count">
         <item quantity="zero">لا توجد نماذج لهذا المفتاح</item>

@@ -235,6 +235,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     val settings: StateFlow<Settings> = settingsRepo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
+    val userModelList = settingsRepo.userModels.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _screen = MutableStateFlow(ScreenSession())
     val screen: StateFlow<ScreenSession> = _screen
@@ -718,9 +719,11 @@ class ReaderViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.Default) { runCatching { pipeline.warmUp(cfg) } }
     }
 
-    fun engineLabel(): String {
+    fun engineLabel(userModelLabel: String? = null): String {
         val cfg = _ui.value.config ?: return ""
-        return cfg.engineId.uiName(context) + " · " + cfg.src.code.uppercase() + " → " + cfg.tgt.code.uppercase()
+        val name = if (cfg.engineId == EngineId.LOCAL_USER) userModelLabel?.takeIf { it.isNotBlank() } ?: cfg.engineId.uiName(context)
+            else cfg.engineId.uiName(context)
+        return name + " · " + cfg.src.code.uppercase() + " → " + cfg.tgt.code.uppercase()
     }
 
 

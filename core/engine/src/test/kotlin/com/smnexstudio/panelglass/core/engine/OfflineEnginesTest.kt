@@ -63,7 +63,7 @@ class OfflineEnginesTest {
         packGate = PackGate.OPEN
     }
     private val registry = EngineRegistry(
-        locals, GeminiEngine(offline, keys, settings), ClaudeEngine(offline, keys, settings), OpenAiEngine(offline, keys, settings),
+        locals, GeminiEngine(offline, keys, settings), com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(offline, keys, settings), ClaudeEngine(offline, keys, settings), OpenAiEngine(offline, keys, settings),
         DeepLEngine(offline, keys), PapagoEngine(offline, keys), DeepSeekEngine(offline, keys),
         google, OpenRouterEngine(offline, keys, settings), keys, settings,
     )

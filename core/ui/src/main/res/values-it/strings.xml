@@ -111,6 +111,9 @@
     <string name="key_hint">Chiave API</string>
     <string name="key_hint_saved">Chiave API (salvata · lascia vuoto per mantenerla)</string>
     <string name="key_model">Modello</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
     <string name="key_models_loading">Caricamento modelli…</string>
     <plurals name="key_models_count">
         <item quantity="one">%d modello per questa chiave</item>

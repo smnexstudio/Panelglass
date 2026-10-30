@@ -37,6 +37,10 @@ data class Settings(
     val translationNotes: String = TranslationNotes.DEFAULT,
     /** Ask GitHub for a newer release once a day at start (Settings › About); the manual check works either way. */
     val autoUpdateCheck: Boolean = true,
+    /** Server address for Custom AI; not a secret. */
+    val customBaseUrl: String = "",
+    /** The user's own model the "Offline model" engine runs; empty when none is active. */
+    val activeUserModelId: String = "",
 ) {
     /**
      * The model to call for [id]: the user's choice, else the provider's default; blank when neither exists. A
