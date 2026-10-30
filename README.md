@@ -194,7 +194,8 @@ engines, so it runs fully offline too.
    number and credits, and a CBZ with a folder per chapter imports as several chapters. Each manga gets a cover,
    its details and a chapter list.
 2. **Translate** the whole chapter with the engine chosen in Settings. Every page is read, translated and cleaned;
-   stop at any time and tap **Continue** later.
+   it keeps going in the background with a progress notification, pauses when the phone is hot or low on battery,
+   and can be paused, cancelled, or continued later.
 3. **Review** bubble by bubble: the page with every bubble numbered, the original and the translation to correct,
    **Re-translate**, a **Proofread** list, and **Original / Clean / Final** to compare. Add text the detector
    missed, mark a false detection *Not text*, or delete it.
@@ -206,6 +207,10 @@ engines, so it runs fully offline too.
 
 Also in the Studio:
 
+- **Translation in the background:** a chapter keeps translating when you leave the app or turn the screen off,
+  with its progress in a notification (Pause, Resume, Cancel). It waits while the phone is too hot, in Battery Saver
+  or low on battery, while Gemini has no network, and while the reader uses the on-device model; **Settings ›
+  Models › Studio runs only while charging** makes on-device chapters wait for the charger.
 - **Fonts:** 21 bundled fonts with a dialogue and a sound-effect default for every target language, plus your own
   `.ttf` / `.otf` / `.ttc`. The reader letters with the same fonts (Settings › Fonts).
 - **Sound effects:** keep or replace each one, start from a preset, then move, turn, stretch or
@@ -310,6 +315,9 @@ signed with a different key from the published releases, so uninstall one before
 - **Links from other apps** open in the reader but are never translated automatically, even with
   translate-on-open on: you tap Start yourself.
 - **Logs** contain timings and failure types only: no keys, page URLs or page text.
+- **Permissions:** the network, installing an update you accept, and for a Studio chapter translating in the
+  background a foreground service, its notification (Android 13+ asks once; refusing only hides it) and keeping the
+  phone awake while the chapter is worked on. No storage, camera, location or contacts.
 - **Other network use**: the block lists ([AdGuard DNS filter](https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt),
   [HaGeZi pop-up ads](https://github.com/hagezi/dns-blocklists), [StevenBlack hosts](https://github.com/StevenBlack/hosts)
   as a fallback), the model downloads you start (Hugging Face; Google for ML Kit language packs), and once a day a

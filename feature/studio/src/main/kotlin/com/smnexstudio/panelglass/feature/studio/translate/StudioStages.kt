@@ -114,6 +114,9 @@ abstract class StudioTranslateModule {
     @Binds abstract fun stages(impl: PipelineStages): StudioStages
     @Binds abstract fun loader(impl: BitmapPageLoader): PageLoader
     @Binds abstract fun resolver(impl: EngineRegistry): EngineResolver
+    @Binds abstract fun gate(impl: StudioRunGate): RunGate
+    @Binds abstract fun device(impl: AndroidDeviceProbe): DeviceProbe
+    @Binds abstract fun host(impl: StudioRunStarter): RunHost
 }
 
 /** A page's brush strokes on disk (`strokes.json` beside the page). A missing or unreadable file is no strokes. */

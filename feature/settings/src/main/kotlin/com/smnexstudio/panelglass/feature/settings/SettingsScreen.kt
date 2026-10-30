@@ -267,6 +267,12 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
                     }
                 }
             }
+            CardDivider()
+            // The Studio only: a chapter on an on-device model can run for hours, so it may wait for the charger.
+            ToggleCardRow(
+                stringResource(UiR.string.studio_only_charging), s.studioOnlyWhileCharging,
+                secondary = stringResource(UiR.string.studio_only_charging_note),
+            ) { vm.setStudioOnlyWhileCharging(it) }
         }
         Spacer(Modifier.height(12.dp))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {

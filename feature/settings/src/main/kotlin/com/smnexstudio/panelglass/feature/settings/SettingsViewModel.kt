@@ -137,6 +137,7 @@ class SettingsViewModel @Inject constructor(
     fun setAdBlock(v: Boolean) = viewModelScope.launch { repo.setAdBlockDefault(v) }
     /** Takes effect at Qwen's next call: a model already loaded on the other backend is reloaded then. */
     fun setQwenBackend(v: QwenBackend) = viewModelScope.launch { repo.setQwenBackend(v) }
+    fun setStudioOnlyWhileCharging(v: Boolean) = viewModelScope.launch { repo.setStudioOnlyWhileCharging(v) }
     fun setSfxMode(v: SfxMode) = viewModelScope.launch { repo.setSfxMode(v) }
 
     /** Settings › About: the installed version, and a check for a newer release (shown by the app-wide dialog). */

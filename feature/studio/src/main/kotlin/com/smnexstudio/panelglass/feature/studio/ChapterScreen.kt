@@ -1,5 +1,12 @@
 package com.smnexstudio.panelglass.feature.studio
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -157,7 +164,10 @@ class ChapterViewModel @Inject constructor(
     val run: StateFlow<ChapterRun?> = translator.runs.map { it[chapterId] }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val userPaused: StateFlow<Boolean> = translator.userPaused
     fun translate() = translator.start(chapterId)
+    fun pause() = translator.pause()
+    fun resume() = translator.resume()
     fun translateAgain() = translator.start(chapterId, redo = true)
     fun cancel() = translator.cancel(chapterId)
 
@@ -190,6 +200,16 @@ fun ChapterScreen(
     val run by vm.run.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
     var confirmAgain by remember { mutableStateOf(false) }
+    val userPaused by vm.userPaused.collectAsStateWithLifecycle()
+    // A run goes on in the background with a progress notification: Android 13+ asks for it once, on the first run.
+    // The run starts whatever the answer; without the permission its notification is only hidden.
+    val context = LocalContext.current
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.translate() }
+    val translate: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) else vm.translate()
+    }
     var moving by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     val c = chapter ?: return
@@ -226,7 +246,8 @@ fun ChapterScreen(
             manga?.let { m ->
                 TranslationCard(
                     engine = engine, src = m.srcLang, tgt = c.language ?: m.tgtLang, pages = pages, run = run,
-                    onTranslate = vm::translate, onTranslateAgain = { confirmAgain = true }, onCancel = vm::cancel,
+                    onTranslate = translate, onTranslateAgain = { confirmAgain = true }, onCancel = vm::cancel,
+                    userPaused = userPaused, onPause = vm::pause, onResume = vm::resume,
                     onChangeEngine = { onOpenSettings(null) }, onAddKey = { onOpenSettings(it) }, onDownloadPacks = vm::downloadPacks,
                     onReview = { onReview(c.id, pages.firstOrNull { !it.reviewed }?.index ?: 0) },
                 )
