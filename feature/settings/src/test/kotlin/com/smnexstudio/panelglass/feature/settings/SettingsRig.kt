@@ -64,7 +64,7 @@ internal class SettingsRig(private val context: Context) {
             } }
         }
         registry = EngineRegistry(
-            LocalEngines(context, ModelStores(context, downloads)), gemini, ClaudeEngine(offline, keys, settings),
+            LocalEngines(context, ModelStores(context, downloads)), gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(offline, keys, settings), ClaudeEngine(offline, keys, settings),
             OpenAiEngine(offline, keys, settings), DeepLEngine(offline, keys), PapagoEngine(offline, keys), DeepSeekEngine(offline, keys),
             google, OpenRouterEngine(offline, keys, settings), keys, settings,
         )

@@ -103,7 +103,7 @@ class TranslationPipelineTest {
         val http = HttpEngineSupport(OkHttpClient(), Json { ignoreUnknownKeys = true })
         locals = LocalEngines(context, ModelStores(context, SystemDownloads(context)))
         val registry = EngineRegistry(
-            locals, GeminiEngine(http, keys, settings), ClaudeEngine(http, keys, settings), OpenAiEngine(http, keys, settings),
+            locals, GeminiEngine(http, keys, settings), com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(http, keys, settings), ClaudeEngine(http, keys, settings), OpenAiEngine(http, keys, settings),
             DeepLEngine(http, keys), PapagoEngine(http, keys), DeepSeekEngine(http, keys),
             GoogleTranslateEngine(), OpenRouterEngine(http, keys, settings), keys, settings,
         )

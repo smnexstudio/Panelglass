@@ -119,7 +119,7 @@ class HttpFailureWireTest {
         val locals = LocalEngines(context, ModelStores(context, SystemDownloads(context)))
         settings.setEngine(EngineId.GEMINI)
         return EngineRegistry(
-            locals, gemini, ClaudeEngine(s, keys, settings), OpenAiEngine(s, keys, settings),
+            locals, gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(s, keys, settings), ClaudeEngine(s, keys, settings), OpenAiEngine(s, keys, settings),
             DeepLEngine(s, keys), PapagoEngine(s, keys), DeepSeekEngine(s, keys),
             GoogleTranslateEngine(), OpenRouterEngine(s, keys, settings), keys, settings,
         )

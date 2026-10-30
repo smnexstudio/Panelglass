@@ -183,7 +183,7 @@ class SettingsViewModel @Inject constructor(
      * id, and for the "Custom AI" engine its server address. Completing the sheet for the engine the user was trying
      * to select completes that selection. One coroutine, so the three values land in order and never race.
      */
-    fun saveEngineConfig(id: EngineId, key: String?, model: String?, baseUrl: String?) {
+    fun saveEngineConfig(id: EngineId, key: String?, model: String?, baseUrl: String? = null) {
         // Validate before changing the key, model or pending engine selection.
         val normalizedBaseUrl = if (id == EngineId.CUSTOM) {
             CustomEndpoint.normalize(baseUrl ?: return) ?: return
