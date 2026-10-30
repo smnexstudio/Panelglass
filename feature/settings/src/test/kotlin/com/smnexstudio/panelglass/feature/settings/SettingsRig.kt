@@ -75,7 +75,7 @@ internal class SettingsRig(private val context: Context) {
         val packs = LanguagePackStore().apply { manager = NoPacks }
         return models.keep(SettingsViewModel(
             settings, history, registry, gemini, context, ModelStores(context, downloads), packs,
-            MangaOcrStore(context, downloads), LamaStore(context, downloads), studio, AppUpdates(context, downloads, settings), library, catalog,
+            MangaOcrStore(context, downloads), LamaStore(context, downloads), studio, AppUpdates(context, downloads, settings), library, catalog, com.smnexstudio.panelglass.core.data.cache.RegionStore(File(root, "saved-regions")),
         ))
     }
 

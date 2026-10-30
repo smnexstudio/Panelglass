@@ -742,4 +742,23 @@
     <string name="cast_note" translatable="false">Used only for translation on this website. Not shared.</string>
     <string name="cast_counter" translatable="false">%1$d / %2$d</string>
     <string name="cast_clear" translatable="false">Clear</string>
+    <string name="settings_memory_title" translatable="false">Translation memory</string>
+    <string name="settings_overlay_screens" translatable="false">Overlays kept in memory</string>
+    <string name="settings_overlay_screens_desc" translatable="false">More screens keep far-away translations visible at once but use more memory.</string>
+    <string name="settings_overlay_memory" translatable="false">Overlay memory limit</string>
+    <string name="settings_overlay_memory_desc" translatable="false">A hard ceiling on memory used by drawn translations, whatever the screen count.</string>
+    <string name="settings_saved_translations" translatable="false">Saved translations</string>
+    <string name="settings_saved_translations_desc" translatable="false">Reused without calling the AI again after you scroll away and back. Translations saved by an older version cannot be reused and are translated again once.</string>
+    <string name="settings_saved_translations_storage" translatable="false">Saved translations storage</string>
+    <string name="settings_saved_translations_storage_desc" translatable="false">The oldest saved translations are removed first when this is full.</string>
+    <string name="settings_memory_auto" translatable="false">Auto</string>
+    <string name="settings_memory_screens" translatable="false">%1$d screen</string>
+    <string name="settings_memory_screens_plural" translatable="false">%1$d screens</string>
+    <string name="settings_memory_mb" translatable="false">%1$d MB</string>
+    <string name="settings_memory_gb" translatable="false">%1$d GB</string>
+    <string name="settings_saved_translations_off" translatable="false">Off</string>
+    <string name="settings_saved_translations_chapter" translatable="false">This chapter</string>
+    <string name="settings_saved_translations_week" translatable="false">7 days</string>
+    <string name="settings_clear_saved_translations" translatable="false">Clear saved translations</string>
+    <string name="settings_clear_saved_translations_confirm" translatable="false">This frees the storage. Pages will be translated again (and billed again by cloud engines).</string>
 </resources>

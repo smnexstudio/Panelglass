@@ -133,6 +133,8 @@ class FeatureReachabilityTest {
         // They are listed rather than removed, because they are not this branch's to clean up.
         val deadUpstream = setOf(
             "studio_add_font", "studio_label_genres", "studio_library", "studio_no_text", "studio_page_title",
+            // Declared but unused in the earlier model-library contribution, before retention was added.
+            "models_user_title", "browse_no_space",
         )
 
         val declared = Regex("""<string\s+name="([a-z0-9_]+)"""").findAll(
