@@ -6,6 +6,12 @@
     <!-- In-app updates (AppUpdates): hand a downloaded, checksum-verified release APK to Android's installer. Android
          asks the user once to allow it; the installer still refuses an APK signed with another key. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- A Studio chapter run goes on in the background as a foreground service with a progress notification
+         (feature:studio StudioRunService), and with the screen off through a partial wake lock held only while it works. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".PanelglassApp"
@@ -40,6 +46,16 @@
         </activity>
 
         <!-- Shares only the downloaded update APK (files/updates in app-specific external storage) with the installer. -->
+        <!-- specialUse: a user-started translation that can run for hours (dataSync is for transfers, capped at 6 h a day). -->
+        <service
+            android:name="com.smnexstudio.panelglass.feature.studio.translate.StudioRunService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Translates a chapter the user started in the Studio, page by page, until it is done" />
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

@@ -36,6 +36,16 @@ import com.smnexstudio.panelglass.core.model.TranslateConfig
 import com.smnexstudio.panelglass.core.model.TranslateRequest
 import com.smnexstudio.panelglass.core.model.TranslatedItem
 import com.smnexstudio.panelglass.core.pipeline.TranslationPipeline
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import com.smnexstudio.panelglass.feature.studio.MemoryDataStore
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -187,6 +197,51 @@ class StudioTranslatorTest {
         assertFalse(StudioStage.REVIEWED in pages(ch)[0].stages)
     }
 
+    /** Lets [passes] pages through, then holds every later page until the run is cancelled (the app killed). */
+    private class CuttingGate(private val passes: Int) : RunGate {
+        @Volatile var waits = 0
+        override val userPaused = MutableStateFlow(false)
+        override fun setUserPaused(paused: Boolean) = Unit
+        override suspend fun await(engine: EngineId, paused: suspend (PauseReason?) -> Unit) {
+            if (++waits > passes) awaitCancellation()
+        }
+    }
+
+    /**
+     * A Translate again cut short (killed or cancelled) is finished by the next ordinary run: the pages it had not
+     * redone yet are waiting to be done, and nothing it already redid is done twice.
+     */
+    @Test fun aTranslateAgainCutShortIsFinishedByTheNextRun() = runBlocking<Unit> {
+        val ch = chapter(3)
+        translator().run(ch)
+        stages.log.clear()
+        // The redo reads three pages and translates the first; then the app dies before page 2.
+        val gate = CuttingGate(passes = 4)
+        val cut = translator().also { it.gate = gate }
+        val job = launch(Dispatchers.Default) { cut.run(ch, redo = true) }
+        // At the gate before page 2's translation: page 1's is saved.
+        withTimeout(5_000) { while (gate.waits <= 4) delay(10) }
+        job.cancelAndJoin()
+        assertEquals(listOf("detect p1", "detect p2", "detect p3", "translate p1"), stages.log)
+        assertEquals("pages 2 and 3 are marked to be done again", listOf(true, false, false), pages(ch).map { StudioStage.TRANSLATED in it.stages })
+        stages.log.clear()
+        // The next start resumes as an ordinary run (no redo flag): it finishes the redo.
+        val next = translator()
+        next.run(ch)
+        assertEquals(listOf("translate p2", "translate p3"), stages.log)
+        assertTrue(pages(ch).all { StudioStage.TRANSLATED in it.stages && StudioStage.CLEANED in it.stages })
+        assertEquals(RunPhase.DONE, next.runs.value.getValue(ch).phase)
+    }
+
+    /** An engine that cannot be used stops a Translate again before it clears anything. */
+    @Test fun aTranslateAgainThatCannotStartClearsNothing() = runBlocking<Unit> {
+        val ch = chapter(2)
+        translator().run(ch)
+        resolver.failure = EngineFailure.MissingKey(EngineId.GEMINI)
+        translator().run(ch, redo = true)
+        assertTrue(pages(ch).all { StudioStage.TRANSLATED in it.stages })
+    }
+
     @Test fun anEditedSourceTextIsWhatGetsTranslated() = runBlocking {
         val ch = chapter(1)
         val t = translator()
@@ -272,6 +327,84 @@ class StudioTranslatorTest {
     }
 
     // ---- fakes ---------------------------------------------------------------------------------
+
+    // ---- runs in the background: the gate, pause, and a run cut short --------------------------------------------
+
+    /** A gate that holds the run at its first page with [reason] until [open] is completed, and counts every wait. */
+    private class HoldingGate(val reason: PauseReason) : RunGate {
+        val open = CompletableDeferred<Unit>()
+        @Volatile var waits = 0
+        override val userPaused = MutableStateFlow(false)
+        override fun setUserPaused(paused: Boolean) { userPaused.value = paused }
+        override suspend fun await(engine: EngineId, paused: suspend (PauseReason?) -> Unit) {
+            waits++
+            if (open.isCompleted) return
+            paused(reason)
+            open.await()
+            paused(null)
+        }
+    }
+
+    /** Settings in memory for started runs: they write them more than once (a file-backed DataStore fails on Windows). */
+    private val memorySettings = SettingsRepository(MemoryDataStore())
+    private fun backgroundTranslator() = StudioTranslator(repo, stages, FakeLoader, resolver, memorySettings)
+
+    /** Before every page of every phase the run asks the gate; while held it says why and does nothing. */
+    @Test fun aHeldRunWaitsBeforeItsNextPageAndSaysWhy() = runBlocking<Unit> {
+        val ch = chapter(2)
+        val gate = HoldingGate(PauseReason.HOT)
+        val t = translator().also { it.gate = gate }
+        val job = launch(Dispatchers.Default) { t.run(ch) }
+        withTimeout(5_000) { t.runs.first { it[ch]?.paused == PauseReason.HOT } }
+        assertTrue("nothing is read while held", stages.log.isEmpty())
+        assertEquals(RunPhase.READING, t.runs.value.getValue(ch).phase)
+        gate.open.complete(Unit)
+        job.join()
+        assertEquals(RunPhase.DONE, t.runs.value.getValue(ch).phase)
+        assertNull(t.runs.value.getValue(ch).paused)
+        assertEquals("2 reads, 2 translations, 2 cleans", 6, gate.waits)
+    }
+
+    /** A run cut short (the app killed) is recorded and carries on at the next start; an ended one is forgotten. */
+    @Test fun aRunCutShortCarriesOnAtTheNextStart() = runBlocking<Unit> {
+        val ch = chapter(2)
+        val t = backgroundTranslator()
+        val s = memorySettings
+        s.setStudioRunChapter(ch) // as a killed process leaves it
+        t.resumeInterrupted()
+        withTimeout(10_000) { t.runs.first { it[ch]?.phase == RunPhase.DONE } }
+        assertTrue(pages(ch).all { StudioStage.TRANSLATED in it.stages })
+        withTimeout(5_000) { while (s.studioRunChapter() != null) delay(10) }
+        // A later onCreate in the same process (a rotation) finds nothing to resume, even with a record left.
+        s.setStudioRunChapter(ch)
+        t.dismiss(ch)
+        t.resumeInterrupted()
+        assertNull(t.runs.value[ch])
+    }
+
+    @Test fun nothingIsResumedWhenNoRunWasCutShort() = runBlocking<Unit> {
+        val ch = chapter(1)
+        val t = backgroundTranslator()
+        t.resumeInterrupted()
+        assertNull(t.runs.value[ch])
+    }
+
+    /** Cancel ends a run held at the gate, forgets it, and clears the user's pause for the next run. */
+    @Test fun cancellingAHeldRunEndsItAndForgetsIt() = runBlocking<Unit> {
+        val ch = chapter(2)
+        val gate = HoldingGate(PauseReason.USER)
+        val t = backgroundTranslator().also { it.gate = gate }
+        val s = memorySettings
+        t.pause()
+        t.start(ch)
+        withTimeout(5_000) { t.runs.first { it[ch]?.paused == PauseReason.USER } }
+        assertEquals(ch, s.studioRunChapter())
+        t.cancel(ch)
+        assertEquals(RunPhase.CANCELLED, t.runs.value.getValue(ch).phase)
+        assertFalse(t.userPaused.value)
+        withTimeout(5_000) { while (s.studioRunChapter() != null) delay(10) }
+        assertTrue(stages.log.isEmpty())
+    }
 
     private object FakeLoader : PageLoader {
         override fun load(file: File) = LoadedPage(Bitmap.createBitmap(100, 150, Bitmap.Config.ARGB_8888).also { it.density = file.readText().drop(1).toInt() }, 1f)

@@ -56,6 +56,8 @@ class SettingsRepository @Inject constructor(
         val translationNotes = stringPreferencesKey("translationNotes")
         val updateCheckedAt = longPreferencesKey("updateCheckedAt")
         val autoUpdateCheck = booleanPreferencesKey("autoUpdateCheck")
+        val studioOnlyWhileCharging = booleanPreferencesKey("studioOnlyWhileCharging")
+        val studioRunChapter = longPreferencesKey("studioRunChapter")
         fun model(id: EngineId) = stringPreferencesKey("model_" + id.name)
         fun profile(id: EngineId, model: String) = stringPreferencesKey("profile_" + id.name + "_" + model)
     }
@@ -83,6 +85,7 @@ class SettingsRepository @Inject constructor(
             qwenBackend = p[K.qwenBackend]?.let { enumOrNull<QwenBackend>(it) } ?: d.qwenBackend,
             translationNotes = p[K.translationNotes] ?: d.translationNotes,
             autoUpdateCheck = p[K.autoUpdateCheck] ?: d.autoUpdateCheck,
+            studioOnlyWhileCharging = p[K.studioOnlyWhileCharging] ?: d.studioOnlyWhileCharging,
         )
     }
 
@@ -119,6 +122,17 @@ class SettingsRepository @Inject constructor(
 
     suspend fun studioExportQuality(): String? = dataStore.data.first()[K.studioExportQuality]
     suspend fun setStudioExportQuality(name: String) { dataStore.edit { it[K.studioExportQuality] = name } }
+
+    suspend fun setStudioOnlyWhileCharging(v: Boolean) { dataStore.edit { it[K.studioOnlyWhileCharging] = v } }
+
+    /**
+     * The chapter a Studio run is working on, kept until the run ends, so a run the system stopped (the app killed)
+     * carries on at the next start; null when none is.
+     */
+    suspend fun studioRunChapter(): Long? = dataStore.data.first()[K.studioRunChapter]
+    suspend fun setStudioRunChapter(id: Long?) {
+        dataStore.edit { if (id == null) it.remove(K.studioRunChapter) else it[K.studioRunChapter] = id }
+    }
 
     /** What the Studio last exported: the translated pages or the clean ones (`ExportContent` name). */
     suspend fun studioExportContent(): String? = dataStore.data.first()[K.studioExportContent]

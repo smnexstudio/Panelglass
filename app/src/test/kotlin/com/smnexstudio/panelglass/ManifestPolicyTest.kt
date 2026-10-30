@@ -32,12 +32,30 @@ class ManifestPolicyTest {
     private val manifest by lazy { xml("src/main/AndroidManifest.xml") }
     private val application by lazy { manifest.children("application").single() }
 
+    /**
+     * The network, the update installer, and what a Studio run in the background needs (a foreground service of the
+     * special-use type, its progress notification, and a wake lock while it works). Nothing else: no storage, camera,
+     * location or contacts.
+     */
     @Test fun onlyTheExpectedPermissionsAreRequested() {
         val permissions = manifest.children("uses-permission").map { it.getAttributeNS(android, "name") }.toSet()
         assertEquals(
-            setOf("android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "android.permission.REQUEST_INSTALL_PACKAGES"),
+            setOf(
+                "android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "android.permission.REQUEST_INSTALL_PACKAGES",
+                "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+                "android.permission.POST_NOTIFICATIONS", "android.permission.WAKE_LOCK",
+            ),
             permissions,
         )
+    }
+
+    /** The Studio's run service: not exported, special-use, and saying what it is used for, as Android 14+ requires. */
+    @Test fun theStudioRunServiceIsPrivateAndSpecialUse() {
+        val service = application.children("service").single { it.getAttributeNS(android, "name").endsWith(".StudioRunService") }
+        assertEquals("false", service.getAttributeNS(android, "exported"))
+        assertEquals("specialUse", service.getAttributeNS(android, "foregroundServiceType"))
+        val subtype = service.children("property").single { it.getAttributeNS(android, "name") == "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" }
+        assertTrue(subtype.getAttributeNS(android, "value").isNotBlank())
     }
 
     @Test fun cleartextIsNeverAllowed() {

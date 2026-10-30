@@ -41,7 +41,9 @@ flowchart LR
 ## Releases
 
 Every pull request with a user-visible change adds a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md)
-(`Added`, `Changed`, `Fixed` or `Removed`).
+(`Added`, `Changed`, `Fixed` or `Removed`). Write each entry on **one line**, however long: the
+version's section becomes the GitHub Release notes, which keep every line break, so a wrapped entry breaks mid-sentence
+there.
 
 To release, a maintainer:
 

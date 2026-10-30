@@ -71,7 +71,7 @@ alters a requirement updates this list in the same pull request.
 | ID | Requirement | Evidence |
 |---|---|---|
 | FR-16 | Import images, a PDF or a CBZ into a new or existing manga or chapter, with ComicInfo.xml read and a chapter per folder when the archive has one. | `StudioImporterTest`, `ImportViewModelTest`, `CbzImporterTest`, `ImageImporterTest`, `FolderChaptersTest` |
-| FR-17 | Translate a chapter with the chosen engine; a stopped or failed run continues from the first unfinished page. | `StudioTranslatorTest` |
+| FR-17 | Translate a chapter with the chosen engine, in the background with a progress notification (Pause, Resume, Cancel); a stopped, failed or killed run continues from the first unfinished page. | `StudioTranslatorTest`, `RunNotificationsTest`; phone check |
 | FR-18 | Review each bubble: edit the original and translation, re-translate, add, dismiss or delete bubbles, undo and redo, mark pages reviewed. | `ReviewSavingTest`, `ReviewPanelsTest`, `PageCanvasGestureTest` |
 | FR-19 | Clean and letter pages: fonts, size, colour, outline, fill, reshaped bubbles, brush, sound-effect presets and transforms. | `PageCleanerTest`, `StudioRendererTest`, `SfxRendererTest`, `ReviewPanelsTest` |
 | FR-20 | Export chapters as images, CBZ or ZIP with ComicInfo.xml, to Downloads or a folder the user picks: translated pages, or clean text-free pages under their own name. | `StudioExporterTest`, `ExportViewModelTest`, `ExportScreenTest`, `ExportNamesTest` |
@@ -114,6 +114,7 @@ alters a requirement updates this list in the same pull request.
 | ID | Requirement | Evidence |
 |---|---|---|
 | NFR-13 | The interface never waits for a model: loading happens off the main thread, the reader pre-warms detector, OCR and engine, and each pipeline stage has its own concurrency limit. | Code review; phone check |
+| NFR-21 | A Studio run in the background gives way to the phone: its thread runs at background priority, and it waits before its next page while the phone is too hot, in Battery Saver or below 15% unless charging, without network (cloud engines), without a charger when asked (on-device engines), or while the reader uses the on-device model. | `RunGateTest`, `StudioTranslatorTest` |
 | NFR-14 | Memory: one on-device model at a time, released when idle or under memory pressure; models a phone cannot hold are hidden (Gemma 4 under 8 GB, LaMa under 4 GB) and Qwen runs on the CPU under 6 GB. | `RegistryAndQwenTest`, `SettingsViewModelTest`; [MEMORY_USAGE.md](MEMORY_USAGE.md) |
 | NFR-15 | Cloud cost is bounded: each reply at most 300 + 120 tokens per item (8,192 in all), glossary terms 60 characters, notes 500. | `LlmContractTest` (reply cap), `TranslationNotesTest` (notes); the glossary cap has no test |
 
@@ -230,6 +231,15 @@ flowchart LR
   Settings' translation notes are combined by the pipeline before every capture and sent with each engine call.
   Settings' notes start as `TranslationNotes.DEFAULT` until the user saves their own (an emptied note stays empty).
   See [TRANSLATION_QUALITY.md](TRANSLATION_QUALITY.md).
+- **`StudioRunService`** (foreground service, type `specialUse`) keeps a Studio run alive while the app is in the
+  background: it starts when a run starts (`RunHost`, from the Translate tap), shows the run's notification
+  (`RunNotifications`: progress, Pause or Resume, Cancel; a tap opens the chapter), holds a partial wake lock while the
+  run works, and stops when no run is active. Before every page the run asks `StudioRunGate`, which applies `RunRules`
+  (the user's pause, heat, the charger setting, battery, network, the reader through `LocalModelUse`) and waits until
+  none applies. The running chapter is kept in settings (`studioRunChapter`) until the run ends; `MainActivity` resumes
+  it (`StudioTranslator.resumeInterrupted`, once per process) when a killed run left it there. A resumed run does what
+  is missing; *Translate again* first takes every page's stages off in one transaction
+  (`StudioRepository.clearStages`), so a redo cut short is finished by the next run.
 - **`AppUpdates`** asks GitHub for the latest release once a day (never in a debug build), downloads a newer APK
   through `SystemDownloads`, checks it against the release's `.sha256`, and hands it to Android's installer; the
   dialog is `UpdateHost` in `:app`.
@@ -274,7 +284,7 @@ the picker and refused by the registry.
 | What | Where | Notes |
 |---|---|---|
 | Sites, history (last 15), SFX translations, glossary (with pronouns), series notes, Studio library | Room `PanelglassDb`, version 5 | Every schema change bumps the version and adds a `Migration` (`MIGRATION_3_4`, `MIGRATION_4_5`) |
-| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality) | DataStore | Includes remembered Gemini request options per model |
+| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality), "Studio runs only while charging" and the chapter a Studio run is working on | DataStore | Includes remembered Gemini request options per model |
 | API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
 | Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine, `PIPELINE_VERSION`, font, and a digest of the glossary and notes |
 | Detector models | `assets/` | Bundled: comic detector 11 MB, PP-OCRv6 tiny 1.8 MB |
@@ -293,6 +303,12 @@ phone, and everything is removed on uninstall.
   detecting.
 - Each stage has a 50 s watchdog; a timeout fails that image only, with a typed failure.
 - Model loading never happens on the main thread. The reader pre-warms the detector, OCR and engine when it opens.
+- Known, measured 2026-10-30 ([MEMORY_USAGE.md › Leak check](MEMORY_USAGE.md#leak-check-2026-10-30)): the
+  on-device model the reader pre-warmed stays loaded after the reader closes, until the app is hidden; and the reader's
+  WebView, off screen, keeps the activity that last showed it, so a recreation in the meantime holds one earlier
+  activity until the reader closes. Neither grows with use.
+- A Studio chapter run has its own thread at background priority (`StudioTranslator`), so the app on screen comes
+  first; its cleaning runs there too. ONNX Runtime and LiteRT-LM keep their own thread pools.
 - Patches more than three screens away from the viewport are dropped and re-made on return.
 - `PanelglassApp.onTrimMemory` releases idle on-device models and manga-ocr sessions under memory pressure
   (`TRIM_MEMORY_RUNNING_LOW` and above), and logs that it did. When the UI is hidden (`TRIM_MEMORY_UI_HIDDEN`), a
@@ -303,6 +319,11 @@ phone, and everything is removed on uninstall.
 
 - **Keys.** Stored only in `SecureKeyStore`; never logged. HTTP bodies are never logged (they can echo a key).
 - **Logs.** Timings and failure types only: no keys, page URLs, page text or user IDs.
+- **Permissions.** Network (`INTERNET`, `ACCESS_NETWORK_STATE`), the update installer (`REQUEST_INSTALL_PACKAGES`),
+  and for a Studio run in the background `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE`, `POST_NOTIFICATIONS`
+  (asked once, on Android 13+, at the first run; refusing only hides the notification) and `WAKE_LOCK` (held only while
+  a run works). The run service is not exported, and its notification actions are explicit immutable
+  `PendingIntent`s. `ManifestPolicyTest` fails on any other permission.
 - **Exported activity.** `MainActivity` accepts a `url` from other apps but loads only `https` (`http` is
   upgraded). The scripted-run extras (`engine`, `src`, `tgt`, `start`) are honoured only in debuggable builds.
 - **Debug and release side by side.** Debug builds use the application ID `com.smnexstudio.panelglass.debug` and the

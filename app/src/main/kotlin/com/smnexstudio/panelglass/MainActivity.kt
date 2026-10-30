@@ -57,6 +57,8 @@ import com.smnexstudio.panelglass.feature.studio.export.ExportScreen
 import com.smnexstudio.panelglass.feature.studio.fonts.FontsScreen
 import com.smnexstudio.panelglass.feature.studio.importer.ImportSource
 import com.smnexstudio.panelglass.feature.studio.review.ReviewScreen
+import com.smnexstudio.panelglass.feature.studio.translate.StudioRunService
+import com.smnexstudio.panelglass.feature.studio.translate.StudioTranslator
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -71,6 +73,8 @@ import androidx.compose.runtime.collectAsState
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.update.AppUpdates
 import com.smnexstudio.panelglass.core.model.Settings
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -78,7 +82,10 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var settingsRepo: SettingsRepository
     @Inject lateinit var readerWarmup: ReaderWarmup
     @Inject lateinit var updates: AppUpdates
+    @Inject lateinit var studioTranslator: StudioTranslator
     private var startUrl by mutableStateOf<String?>(null)
+    /** The chapter whose Studio run notification was tapped. */
+    private var startChapter by mutableStateOf<Long?>(null)
     private var startEngine by mutableStateOf<String?>(null)
     private var startExtras by mutableStateOf<LaunchExtras?>(null)
 
@@ -95,10 +102,14 @@ class MainActivity : ComponentActivity() {
         startUrl = intent?.getStringExtra("url") ?: intent?.dataString
         startEngine = scriptedExtra(intent) { it.getStringExtra("engine") }
         startExtras = scriptedExtra(intent) { LaunchExtras.of(it) }
+        startChapter = chapterOf(intent)
+        // A Studio run the system stopped (the app killed while it worked) carries on from its first unfinished page.
+        // Not gated on savedInstanceState: after a kill, Android restores this activity with its saved state.
+        lifecycleScope.launch { studioTranslator.resumeInterrupted() }
         setContent {
             val settings by settingsRepo.settings.collectAsState(initial = Settings())
             PanelglassTheme(theme = settings.appTheme) {
-                PanelglassMain(startUrl, startEngine, startExtras)
+                PanelglassMain(startUrl, startEngine, startExtras, startChapter)
                 // A newer release from GitHub, over whatever screen is open (AppUpdates; once a day, never in debug).
                 val update by updates.state.collectAsState()
                 UpdateHost(update, updates)
@@ -116,6 +127,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        chapterOf(intent)?.let { startChapter = it }
         val url = intent.getStringExtra("url") ?: intent.dataString
         if (!url.isNullOrBlank()) {
             startUrl = url
@@ -123,6 +135,10 @@ class MainActivity : ComponentActivity() {
             startExtras = scriptedExtra(intent) { LaunchExtras.of(it) }
         }
     }
+
+    /** The chapter in a Studio run notification's intent; null for any other start. */
+    private fun chapterOf(intent: Intent?): Long? =
+        intent?.getLongExtra(StudioRunService.EXTRA_CHAPTER, -1L)?.takeIf { it > 0 }
 
     /**
      * The activity is exported, so any app can start it: in a release build the scripted-run extras are ignored,
@@ -174,8 +190,11 @@ data class LaunchExtras(val src: String?, val tgt: String?, val start: Boolean) 
 }
 
 @Composable
-private fun PanelglassMain(startUrl: String? = null, startEngine: String? = null, startExtras: LaunchExtras? = null) {
+private fun PanelglassMain(startUrl: String? = null, startEngine: String? = null, startExtras: LaunchExtras? = null, startChapter: Long? = null) {
     val nav = rememberNavController()
+    LaunchedEffect(startChapter) {
+        startChapter?.let { nav.navigate(Routes.studioChapter(it)) { launchSingleTop = true } }
+    }
     LaunchedEffect(startUrl, startEngine, startExtras) {
         if (!startUrl.isNullOrBlank()) {
             // Every start URL comes from an intent, which any installed app can send.
