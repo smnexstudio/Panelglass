@@ -17,7 +17,7 @@ android {
         targetSdk = 35
         // Release builds pass the version from the git tag (-PversionName=1.2.3); versionCode is derived from it so
         // every release installs over the previous one. Local builds keep the defaults.
-        val appVersion = (findProperty("versionName") as String?) ?: "0.3.0"
+        val appVersion = (findProperty("versionName") as String?) ?: "0.4.0"
         versionName = appVersion
         versionCode = appVersion.split('.').map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
             .let { (it + listOf(0, 0, 0)).take(3) }.let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
