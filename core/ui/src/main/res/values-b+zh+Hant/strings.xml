@@ -9,7 +9,7 @@
     <string name="action_edit">編輯</string>
     <string name="action_add">新增</string>
     <string name="action_add_key">新增金鑰</string>
-    <string name="action_use_google_translate">使用 Google 翻譯</string>
+    <string name="action_use_google_translate">使用 ML Kit</string>
     <string name="action_use_on_device">使用裝置端翻譯</string>
 
     <string name="cd_selected">已選取</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">下載未完成，請輕觸「重試」</string>
     <string name="download_failed">下載失敗</string>
 
-    <string name="packs_title">Google 翻譯語言套件</string>
+    <string name="packs_title">ML Kit語言套件</string>
     <string name="packs_count">本機已有 %1$d / %2$d 種語言</string>
     <string name="packs_downloading_one">正在下載%1$s…</string>
     <string name="packs_manage">管理</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">把章節翻譯成圖片檔</string>
     <string name="studio_library">我的漫畫</string>
     <string name="studio_new_manga">新增漫畫</string>
-    <string name="studio_empty">還沒有漫畫。從圖片、PDF 或 CBZ 匯入一章。</string>
+    <string name="studio_empty">還沒有漫畫。從圖片、PDF 或 CBZ/ZIP/7z 匯入一章。</string>
     <string name="studio_import">匯入</string>
     <string name="studio_import_from">匯入來源</string>
     <string name="studio_source_images">圖片</string>
     <string name="studio_source_images_note">PNG、JPEG、WebP 或 AVIF，可一次選多張</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">每一頁都會變成一張圖片</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">漫畫壓縮檔，用其中的 ComicInfo.xml 填寫資料</string>
+    <string name="studio_source_archive">漫畫壓縮檔</string>
+    <string name="studio_source_archive_note">CBZ、ZIP、CB7 或 7z，用其中的 ComicInfo.xml 填寫資料</string>
     <string name="studio_reviewed">已校對 %1$d/%2$d</string>
     <string name="studio_chapters_section">章節</string>
     <string name="studio_reorder_hint">長按並拖曳可調整順序。</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">檔案太大</string>
     <string name="studio_skip_too_many_pixels">圖片太大</string>
     <string name="studio_skip_unreadable">無法讀取</string>
-    <string name="studio_error_not_cbz">請選擇 .cbz 檔。一般 .zip 壓縮檔不會匯入。</string>
-    <string name="studio_error_not_zip">無法開啟此 CBZ：壓縮檔已損壞或不是 zip。</string>
+    <string name="studio_skip_unsupported_format">不支援的格式</string>
+    <string name="studio_skip_unsupported_compression">不支援的壓縮方式</string>
+    <string name="studio_skip_nested_archive">壓縮檔中的壓縮檔</string>
+    <string name="studio_error_not_archive">無法以壓縮檔開啟此檔案：檔案已損壞，或不是 CBZ、ZIP、CB7 或 7z 檔。</string>
+    <string name="studio_error_rar">暫不支援匯入 RAR 壓縮檔（.cbr、.rar）。請將頁面重新打包為 CBZ 或 7z，再重新匯入。</string>
+    <string name="studio_error_encrypted_archive">此壓縮檔受密碼保護。請先移除密碼，再重新匯入。</string>
+    <string name="studio_error_unsupported_compression">此壓縮檔使用了無法讀取的壓縮方式。請重新打包為 CBZ 或 7z，再重新匯入。</string>
     <string name="studio_error_encrypted_pdf">此 PDF 受密碼保護。請先移除密碼，再重新匯入。</string>
     <string name="studio_error_not_pdf">無法以 PDF 開啟此檔案。</string>
     <string name="studio_error_too_large">檔案太大，無法匯入。</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">暫停</string>
     <string name="action_resume">繼續</string>
     <string name="studio_only_charging">工作室僅在充電時執行</string>
-    <string name="studio_only_charging_note">使用 Qwen 或 Gemma 的工作室章節會等待充電。閱讀器、Gemini 和 Google 翻譯不受影響。</string>
+    <string name="studio_only_charging_note">使用 Qwen 或 Gemma 的工作室章節會等待充電。閱讀器、Gemini 和 ML Kit不受影響。</string>
     <string name="studio_chapter_short">第 %1$s 話</string>
     <string name="studio_stage_new">未翻譯</string>
     <string name="studio_font">字型</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">尖角</string>
     <string name="studio_import_split">每個資料夾一章</string>
     <string name="studio_import_split_note">此壓縮檔有 %1$d 個資料夾，每個都會依名稱中的編號成為單獨的一章。</string>
+    <string name="studio_import_series">每個系列一部漫畫</string>
+    <string name="studio_import_series_note">此壓縮檔包含 %1$d 個系列。每個系列成為一部漫畫；工作室中已有同名漫畫的，章節會加入其中。</string>
     <string name="studio_zoom_show">顯示縮放</string>
     <string name="studio_zoom_hide">隱藏縮放</string>
     <string name="studio_delete_bubble">刪除</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">加入名字或詞彙</string>
     <string name="memory_notes_label">給譯者的備註</string>
     <string name="memory_notes_hint">例如：小蓮是女性。保留「-san」等敬稱。</string>
-    <string name="memory_engine_note">代名詞和備註由 Gemini 和裝置端模型使用。Google 翻譯只使用名字和詞彙。</string>
+    <string name="memory_engine_note">代名詞和備註由 Gemini 和裝置端模型使用。ML Kit只使用名字和詞彙。</string>
     <string name="memory_term_title">名字或詞彙</string>
     <string name="memory_term_source">原文（與頁面一致）</string>
     <string name="memory_term_target">譯名</string>

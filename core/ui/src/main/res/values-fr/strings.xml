@@ -9,7 +9,7 @@
     <string name="action_edit">Modifier</string>
     <string name="action_add">Ajouter</string>
     <string name="action_add_key">Ajouter une clé</string>
-    <string name="action_use_google_translate">Utiliser Google Traduction</string>
+    <string name="action_use_google_translate">Utiliser ML Kit</string>
     <string name="action_use_on_device">Traduire sur l’appareil</string>
 
     <string name="cd_selected">Sélectionné</string>
@@ -174,7 +174,7 @@
     <string name="download_incomplete">Téléchargement incomplet ; appuyez sur Réessayer</string>
     <string name="download_failed">Échec du téléchargement</string>
 
-    <string name="packs_title">Packs de langue Google Traduction</string>
+    <string name="packs_title">Packs de langue ML Kit</string>
     <string name="packs_count">%1$d langues sur %2$d sur ce téléphone</string>
     <string name="packs_downloading_one">Téléchargement de %1$s…</string>
     <string name="packs_manage">Gérer</string>
@@ -212,15 +212,15 @@
     <string name="studio_subtitle">Traduire des chapitres en fichiers image</string>
     <string name="studio_library">Vos mangas</string>
     <string name="studio_new_manga">Nouveau manga</string>
-    <string name="studio_empty">Aucun manga pour l’instant. Importez un chapitre depuis des images, un PDF ou un CBZ.</string>
+    <string name="studio_empty">Aucun manga pour l’instant. Importez un chapitre depuis des images, un PDF ou un CBZ/ZIP/7z.</string>
     <string name="studio_import">Importer</string>
     <string name="studio_import_from">Importer depuis</string>
     <string name="studio_source_images">Images</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP ou AVIF, une ou plusieurs pages à la fois</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Chaque page devient une image</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Archive de BD ; son ComicInfo.xml remplit les informations</string>
+    <string name="studio_source_archive">Archive de BD</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 ou 7z ; son ComicInfo.xml remplit les informations</string>
     <string name="studio_reviewed">%1$d/%2$d relues</string>
     <string name="studio_chapters_section">Chapitres</string>
     <string name="studio_reorder_hint">Maintenez et faites glisser pour changer l’ordre.</string>
@@ -277,8 +277,13 @@
     <string name="studio_skip_too_large">fichier trop lourd</string>
     <string name="studio_skip_too_many_pixels">image trop grande</string>
     <string name="studio_skip_unreadable">illisible</string>
-    <string name="studio_error_not_cbz">Choisissez un fichier .cbz. Les archives .zip simples ne sont pas importées.</string>
-    <string name="studio_error_not_zip">Impossible d’ouvrir ce CBZ. L’archive est endommagée ou n’est pas un zip.</string>
+    <string name="studio_skip_unsupported_format">format non pris en charge</string>
+    <string name="studio_skip_unsupported_compression">compression non prise en charge</string>
+    <string name="studio_skip_nested_archive">archive dans une archive</string>
+    <string name="studio_error_not_archive">Impossible d’ouvrir ce fichier comme archive. Il est endommagé, ou ce n’est pas un fichier CBZ, ZIP, CB7 ou 7z.</string>
+    <string name="studio_error_rar">Les archives RAR (.cbr, .rar) ne peuvent pas encore être importées. Réempaquetez les pages en CBZ ou 7z, puis importez-les à nouveau.</string>
+    <string name="studio_error_encrypted_archive">Cette archive est protégée par un mot de passe. Retirez le mot de passe, puis importez-la à nouveau.</string>
+    <string name="studio_error_unsupported_compression">Cette archive utilise une méthode de compression illisible. Réempaquetez-la en CBZ ou 7z, puis importez-la à nouveau.</string>
     <string name="studio_error_encrypted_pdf">Ce PDF est protégé par un mot de passe. Retirez le mot de passe, puis importez-le à nouveau.</string>
     <string name="studio_error_not_pdf">Ce fichier ne peut pas être ouvert comme PDF.</string>
     <string name="studio_error_too_large">Ce fichier est trop lourd pour être importé.</string>
@@ -363,7 +368,7 @@
     <string name="action_pause">Pause</string>
     <string name="action_resume">Reprendre</string>
     <string name="studio_only_charging">Studio seulement en charge</string>
-    <string name="studio_only_charging_note">Un chapitre du Studio avec Qwen ou Gemma attend le chargeur. Le lecteur, Gemini et Google Traduction ne sont pas concernés.</string>
+    <string name="studio_only_charging_note">Un chapitre du Studio avec Qwen ou Gemma attend le chargeur. Le lecteur, Gemini et ML Kit ne sont pas concernés.</string>
     <string name="studio_chapter_short">Ch. %1$s</string>
     <string name="studio_stage_new">Non traduite</string>
     <string name="studio_font">Police</string>
@@ -624,6 +629,8 @@
     <string name="studio_corners_sharp">Vifs</string>
     <string name="studio_import_split">Un chapitre par dossier</string>
     <string name="studio_import_split_note">Cette archive contient %1$d dossiers. Chacun devient un chapitre, numéroté d’après son nom.</string>
+    <string name="studio_import_series">Un manga par série</string>
+    <string name="studio_import_series_note">Cette archive contient %1$d séries. Chacune devient son propre manga ; un manga du même titre déjà dans le Studio reçoit ses chapitres.</string>
     <string name="studio_zoom_show">Afficher le zoom</string>
     <string name="studio_zoom_hide">Masquer le zoom</string>
     <string name="studio_delete_bubble">Supprimer</string>
@@ -638,7 +645,7 @@
     <string name="memory_add_term">Ajouter un nom ou un terme</string>
     <string name="memory_notes_label">Notes pour la traduction</string>
     <string name="memory_notes_hint">ex. Ren est une femme. Garder les suffixes comme -san.</string>
-    <string name="memory_engine_note">Gemini et les modèles sur l’appareil utilisent les pronoms et les notes. Google Traduction n’utilise que les noms et les termes.</string>
+    <string name="memory_engine_note">Gemini et les modèles sur l’appareil utilisent les pronoms et les notes. ML Kit n’utilise que les noms et les termes.</string>
     <string name="memory_term_title">Nom ou terme</string>
     <string name="memory_term_source">Original, tel que sur la page</string>
     <string name="memory_term_target">Traduction</string>

@@ -9,7 +9,7 @@
     <string name="action_edit">Sửa</string>
     <string name="action_add">Thêm</string>
     <string name="action_add_key">Thêm khóa</string>
-    <string name="action_use_google_translate">Dùng Google Dịch</string>
+    <string name="action_use_google_translate">Dùng ML Kit</string>
     <string name="action_use_on_device">Dịch trên thiết bị</string>
 
     <string name="cd_selected">Đã chọn</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">Tải xuống chưa hoàn tất; nhấn Thử lại</string>
     <string name="download_failed">Tải xuống không thành công</string>
 
-    <string name="packs_title">Gói ngôn ngữ Google Dịch</string>
+    <string name="packs_title">Gói ngôn ngữ ML Kit</string>
     <string name="packs_count">%1$d/%2$d ngôn ngữ trên điện thoại này</string>
     <string name="packs_downloading_one">Đang tải %1$s…</string>
     <string name="packs_manage">Quản lý</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">Dịch các chương thành tệp ảnh</string>
     <string name="studio_library">Manga của bạn</string>
     <string name="studio_new_manga">Manga mới</string>
-    <string name="studio_empty">Chưa có manga nào. Hãy nhập một chương từ ảnh, PDF hoặc CBZ.</string>
+    <string name="studio_empty">Chưa có manga nào. Hãy nhập một chương từ ảnh, PDF hoặc CBZ/ZIP/7z.</string>
     <string name="studio_import">Nhập</string>
     <string name="studio_import_from">Nhập từ</string>
     <string name="studio_source_images">Ảnh</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP hoặc AVIF, một hoặc nhiều trang cùng lúc</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Mỗi trang trở thành một ảnh</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Tệp nén truyện tranh; ComicInfo.xml trong đó điền sẵn thông tin</string>
+    <string name="studio_source_archive">Tệp nén truyện tranh</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 hoặc 7z; ComicInfo.xml trong đó điền sẵn thông tin</string>
     <string name="studio_reviewed">Đã duyệt %1$d/%2$d</string>
     <string name="studio_chapters_section">Chương</string>
     <string name="studio_reorder_hint">Nhấn giữ và kéo để đổi thứ tự.</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">tệp quá lớn</string>
     <string name="studio_skip_too_many_pixels">ảnh quá lớn</string>
     <string name="studio_skip_unreadable">không đọc được</string>
-    <string name="studio_error_not_cbz">Hãy chọn tệp .cbz. Tệp nén .zip thông thường không được nhập.</string>
-    <string name="studio_error_not_zip">Không mở được CBZ này. Tệp nén bị hỏng hoặc không phải zip.</string>
+    <string name="studio_skip_unsupported_format">định dạng không được hỗ trợ</string>
+    <string name="studio_skip_unsupported_compression">cách nén không được hỗ trợ</string>
+    <string name="studio_skip_nested_archive">tệp nén nằm trong tệp nén</string>
+    <string name="studio_error_not_archive">Không mở được tệp này dưới dạng tệp nén. Tệp bị hỏng, hoặc không phải tệp CBZ, ZIP, CB7 hay 7z.</string>
+    <string name="studio_error_rar">Chưa nhập được tệp nén RAR (.cbr, .rar). Hãy nén lại các trang thành CBZ hoặc 7z rồi nhập lại.</string>
+    <string name="studio_error_encrypted_archive">Tệp nén này được bảo vệ bằng mật khẩu. Hãy gỡ mật khẩu rồi nhập lại.</string>
+    <string name="studio_error_unsupported_compression">Tệp nén này dùng cách nén không đọc được. Hãy nén lại thành CBZ hoặc 7z rồi nhập lại.</string>
     <string name="studio_error_encrypted_pdf">PDF này được bảo vệ bằng mật khẩu. Hãy gỡ mật khẩu rồi nhập lại.</string>
     <string name="studio_error_not_pdf">Không mở được tệp này dưới dạng PDF.</string>
     <string name="studio_error_too_large">Tệp quá lớn để nhập.</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">Tạm dừng</string>
     <string name="action_resume">Tiếp tục</string>
     <string name="studio_only_charging">Studio chỉ chạy khi sạc</string>
-    <string name="studio_only_charging_note">Chương Studio dùng Qwen hoặc Gemma sẽ chờ sạc. Trình đọc, Gemini và Google Dịch không bị ảnh hưởng.</string>
+    <string name="studio_only_charging_note">Chương Studio dùng Qwen hoặc Gemma sẽ chờ sạc. Trình đọc, Gemini và ML Kit không bị ảnh hưởng.</string>
     <string name="studio_chapter_short">Ch. %1$s</string>
     <string name="studio_stage_new">Chưa dịch</string>
     <string name="studio_font">Phông</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">Nhọn</string>
     <string name="studio_import_split">Mỗi thư mục một chương</string>
     <string name="studio_import_split_note">Tệp nén này có %1$d thư mục. Mỗi thư mục thành một chương, đánh số theo tên.</string>
+    <string name="studio_import_series">Mỗi bộ một manga</string>
+    <string name="studio_import_series_note">Tệp nén này có %1$d bộ truyện. Mỗi bộ thành một manga riêng; nếu Studio đã có manga cùng tên, các chương sẽ được thêm vào đó.</string>
     <string name="studio_zoom_show">Hiện thu phóng</string>
     <string name="studio_zoom_hide">Ẩn thu phóng</string>
     <string name="studio_delete_bubble">Xóa</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">Thêm tên hoặc thuật ngữ</string>
     <string name="memory_notes_label">Ghi chú cho người dịch</string>
     <string name="memory_notes_hint">vd: Ren là nữ. Giữ kính ngữ như -san.</string>
-    <string name="memory_engine_note">Đại từ và ghi chú được Gemini và các mô hình trên thiết bị sử dụng. Google Dịch chỉ dùng tên và thuật ngữ.</string>
+    <string name="memory_engine_note">Đại từ và ghi chú được Gemini và các mô hình trên thiết bị sử dụng. ML Kit chỉ dùng tên và thuật ngữ.</string>
     <string name="memory_term_title">Tên hoặc thuật ngữ</string>
     <string name="memory_term_source">Bản gốc, như trên trang</string>
     <string name="memory_term_target">Bản dịch</string>

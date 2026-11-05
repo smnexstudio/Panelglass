@@ -11,6 +11,7 @@ import com.smnexstudio.panelglass.core.model.Chapter
 import com.smnexstudio.panelglass.core.model.ComicInfo
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.Manga
+import com.smnexstudio.panelglass.core.model.MangaStatus
 import com.smnexstudio.panelglass.feature.studio.importer.ImportRefused
 import com.smnexstudio.panelglass.feature.studio.importer.ImportSource
 import com.smnexstudio.panelglass.feature.studio.importer.SkipReason
@@ -29,7 +30,7 @@ import kotlin.concurrent.thread
 sealed interface ImportUi {
     /** The system picker is open (or about to be). */
     data object Picking : ImportUi
-    /** Pages are being copied in; [total] is 0 when unknown (a CBZ is read as a stream). */
+    /** Pages are being copied in; [total] is 0 when unknown (an archive's page count is known only once it is read). */
     data class Reading(val done: Int, val total: Int) : ImportUi
     /** Staged pages shown for ordering, plus where they go. */
     data object Review : ImportUi
@@ -73,6 +74,14 @@ class ImportViewModel @Inject constructor(
     val folders = MutableStateFlow<List<FolderChapter>>(emptyList())
     val split = MutableStateFlow(true)
 
+    /**
+     * A pack holding chapters of two or more series (Mihon's `<source>/<series>/<chapter>.cbz`): one manga per series,
+     * each joining a manga of the same title already in the Studio. Empty otherwise; [perSeries] is whether to import
+     * them so (else every chapter goes to the one manga chosen, as before).
+     */
+    val series = MutableStateFlow<List<SeriesGroup>>(emptyList())
+    val perSeries = MutableStateFlow(true)
+
     /** Survives a configuration change, so the picker is not opened twice. */
     var pickerLaunched: Boolean
         get() = handle.get<Boolean>("picked") == true
@@ -92,11 +101,12 @@ class ImportViewModel @Inject constructor(
                 val staging = when (source) {
                     ImportSource.IMAGES -> importer.images(uris, progress)
                     ImportSource.PDF -> importer.pdf(uris.first(), progress)
-                    ImportSource.CBZ -> importer.cbz(uris.first(), progress)
+                    ImportSource.ARCHIVE -> importer.archive(uris.first(), progress)
                 }
                 prefill(staging)
                 pages.value = staging.pages
-                folders.value = if (appendTo == null) FolderChapters.of(staging.pages) else emptyList()
+                folders.value = if (appendTo == null) FolderChapters.of(staging.pages, staging.folderInfo) else emptyList()
+                series.value = if (startManga == null) FolderChapters.series(folders.value, staging.folderInfo) else emptyList()
                 skipped.value = staging.skipped
                 ui.value = ImportUi.Review
             } catch (e: ImportRefused) {
@@ -131,6 +141,10 @@ class ImportViewModel @Inject constructor(
         if (list.isEmpty() || ui.value != ImportUi.Review) return
         ui.value = ImportUi.Saving
         viewModelScope.launch {
+            if (bySeries()) {
+                saveSeries(list, series.value)
+                return@launch
+            }
             val groups = folders.value
             if (split.value && groups.size > 1) {
                 saveFolders(list, groups)
@@ -153,19 +167,53 @@ class ImportViewModel @Inject constructor(
      * follow it. Pages keep the order shown, each with its folder.
      */
     private suspend fun saveFolders(list: List<StagedPage>, groups: List<FolderChapter>) {
-        var mangaId = destManga.value?.id
+        val first = saveChapters(list, groups, destManga.value?.id, newManga.value.normalized())
+        saved = true
+        ui.value = ImportUi.Done(first ?: return)
+    }
+
+    /**
+     * One manga per series, in the archive's order: a manga already in the Studio with the series' title (any case)
+     * gets its chapters, else a new one is made from the series' ComicInfo, with the languages chosen on this screen.
+     */
+    private suspend fun saveSeries(list: List<StagedPage>, groups: List<SeriesGroup>) {
+        val existing = repo.allMangas()
+        val base = newManga.value
+        var first: Long? = null
+        for (s in groups) {
+            val info = s.info
+            val template = Manga(
+                title = s.title.trim(),
+                altTitle = info?.localizedSeries.orEmpty().trim(),
+                summary = info?.summary.orEmpty().trim(),
+                author = info?.writer.orEmpty(),
+                artist = info?.penciller.orEmpty(),
+                genres = info?.genre.orEmpty(),
+                status = info?.status ?: MangaStatus.UNKNOWN,
+                srcLang = Lang.entries.firstOrNull { info != null && it.code.equals(info.languageIso, ignoreCase = true) } ?: base.srcLang,
+                tgtLang = base.tgtLang,
+            )
+            val id = saveChapters(list, s.chapters, existing.firstOrNull { it.title.trim().equals(template.title, ignoreCase = true) }?.id, template)
+            if (first == null) first = id
+        }
+        saved = true
+        ui.value = ImportUi.Done(first ?: return)
+    }
+
+    /** [groups] as chapters of [mangaId], or of a new manga made from [newOne]; returns the first chapter's id. */
+    private suspend fun saveChapters(list: List<StagedPage>, groups: List<FolderChapter>, mangaId: Long?, newOne: Manga): Long? {
+        var manga = mangaId
         var first: Long? = null
         for (g in groups) {
             val pagesOf = list.filter { FolderChapters.folderOf(it.name) == g.folder }.map { it.page }
             if (pagesOf.isEmpty()) continue
             val ch = Chapter(mangaId = 0, number = g.number.toFloatOrNull(), title = g.title)
-            val id = if (mangaId == null) {
-                repo.import(ImportTarget.NewManga(newManga.value.normalized(), ch), pagesOf).also { mangaId = repo.getChapter(it)?.mangaId }
-            } else repo.import(ImportTarget.NewChapter(mangaId!!, ch), pagesOf)
+            val id = if (manga == null) {
+                repo.import(ImportTarget.NewManga(newOne, ch), pagesOf).also { manga = repo.getChapter(it)?.mangaId }
+            } else repo.import(ImportTarget.NewChapter(manga!!, ch), pagesOf)
             if (first == null) first = id
         }
-        saved = true
-        ui.value = ImportUi.Done(first ?: return)
+        return first
     }
 
     private suspend fun prefill(s: Staging) {
@@ -181,9 +229,13 @@ class ImportViewModel @Inject constructor(
         val series = info.series.ifBlank { guessed.series }
         newManga.value = Manga(
             title = series,
+            altTitle = info.localizedSeries.trim(),
+            // Mihon writes the series' description here (a chapter rarely has its own).
+            summary = info.summary.trim(),
             author = info.writer,
             artist = info.penciller,
             genres = info.genre,
+            status = info.status, // Mihon writes it into every chapter it downloads
             srcLang = Lang.entries.firstOrNull { it.code.equals(info.languageIso, ignoreCase = true) } ?: settings.defaultSourceLang,
             tgtLang = settings.defaultTargetLang,
         )
@@ -218,14 +270,26 @@ class ImportViewModel @Inject constructor(
 
     /** A new manga needs a title; the chapter fields must parse. */
     fun canSave(dest: Manga?, draft: ChapterDraft, manga: Manga): Boolean =
-        pages.value.isNotEmpty() && (appendTo != null || ((draft.valid || splitting()) && (dest != null || manga.title.isNotBlank())))
+        pages.value.isNotEmpty() && (appendTo != null || bySeries() || ((draft.valid || splitting()) && (dest != null || manga.title.isNotBlank())))
 
     /** Whether Save makes one chapter per folder. */
     fun splitting(): Boolean = split.value && folders.value.size > 1
+
+    /** Whether Save makes one manga per series (each series' title comes from the archive: none to type). */
+    fun bySeries(): Boolean = appendTo == null && perSeries.value && series.value.size > 1
 }
 
-/** A folder of an archive imported as its own chapter: the number and title read from the folder's name. */
-data class FolderChapter(val folder: String, val number: String, val title: String, val pages: Int)
+/**
+ * A folder of an archive imported as its own chapter: the number and title read from the folder's name (the
+ * number from its ComicInfo.xml when the name has none). [series] is the series it belongs to, from its ComicInfo or
+ * the folder holding it; empty when that can't be told.
+ */
+data class FolderChapter(val folder: String, val number: String, val title: String, val pages: Int, val series: String = "")
+
+/** Chapters of one series in a pack holding several, imported as its own manga. [info]: one of its ComicInfo.xml. */
+data class SeriesGroup(val title: String, val chapters: List<FolderChapter>, val info: ComicInfo? = null) {
+    val pages: Int get() = chapters.sumOf { it.pages }
+}
 
 /** Pages grouped by the folder they came from, for an archive that holds one chapter per folder. */
 internal object FolderChapters {
@@ -233,19 +297,46 @@ internal object FolderChapters {
 
     /**
      * The folders, in page order, when the pages sit in two or more of them (else none: one chapter as before). A
-     * folder's number comes from its name (`Chapter 66`, `c067`, `第66話`, a bare `66`); what follows it is the title.
+     * folder's number comes from its name (`Chapter 66`, `c067`, `第66話`, a bare `66`), or from its [infos] entry when
+     * the name has none; what follows the number is the title.
+     *
+     * The series of each: its ComicInfo's, else the name of the folder holding the chapter folders (Mihon's
+     * `<source>/<series>/<chapter>.cbz`) — but only when every chapter sits one level under such a folder and none of
+     * those folders is a volume (`Vol 2/c012`) or a bare number: then it would be one series in parts.
      */
-    fun of(pages: List<StagedPage>): List<FolderChapter> {
+    fun of(pages: List<StagedPage>, infos: Map<String, ComicInfo> = emptyMap()): List<FolderChapter> {
         val order = LinkedHashMap<String, Int>()
         for (p in pages) order[folderOf(p.name)] = (order[folderOf(p.name)] ?: 0) + 1
         if (order.size < 2 || order.keys.any { it.isEmpty() }) return emptyList()
+        val parents = order.keys.map { it.substringBeforeLast('/', "") }
+        val depth = order.keys.map { k -> k.count { it == '/' } }.toSet()
+        val parentsAreSeries = depth.size == 1 && parents.none { it.isEmpty() } &&
+            parents.none { p -> p.substringAfterLast('/').let { leaf -> VOLUME.containsMatchIn(leaf) || leaf.all(Char::isDigit) } }
         return order.map { (folder, count) ->
             val leaf = folder.substringAfterLast('/')
             val g = ImportGuess.fromName(leaf)
             val title = if (g.number.isNotEmpty()) leaf.substringAfter(g.number, "").trim().trimStart('-', '–', '—', ':', '.', '_').trim() else leaf
-            FolderChapter(folder, g.number, title, count)
+            val info = infos[folder]
+            val series = info?.series.orEmpty().trim().ifEmpty {
+                if (parentsAreSeries) folder.substringBeforeLast('/').substringAfterLast('/').trim() else ""
+            }
+            FolderChapter(folder, g.number.ifEmpty { info?.number.orEmpty().trim() }, title, count, series)
         }
     }
+
+    /**
+     * The series of [chapters], in the archive's order, when they belong to two or more (else none: one manga as
+     * before). Series are told apart by name, ignoring case; a chapter whose series can't be told keeps the pack whole.
+     */
+    fun series(chapters: List<FolderChapter>, infos: Map<String, ComicInfo> = emptyMap()): List<SeriesGroup> {
+        if (chapters.size < 2 || chapters.any { it.series.isBlank() }) return emptyList()
+        val groups = chapters.groupBy { it.series.lowercase() }
+        if (groups.size < 2) return emptyList()
+        return groups.values.map { list -> SeriesGroup(list.first().series, list, list.firstNotNullOfOrNull { infos[it.folder] }) }
+    }
+
+    /** A volume folder's name: `Vol 2`, `Volume 3 - …`, `v02`, `Tome 4`, `Band 5`, `第3巻` (not `Band of …`, `Vinland …`). */
+    private val VOLUME = Regex("(?i)^(?:vol(?:ume)?\\.?|v|tome|band)[._ -]?\\d+\\b|^vol(?:ume)?\\b|^第?\\d+\\s*巻")
 }
 
 /** Series, chapter and volume read from a file name: `Blue Box v02 c012.cbz`, `Chapter 12.5 - Title.pdf`. */

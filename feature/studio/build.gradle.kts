@@ -52,6 +52,8 @@ dependencies {
     implementation(project(":core:render"))
     implementation(project(":core:ocr"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.commons.compress)
+    implementation(libs.xz)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.vintage)

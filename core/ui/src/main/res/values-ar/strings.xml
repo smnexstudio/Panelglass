@@ -9,7 +9,7 @@
     <string name="action_edit">تعديل</string>
     <string name="action_add">إضافة</string>
     <string name="action_add_key">إضافة مفتاح</string>
-    <string name="action_use_google_translate">استخدام ترجمة Google</string>
+    <string name="action_use_google_translate">استخدام ML Kit</string>
     <string name="action_use_on_device">الترجمة على الجهاز</string>
 
     <string name="cd_selected">محدَّد</string>
@@ -190,7 +190,7 @@
     <string name="download_incomplete">لم يكتمل التنزيل؛ انقر على إعادة المحاولة</string>
     <string name="download_failed">تعذّر التنزيل</string>
 
-    <string name="packs_title">حزم لغات ترجمة Google</string>
+    <string name="packs_title">حزم لغات ML Kit</string>
     <string name="packs_count">%1$d من %2$d لغة على هذا الهاتف</string>
     <string name="packs_downloading_one">جارٍ تنزيل %1$s…</string>
     <string name="packs_manage">إدارة</string>
@@ -228,15 +228,15 @@
     <string name="studio_subtitle">ترجمة الفصول إلى ملفات صور</string>
     <string name="studio_library">المانغا الخاصة بك</string>
     <string name="studio_new_manga">مانغا جديدة</string>
-    <string name="studio_empty">لا توجد مانغا بعد. استورد فصلًا من صور أو ملف PDF أو CBZ.</string>
+    <string name="studio_empty">لا توجد مانغا بعد. استورد فصلًا من صور أو ملف PDF أو CBZ/ZIP/7z.</string>
     <string name="studio_import">استيراد</string>
     <string name="studio_import_from">الاستيراد من</string>
     <string name="studio_source_images">صور</string>
     <string name="studio_source_images_note">PNG أو JPEG أو WebP أو AVIF، صفحة واحدة أو عدة صفحات معًا</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">تصبح كل صفحة صورة</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">أرشيف قصص مصورة؛ يملأ ملف ComicInfo.xml التفاصيل</string>
+    <string name="studio_source_archive">أرشيف قصص مصورة</string>
+    <string name="studio_source_archive_note">CBZ أو ZIP أو CB7 أو 7z؛ يملأ ملف ComicInfo.xml التفاصيل</string>
     <string name="studio_reviewed">تمت مراجعة %1$d/%2$d</string>
     <string name="studio_chapters_section">الفصول</string>
     <string name="studio_reorder_hint">اضغط مطولًا واسحب لتغيير الترتيب.</string>
@@ -293,8 +293,13 @@
     <string name="studio_skip_too_large">الملف كبير جدًا</string>
     <string name="studio_skip_too_many_pixels">الصورة كبيرة جدًا</string>
     <string name="studio_skip_unreadable">تتعذر قراءته</string>
-    <string name="studio_error_not_cbz">اختر ملف ‎.cbz‏. لا يتم استيراد أرشيفات ‎.zip‏ العادية.</string>
-    <string name="studio_error_not_zip">يتعذر فتح ملف CBZ هذا. الأرشيف تالف أو ليس ملف zip.</string>
+    <string name="studio_skip_unsupported_format">التنسيق غير مدعوم</string>
+    <string name="studio_skip_unsupported_compression">الضغط غير مدعوم</string>
+    <string name="studio_skip_nested_archive">أرشيف داخل أرشيف</string>
+    <string name="studio_error_not_archive">يتعذر فتح هذا الملف كأرشيف. الملف تالف أو ليس ملف CBZ أو ZIP أو CB7 أو 7z.</string>
+    <string name="studio_error_rar">لا يمكن استيراد أرشيفات RAR (‎.cbr و‎.rar‏) بعد. أعد حزم الصفحات بتنسيق CBZ أو 7z، ثم استوردها مرة أخرى.</string>
+    <string name="studio_error_encrypted_archive">هذا الأرشيف محمي بكلمة مرور. أزل كلمة المرور ثم استورده مرة أخرى.</string>
+    <string name="studio_error_unsupported_compression">يستخدم هذا الأرشيف طريقة ضغط تتعذر قراءتها. أعد حزمه بتنسيق CBZ أو 7z، ثم استورده مرة أخرى.</string>
     <string name="studio_error_encrypted_pdf">ملف PDF هذا محمي بكلمة مرور. أزل كلمة المرور ثم استورده مرة أخرى.</string>
     <string name="studio_error_not_pdf">يتعذر فتح هذا الملف كملف PDF.</string>
     <string name="studio_error_too_large">الملف كبير جدًا لاستيراده.</string>
@@ -387,7 +392,7 @@
     <string name="action_pause">إيقاف مؤقت</string>
     <string name="action_resume">استئناف</string>
     <string name="studio_only_charging">الاستوديو أثناء الشحن فقط</string>
-    <string name="studio_only_charging_note">ينتظر فصل الاستوديو مع Qwen أو Gemma الشاحن. لا يتأثر القارئ ولا Gemini ولا ترجمة Google.</string>
+    <string name="studio_only_charging_note">ينتظر فصل الاستوديو مع Qwen أو Gemma الشاحن. لا يتأثر القارئ ولا Gemini ولا ML Kit.</string>
     <string name="studio_chapter_short">الفصل %1$s</string>
     <string name="studio_stage_new">غير مترجمة</string>
     <string name="studio_font">الخط</string>
@@ -684,6 +689,8 @@
     <string name="studio_corners_sharp">حادة</string>
     <string name="studio_import_split">فصل لكل مجلد</string>
     <string name="studio_import_split_note">يحتوي هذا الأرشيف على %1$d مجلدات. يصبح كل منها فصلًا مستقلًا مرقّمًا حسب اسمه.</string>
+    <string name="studio_import_series">مانغا لكل سلسلة</string>
+    <string name="studio_import_series_note">يضم هذا الأرشيف %1$d سلاسل. تصبح كل سلسلة مانغا مستقلة؛ وإذا كانت في الاستوديو مانغا بالعنوان نفسه فستُضاف إليها فصولها.</string>
     <string name="studio_zoom_show">إظهار التكبير</string>
     <string name="studio_zoom_hide">إخفاء التكبير</string>
     <string name="studio_delete_bubble">حذف</string>
@@ -698,7 +705,7 @@
     <string name="memory_add_term">إضافة اسم أو مصطلح</string>
     <string name="memory_notes_label">ملاحظات للمترجم</string>
     <string name="memory_notes_hint">مثلًا: رين امرأة. احتفظ بالألقاب مثل -san.</string>
-    <string name="memory_engine_note">يستخدم Gemini والنماذج على الجهاز الضمائر والملاحظات. أما ترجمة Google فتستخدم الأسماء والمصطلحات فقط.</string>
+    <string name="memory_engine_note">يستخدم Gemini والنماذج على الجهاز الضمائر والملاحظات. أما ML Kit فتستخدم الأسماء والمصطلحات فقط.</string>
     <string name="memory_term_title">اسم أو مصطلح</string>
     <string name="memory_term_source">الأصل كما في الصفحة</string>
     <string name="memory_term_target">الترجمة</string>

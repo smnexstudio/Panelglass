@@ -9,7 +9,7 @@
     <string name="action_edit">편집</string>
     <string name="action_add">추가</string>
     <string name="action_add_key">키 추가</string>
-    <string name="action_use_google_translate">Google 번역 사용</string>
+    <string name="action_use_google_translate">ML Kit 사용</string>
     <string name="action_use_on_device">기기에서 번역</string>
 
     <string name="cd_selected">선택됨</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">다운로드가 완료되지 않았습니다. 다시 시도를 탭하세요</string>
     <string name="download_failed">다운로드하지 못했습니다</string>
 
-    <string name="packs_title">Google 번역 언어 팩</string>
+    <string name="packs_title">ML Kit 언어 팩</string>
     <string name="packs_count">이 휴대폰에 있는 언어 %2$d개 중 %1$d개</string>
     <string name="packs_downloading_one">%1$s 다운로드 중…</string>
     <string name="packs_manage">관리</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">챕터를 번역해 이미지 파일로 만듭니다</string>
     <string name="studio_library">내 만화</string>
     <string name="studio_new_manga">새 만화</string>
-    <string name="studio_empty">아직 만화가 없습니다. 이미지, PDF 또는 CBZ에서 챕터를 가져오세요.</string>
+    <string name="studio_empty">아직 만화가 없습니다. 이미지, PDF 또는 CBZ/ZIP/7z에서 챕터를 가져오세요.</string>
     <string name="studio_import">가져오기</string>
     <string name="studio_import_from">가져올 곳</string>
     <string name="studio_source_images">이미지</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP, AVIF. 한 장 또는 여러 장</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">각 페이지가 이미지가 됩니다</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">만화 압축 파일. ComicInfo.xml로 정보를 채웁니다</string>
+    <string name="studio_source_archive">만화 압축 파일</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 또는 7z. ComicInfo.xml로 정보를 채웁니다</string>
     <string name="studio_reviewed">%1$d/%2$d 검토함</string>
     <string name="studio_chapters_section">챕터</string>
     <string name="studio_reorder_hint">길게 눌러 끌면 순서를 바꿀 수 있습니다.</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">파일이 너무 큼</string>
     <string name="studio_skip_too_many_pixels">이미지가 너무 큼</string>
     <string name="studio_skip_unreadable">읽을 수 없음</string>
-    <string name="studio_error_not_cbz">.cbz 파일을 선택하세요. 일반 .zip 압축 파일은 가져오지 않습니다.</string>
-    <string name="studio_error_not_zip">이 CBZ를 열 수 없습니다. 압축 파일이 손상되었거나 zip이 아닙니다.</string>
+    <string name="studio_skip_unsupported_format">지원되지 않는 형식</string>
+    <string name="studio_skip_unsupported_compression">지원되지 않는 압축 방식</string>
+    <string name="studio_skip_nested_archive">압축 파일 안의 압축 파일</string>
+    <string name="studio_error_not_archive">이 파일을 압축 파일로 열 수 없습니다. 손상되었거나 CBZ, ZIP, CB7, 7z 파일이 아닙니다.</string>
+    <string name="studio_error_rar">RAR 압축 파일(.cbr, .rar)은 아직 가져올 수 없습니다. 페이지를 CBZ나 7z로 다시 압축한 뒤 다시 가져오세요.</string>
+    <string name="studio_error_encrypted_archive">이 압축 파일은 암호로 보호되어 있습니다. 암호를 해제한 뒤 다시 가져오세요.</string>
+    <string name="studio_error_unsupported_compression">이 압축 파일은 읽을 수 없는 압축 방식을 사용합니다. CBZ나 7z로 다시 압축한 뒤 다시 가져오세요.</string>
     <string name="studio_error_encrypted_pdf">이 PDF는 암호로 보호되어 있습니다. 암호를 해제한 뒤 다시 가져오세요.</string>
     <string name="studio_error_not_pdf">이 파일을 PDF로 열 수 없습니다.</string>
     <string name="studio_error_too_large">파일이 너무 커서 가져올 수 없습니다.</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">일시정지</string>
     <string name="action_resume">다시 시작</string>
     <string name="studio_only_charging">충전 중에만 스튜디오 실행</string>
-    <string name="studio_only_charging_note">Qwen 또는 Gemma를 쓰는 스튜디오 챕터는 충전기를 기다립니다. 리더, Gemini, Google 번역에는 영향이 없습니다.</string>
+    <string name="studio_only_charging_note">Qwen 또는 Gemma를 쓰는 스튜디오 챕터는 충전기를 기다립니다. 리더, Gemini, ML Kit에는 영향이 없습니다.</string>
     <string name="studio_chapter_short">%1$s화</string>
     <string name="studio_stage_new">번역 안 됨</string>
     <string name="studio_font">글꼴</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">각진</string>
     <string name="studio_import_split">폴더마다 한 화</string>
     <string name="studio_import_split_note">이 압축 파일에는 폴더가 %1$d개 있습니다. 각 폴더가 이름의 번호로 별도의 화가 됩니다.</string>
+    <string name="studio_import_series">시리즈마다 만화 하나</string>
+    <string name="studio_import_series_note">이 압축 파일에는 시리즈 %1$d개가 들어 있습니다. 각각 별도의 만화가 되며, 스튜디오에 같은 제목의 만화가 있으면 그 만화에 챕터가 추가됩니다.</string>
     <string name="studio_zoom_show">확대/축소 표시</string>
     <string name="studio_zoom_hide">확대/축소 숨기기</string>
     <string name="studio_delete_bubble">삭제</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">이름 또는 용어 추가</string>
     <string name="memory_notes_label">번역 메모</string>
     <string name="memory_notes_hint">예: 렌은 여성이다. -상 같은 호칭은 유지.</string>
-    <string name="memory_engine_note">대명사와 메모는 Gemini와 기기 내 모델이 사용합니다. Google 번역은 이름과 용어만 사용합니다.</string>
+    <string name="memory_engine_note">대명사와 메모는 Gemini와 기기 내 모델이 사용합니다. ML Kit은 이름과 용어만 사용합니다.</string>
     <string name="memory_term_title">이름 또는 용어</string>
     <string name="memory_term_source">원문(페이지 표기 그대로)</string>
     <string name="memory_term_target">번역</string>

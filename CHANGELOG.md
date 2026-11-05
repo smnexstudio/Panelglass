@@ -7,6 +7,21 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The free on-device engine is now named **Google Translate (ML Kit)** in the engine picker, Settings, the reader and
+  the Studio, so it is not mistaken for the Google Translate app or its cloud service. It works exactly as before.
+- **README demo and screenshots**: the reader recording, its preview, the before/after captures and every Studio
+  screenshot now show the openly licensed webcomic [Pepper&amp;Carrot](https://www.peppercarrot.com) by David Revoy
+  (CC BY 4.0, Japanese translation by guruguru) instead of commercial manga, with its credit in the README and NOTICE.
+  The old captures, and a screenshot of a third-party reading site, are removed.
+
+### Added
+
+- **More comic archives import into the Studio**: `.zip`, `.cb7` and `.7z` beside `.cbz`, told apart by their contents rather than their name (a 7z named `.cbz` opens too). Archives made by Mihon, other readers and archivers that the Studio used to call damaged or empty now open: pages stored uncompressed with their sizes after the data, Zip64 and Deflate64 archives, and file names in Japanese or Chinese encodings. Pages are recognised by their image data, so pages without an extension or named `.jfif` come in, as do AVIF files most encoders write. An archive holding chapter archives (a `.zip` of `.cbz` files) imports as one chapter each, and a pack of several series (a reader app's download folder zipped whole) offers **One manga per series**: each series becomes its own manga, titled from its ComicInfo.xml or its folder, and a manga already in the Studio with the same title gets that series' chapters.
+- **Exports show up properly in Mihon** and other local-folder readers: every export now writes the manga's `cover.jpg` (the Studio's cover, or the first page) and a series `ComicInfo.xml` into its folder, so Mihon's local source shows the cover, and the publication status reaches Mihon (Mihon's own ComicInfo field, also in each chapter) instead of "Unknown". Importing a chapter Mihon downloaded picks its status and summary up too, and an alternative title travels both ways as ComicInfo's `LocalizedSeries`
+- The import now lists what it left out and why: images in a format it can't read (HEIC, JPEG XL, BMP, TIFF), entries packed with an unsupported compression method, and archives nested two levels deep. RAR (`.cbr`) and password-protected archives get their own message instead of "damaged".
+
 ## [0.4.0] - 2026-10-31
 
 ### Added

@@ -13,7 +13,7 @@ Measured 2026-09-27. Re-measure when LiteRT-LM, a model file or the trim policy 
 - [Method](#method)
 - [Results: Gemma 4 E2B](#results-gemma-4-e2b)
 - [Results: Qwen 2.5 1.5B](#results-qwen-25-15b)
-- [Results: Google Translate](#results-google-translate)
+- [Results: ML Kit](#results-ml-kit)
 - [Results: Qwen 2.5 1.5B on the CPU](#results-qwen-25-15b-on-the-cpu)
 - [Going to the background mid-translation](#going-to-the-background-mid-translation)
 - [Re-run, 2026-10-17](#re-run-2026-10-17)
@@ -24,7 +24,7 @@ Measured 2026-09-27. Re-measure when LiteRT-LM, a model file or the trim policy 
 
 ## Summary
 
-| | Google Translate | Gemma 4 E2B (GPU) | Qwen 2.5 1.5B (GPU) | Qwen 2.5 1.5B (CPU) |
+| | ML Kit | Gemma 4 E2B (GPU) | Qwen 2.5 1.5B (GPU) | Qwen 2.5 1.5B (CPU) |
 |---|---|---|---|---|
 | Reader open, idle (app PSS) | 416 MB | 2,766 MB | 3,086 MB | 2,258 MB |
 | Of which pinned (private dirty) | 325 MB | 2,422 MB | 2,786 MB | 597 MB |
@@ -152,7 +152,7 @@ available): the peak depends on the page and on what else the phone holds.
 WebView renderer: 150 MB idle, 180 MB while translating. Translation: ~10–20 s per group of 4 bubbles (a dense page
 of 13 regions took 45 s). At step 3d the new page needed the model again: reloaded in 11.6 s.
 
-## Results: Google Translate
+## Results: ML Kit
 
 `GOOGLE` (ML Kit on-device translation, ZH→EN pack already installed). No LLM is loaded; the reader pre-warms the
 detector and OCR only.
@@ -235,7 +235,7 @@ second pass, glossary and notes. **Not directly comparable with the tables above
 | | 2026-09-27 (above) | 2026-10-17 |
 |---|---|---|
 | Android | 16 | 17 |
-| Page | Bilibili, Chinese → English, page turns | rawkuma, **Japanese** → English, scroll steps |
+| Page | Bilibili, Chinese → English, page turns | A Japanese reader site, **Japanese** → English, scroll steps |
 | Recognizer | ML Kit (Chinese) | **manga-ocr** (installed; ~140 MB of sessions) |
 | Second detection pass | – | PP-OCRv6 tiny, every capture |
 | Device available before start | 3.4 GB | 2.7–3.0 GB |
@@ -256,7 +256,7 @@ second pass, glossary and notes. **Not directly comparable with the tables above
 | 4a Background again | 601 MB | 90 MB | 45 MB | 9 MB | 445 MB | 2,513 MB |
 | 4b / 4c Cleared | process killed | | | | | 2,947 / 2,967 MB |
 
-**Google Translate** (4 screens, 5.5 s median, 8.4 s at most):
+**ML Kit** (4 screens, 5.5 s median, 8.4 s at most):
 
 | Step | App PSS | Private dirty | GPU | Native | Swap | Device available |
 |---|---|---|---|---|---|---|
@@ -343,7 +343,7 @@ and takes the object counts and heaps from `dumpsys meminfo`.
 
 App PSS in MB (WebView renderer not included):
 
-| Step | Google Translate | Gemma 4 E2B | Qwen 2.5 1.5B (GPU) | Qwen 2.5 1.5B (CPU) |
+| Step | ML Kit | Gemma 4 E2B | Qwen 2.5 1.5B (GPU) | Qwen 2.5 1.5B (CPU) |
 |---|---|---|---|---|
 | 1a Home screen | 233 | 230 | 230 | 196 |
 | 1b Reader, idle | 416 | 2,766 | 3,086 | 2,258 (597 pinned) |
@@ -368,7 +368,7 @@ App PSS in MB (WebView renderer not included):
    quick app switch, at the price of ~2.5–3 GB held in the background and a higher chance of being killed.
 4. **Clearing from Recents frees everything.** The app process and its WebView renderer are both killed ("remove
    task"); device available memory rises by the app's PSS within seconds.
-5. **Google Translate is light.** ~0.6 GB while translating, no swap pressure, and translation itself is under a
+5. **ML Kit is light.** ~0.6 GB while translating, no swap pressure, and translation itself is under a
    second; detection and OCR are the cost.
 6. **The CPU backend trades speed for memory.** Qwen on the CPU pins ~600 MB instead of ~2.8 GB and leaves the
    phone 2.6 GB free while translating (0.7 GB on the GPU), but generates ~3× slower. On a phone with less RAM, or

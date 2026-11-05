@@ -8,6 +8,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import com.smnexstudio.panelglass.core.data.studio.StudioFiles
 import com.smnexstudio.panelglass.core.model.ComicInfo
@@ -20,26 +21,34 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
+import java.nio.channels.SeekableByteChannel
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-enum class ImportSource { IMAGES, PDF, CBZ }
+/** [ARCHIVE]: a comic archive, `.cbz` / `.zip` or `.cb7` / `.7z`. */
+enum class ImportSource { IMAGES, PDF, ARCHIVE }
 
 /** Pages staged from one pick, before the user confirms where they go. */
 data class Staging(
     val pages: List<StagedPage>,
     val skipped: List<Pair<String, SkipReason>> = emptyList(),
-    /** From a CBZ's ComicInfo.xml, to pre-fill the metadata. */
+    /** From an archive's ComicInfo.xml, to pre-fill the metadata. */
     val comicInfo: ComicInfo? = null,
-    /** The picked file's name (PDF / CBZ), without its extension: a title suggestion. */
+    /** The picked file's name (PDF / archive), without its extension: a title suggestion. */
     val sourceName: String? = null,
+    /**
+     * Every ComicInfo.xml of an archive by the folder its pages sit in (an inner archive's chapter folder, `""` at the
+     * top), for an archive holding several chapters or series.
+     */
+    val folderInfo: Map<String, ComicInfo> = emptyMap(),
 )
 
 /**
- * Imports images, a PDF or a CBZ picked through the system file picker (SAF). Pages are staged into their own
+ * Imports images, a PDF or a comic archive picked through the system file picker (SAF). Pages are staged into their own
  * directories off the main thread; nothing is saved to the database here ([com.smnexstudio.panelglass.core.data.repo.StudioRepository.import]
  * does that once the user confirms). A cancelled or failed import deletes what it staged.
  */
@@ -82,21 +91,55 @@ class StudioImporter @Inject constructor(
         Staging(staged.toList(), skipped.toList())
     }
 
-    suspend fun cbz(uri: Uri, progress: (done: Int, total: Int) -> Unit): Staging = staging { staged, skipped ->
+    /**
+     * A comic archive: `.cbz` / `.zip` or `.cb7` / `.7z`, whatever its name says ([ArchiveReader] tells them apart by
+     * their bytes). The archive is read through a seekable channel on the picked file; a provider that only streams
+     * is copied into the cache first, within the total cap.
+     */
+    suspend fun archive(uri: Uri, progress: (done: Int, total: Int) -> Unit): Staging = staging { staged, skipped ->
         val name = displayName(uri)
-        if (!CbzReader.isCbzName(name)) throw ImportRefused(ImportRefused.Reason.NOT_CBZ)
         // The pages are mostly kept byte for byte: about the archive's own size.
         ensureSpace(size(uri) ?: 0L)
-        val input = context.contentResolver.openInputStream(uri) ?: throw ImportRefused(ImportRefused.Reason.UNREADABLE)
         val ctx = coroutineContext
-        val info = input.use { stream ->
-            CbzReader(limits).read(stream.buffered()) { entry, body ->
-                ctx.ensureActive() // a cancelled import stops at the next entry
-                collect(stager.stage(entry, body), staged, skipped)
-                progress(staged.size + skipped.size, 0)
+        val scratch = File(context.cacheDir, SCRATCH).apply { deleteRecursively(); mkdirs() } // a killed import's leftovers
+        try {
+            val folderInfo = LinkedHashMap<String, ComicInfo>()
+            val info = withChannel(uri, scratch) { channel ->
+                ArchiveReader(limits, scratch).read(
+                    channel,
+                    onImage = { entry, body ->
+                        ctx.ensureActive() // a cancelled import stops at the next entry
+                        collect(stager.stage(entry, body), staged, skipped)
+                        progress(staged.size + skipped.size, 0)
+                    },
+                    onSkip = { entry, reason -> skipped += entry to reason },
+                    onComicInfo = { folder, i -> folderInfo.putIfAbsent(folder, i) },
+                )
             }
+            Staging(staged.sortedWith(compareBy(NaturalOrder) { it.name }), skipped.toList(), info, name?.substringBeforeLast('.'), folderInfo)
+        } finally {
+            scratch.deleteRecursively()
         }
-        Staging(staged.sortedWith(compareBy(NaturalOrder) { it.name }), skipped.toList(), info, name?.substringBeforeLast('.'))
+    }
+
+    /** [block] on a seekable channel over the picked file: its own descriptor when it is a file, else a copy in [scratch]. */
+    private fun <T> withChannel(uri: Uri, scratch: File, block: (SeekableByteChannel) -> T): T {
+        val pfd = try {
+            context.contentResolver.openFileDescriptor(uri, "r")
+        } catch (e: SecurityException) {
+            null
+        } catch (e: java.io.FileNotFoundException) {
+            null
+        } ?: throw ImportRefused(ImportRefused.Reason.UNREADABLE)
+        // The stream owns the descriptor: closing it closes the descriptor once.
+        val seekable = pfd.statSize >= 0
+        ParcelFileDescriptor.AutoCloseInputStream(pfd).use { s ->
+            if (seekable) return block(s.channel)
+            // A pipe (some cloud providers): copied once, within the cap on what one archive may unpack.
+            val copy = File(scratch, "picked.bin")
+            if (PageStager.copyCapped(s, copy, limits.maxTotalBytes) < 0) throw ImportRefused(ImportRefused.Reason.TOO_LARGE)
+        }
+        return RandomAccessFile(File(scratch, "picked.bin"), "r").use { raf -> block(raf.channel) }
     }
 
     suspend fun pdf(uri: Uri, progress: (done: Int, total: Int) -> Unit): Staging = staging { staged, _ ->
@@ -191,6 +234,9 @@ class StudioImporter @Inject constructor(
 
 /** About what one rendered PDF page takes as PNG (2000 px wide), for the free space check. */
 private const val PDF_PAGE_BYTES = 3L * 1024 * 1024
+
+/** Cache folder for inner archives and copies of streamed archives; emptied before and after each archive import. */
+private const val SCRATCH = "import"
 
 /** How big a PDF page is rendered: 2× its point size, at most 2000 px wide and [maxPixels] in all. */
 object PdfSizing {

@@ -9,7 +9,7 @@
     <string name="action_edit">แก้ไข</string>
     <string name="action_add">เพิ่ม</string>
     <string name="action_add_key">เพิ่มคีย์</string>
-    <string name="action_use_google_translate">ใช้ Google แปลภาษา</string>
+    <string name="action_use_google_translate">ใช้ ML Kit</string>
     <string name="action_use_on_device">แปลบนอุปกรณ์</string>
 
     <string name="cd_selected">เลือกอยู่</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">ดาวน์โหลดไม่ครบ แตะลองอีกครั้ง</string>
     <string name="download_failed">ดาวน์โหลดไม่สำเร็จ</string>
 
-    <string name="packs_title">แพ็กภาษาของ Google แปลภาษา</string>
+    <string name="packs_title">แพ็กภาษาของ ML Kit</string>
     <string name="packs_count">มี %1$d จาก %2$d ภาษาในโทรศัพท์นี้</string>
     <string name="packs_downloading_one">กำลังดาวน์โหลด%1$s…</string>
     <string name="packs_manage">จัดการ</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">แปลตอนเป็นไฟล์รูปภาพ</string>
     <string name="studio_library">มังงะของคุณ</string>
     <string name="studio_new_manga">มังงะใหม่</string>
-    <string name="studio_empty">ยังไม่มีมังงะ นำเข้าตอนจากรูปภาพ PDF หรือ CBZ</string>
+    <string name="studio_empty">ยังไม่มีมังงะ นำเข้าตอนจากรูปภาพ PDF หรือ CBZ/ZIP/7z</string>
     <string name="studio_import">นำเข้า</string>
     <string name="studio_import_from">นำเข้าจาก</string>
     <string name="studio_source_images">รูปภาพ</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP หรือ AVIF ครั้งละหนึ่งหน้าหรือหลายหน้า</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">ทุกหน้าจะกลายเป็นรูปภาพ</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">ไฟล์รวมการ์ตูน ใช้ ComicInfo.xml เติมรายละเอียด</string>
+    <string name="studio_source_archive">ไฟล์รวมการ์ตูน</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 หรือ 7z ใช้ ComicInfo.xml เติมรายละเอียด</string>
     <string name="studio_reviewed">ตรวจแล้ว %1$d/%2$d</string>
     <string name="studio_chapters_section">ตอน</string>
     <string name="studio_reorder_hint">กดค้างแล้วลากเพื่อเปลี่ยนลำดับ</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">ไฟล์ใหญ่เกินไป</string>
     <string name="studio_skip_too_many_pixels">รูปภาพใหญ่เกินไป</string>
     <string name="studio_skip_unreadable">อ่านไม่ได้</string>
-    <string name="studio_error_not_cbz">เลือกไฟล์ .cbz ระบบจะไม่นำเข้าไฟล์ .zip ทั่วไป</string>
-    <string name="studio_error_not_zip">เปิด CBZ นี้ไม่ได้ ไฟล์เสียหายหรือไม่ใช่ zip</string>
+    <string name="studio_skip_unsupported_format">ไม่รองรับรูปแบบนี้</string>
+    <string name="studio_skip_unsupported_compression">ไม่รองรับวิธีบีบอัดนี้</string>
+    <string name="studio_skip_nested_archive">ไฟล์บีบอัดซ้อนในไฟล์บีบอัด</string>
+    <string name="studio_error_not_archive">เปิดไฟล์นี้เป็นไฟล์บีบอัดไม่ได้ ไฟล์เสียหาย หรือไม่ใช่ไฟล์ CBZ, ZIP, CB7 หรือ 7z</string>
+    <string name="studio_error_rar">ยังนำเข้าไฟล์ RAR (.cbr, .rar) ไม่ได้ โปรดบีบอัดหน้าใหม่เป็น CBZ หรือ 7z แล้วนำเข้าอีกครั้ง</string>
+    <string name="studio_error_encrypted_archive">ไฟล์บีบอัดนี้มีการป้องกันด้วยรหัสผ่าน โปรดเอารหัสผ่านออกแล้วนำเข้าอีกครั้ง</string>
+    <string name="studio_error_unsupported_compression">ไฟล์บีบอัดนี้ใช้วิธีบีบอัดที่อ่านไม่ได้ โปรดบีบอัดใหม่เป็น CBZ หรือ 7z แล้วนำเข้าอีกครั้ง</string>
     <string name="studio_error_encrypted_pdf">PDF นี้มีการป้องกันด้วยรหัสผ่าน โปรดเอารหัสผ่านออกแล้วนำเข้าอีกครั้ง</string>
     <string name="studio_error_not_pdf">เปิดไฟล์นี้เป็น PDF ไม่ได้</string>
     <string name="studio_error_too_large">ไฟล์นี้ใหญ่เกินกว่าจะนำเข้าได้</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">หยุดชั่วคราว</string>
     <string name="action_resume">ทำต่อ</string>
     <string name="studio_only_charging">สตูดิโอทำงานเฉพาะขณะชาร์จ</string>
-    <string name="studio_only_charging_note">ตอนในสตูดิโอที่ใช้ Qwen หรือ Gemma จะรอการชาร์จ ตัวอ่าน Gemini และ Google แปลภาษาไม่ได้รับผลกระทบ</string>
+    <string name="studio_only_charging_note">ตอนในสตูดิโอที่ใช้ Qwen หรือ Gemma จะรอการชาร์จ ตัวอ่าน Gemini และ ML Kitไม่ได้รับผลกระทบ</string>
     <string name="studio_chapter_short">ตอนที่ %1$s</string>
     <string name="studio_stage_new">ยังไม่ได้แปล</string>
     <string name="studio_font">ฟอนต์</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">มุมแหลม</string>
     <string name="studio_import_split">หนึ่งตอนต่อโฟลเดอร์</string>
     <string name="studio_import_split_note">ไฟล์นี้มี %1$d โฟลเดอร์ แต่ละโฟลเดอร์จะเป็นตอนแยก ใช้เลขจากชื่อ</string>
+    <string name="studio_import_series">แยกมังงะตามซีรีส์</string>
+    <string name="studio_import_series_note">ไฟล์บีบอัดนี้มี %1$d ซีรีส์ แต่ละซีรีส์จะเป็นมังงะแยกกัน หากในสตูดิโอมีมังงะชื่อเดียวกันอยู่แล้ว ตอนต่างๆ จะถูกเพิ่มเข้าไป</string>
     <string name="studio_zoom_show">แสดงการซูม</string>
     <string name="studio_zoom_hide">ซ่อนการซูม</string>
     <string name="studio_delete_bubble">ลบ</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">เพิ่มชื่อหรือคำศัพท์</string>
     <string name="memory_notes_label">หมายเหตุสำหรับผู้แปล</string>
     <string name="memory_notes_hint">เช่น เรนเป็นผู้หญิง คงคำเรียกขาน เช่น -san ไว้</string>
-    <string name="memory_engine_note">สรรพนามและหมายเหตุใช้กับ Gemini และโมเดลบนอุปกรณ์ Google แปลภาษาใช้เฉพาะชื่อและคำศัพท์</string>
+    <string name="memory_engine_note">สรรพนามและหมายเหตุใช้กับ Gemini และโมเดลบนอุปกรณ์ ML Kitใช้เฉพาะชื่อและคำศัพท์</string>
     <string name="memory_term_title">ชื่อหรือคำศัพท์</string>
     <string name="memory_term_source">ต้นฉบับ ตามที่อยู่บนหน้า</string>
     <string name="memory_term_target">คำแปล</string>

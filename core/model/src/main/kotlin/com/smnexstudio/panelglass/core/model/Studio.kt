@@ -12,7 +12,10 @@ import kotlinx.serialization.Serializable
  * entities like [Site]; lists and styles are stored as JSON by `core:data`'s `StudioConverters`.
  */
 
-/** Publication status, shown on the manga card (ComicInfo.xml has no field for it). */
+/**
+ * Publication status, shown on the manga card. The Anansi ComicInfo schema has no field for it; Mihon's own
+ * `ty:PublishingStatusTachiyomi` carries it ([ComicInfo.status], [ComicInfo.publishingStatusOf]).
+ */
 @Serializable
 enum class MangaStatus { UNKNOWN, ONGOING, COMPLETED, HIATUS, CANCELLED }
 

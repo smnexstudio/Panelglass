@@ -9,7 +9,7 @@
     <string name="action_edit">編集</string>
     <string name="action_add">追加</string>
     <string name="action_add_key">キーを追加</string>
-    <string name="action_use_google_translate">Google 翻訳を使う</string>
+    <string name="action_use_google_translate">ML Kitを使う</string>
     <string name="action_use_on_device">端末上で翻訳</string>
 
     <string name="cd_selected">選択中</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">ダウンロードが完了していません。再試行をタップしてください</string>
     <string name="download_failed">ダウンロードに失敗しました</string>
 
-    <string name="packs_title">Google 翻訳の言語パック</string>
+    <string name="packs_title">ML Kitの言語パック</string>
     <string name="packs_count">この端末にある言語：%2$d 中 %1$d</string>
     <string name="packs_downloading_one">%1$sをダウンロード中…</string>
     <string name="packs_manage">管理</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">章を翻訳して画像ファイルにします</string>
     <string name="studio_library">あなたのマンガ</string>
     <string name="studio_new_manga">新しいマンガ</string>
-    <string name="studio_empty">まだマンガがありません。画像、PDF、CBZ から章をインポートしてください。</string>
+    <string name="studio_empty">まだマンガがありません。画像、PDF、CBZ/ZIP/7z から章をインポートしてください。</string>
     <string name="studio_import">インポート</string>
     <string name="studio_import_from">インポート元</string>
     <string name="studio_source_images">画像</string>
     <string name="studio_source_images_note">PNG、JPEG、WebP、AVIF。1枚でも複数でも</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">各ページが画像になります</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">コミックアーカイブ。ComicInfo.xml から詳細を入力します</string>
+    <string name="studio_source_archive">コミックアーカイブ</string>
+    <string name="studio_source_archive_note">CBZ・ZIP・CB7・7z。ComicInfo.xml から詳細を入力します</string>
     <string name="studio_reviewed">%1$d/%2$d 確認済み</string>
     <string name="studio_chapters_section">章</string>
     <string name="studio_reorder_hint">長押ししてドラッグすると順番を変えられます。</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">ファイルが大きすぎます</string>
     <string name="studio_skip_too_many_pixels">画像が大きすぎます</string>
     <string name="studio_skip_unreadable">読み込めません</string>
-    <string name="studio_error_not_cbz">.cbz ファイルを選んでください。通常の .zip はインポートできません。</string>
-    <string name="studio_error_not_zip">この CBZ を開けません。アーカイブが壊れているか、zip ではありません。</string>
+    <string name="studio_skip_unsupported_format">対応していない形式</string>
+    <string name="studio_skip_unsupported_compression">対応していない圧縮方式</string>
+    <string name="studio_skip_nested_archive">アーカイブ内のアーカイブ</string>
+    <string name="studio_error_not_archive">このファイルをアーカイブとして開けません。壊れているか、CBZ・ZIP・CB7・7z ではありません。</string>
+    <string name="studio_error_rar">RAR アーカイブ（.cbr、.rar）はまだインポートできません。ページを CBZ か 7z に詰め直してから、もう一度インポートしてください。</string>
+    <string name="studio_error_encrypted_archive">このアーカイブはパスワードで保護されています。パスワードを外してから、もう一度インポートしてください。</string>
+    <string name="studio_error_unsupported_compression">このアーカイブは読み込めない圧縮方式を使っています。CBZ か 7z に詰め直してから、もう一度インポートしてください。</string>
     <string name="studio_error_encrypted_pdf">この PDF はパスワードで保護されています。パスワードを外してから、もう一度インポートしてください。</string>
     <string name="studio_error_not_pdf">このファイルは PDF として開けません。</string>
     <string name="studio_error_too_large">ファイルが大きすぎてインポートできません。</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">一時停止</string>
     <string name="action_resume">再開</string>
     <string name="studio_only_charging">スタジオは充電中のみ実行</string>
-    <string name="studio_only_charging_note">Qwen や Gemma を使うスタジオの章は充電を待ちます。リーダー、Gemini、Google 翻訳には影響しません。</string>
+    <string name="studio_only_charging_note">Qwen や Gemma を使うスタジオの章は充電を待ちます。リーダー、Gemini、ML Kitには影響しません。</string>
     <string name="studio_chapter_short">第%1$s話</string>
     <string name="studio_stage_new">未翻訳</string>
     <string name="studio_font">フォント</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">角ばった</string>
     <string name="studio_import_split">フォルダーごとに1章</string>
     <string name="studio_import_split_note">このアーカイブには %1$d 個のフォルダーがあります。それぞれ名前の番号で別の章になります。</string>
+    <string name="studio_import_series">シリーズごとに 1 つのマンガ</string>
+    <string name="studio_import_series_note">このアーカイブには %1$d 作品が入っています。それぞれが別のマンガになり、同じタイトルのマンガがスタジオにあれば、その章に追加されます。</string>
     <string name="studio_zoom_show">ズームを表示</string>
     <string name="studio_zoom_hide">ズームを隠す</string>
     <string name="studio_delete_bubble">削除</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">名前・用語を追加</string>
     <string name="memory_notes_label">翻訳へのメモ</string>
     <string name="memory_notes_hint">例: レンは女性。「さん」などの敬称は残す。</string>
-    <string name="memory_engine_note">代名詞とメモは Gemini と端末上のモデルが使います。Google 翻訳は名前と用語だけを使います。</string>
+    <string name="memory_engine_note">代名詞とメモは Gemini と端末上のモデルが使います。ML Kitは名前と用語だけを使います。</string>
     <string name="memory_term_title">名前・用語</string>
     <string name="memory_term_source">原文（ページの表記）</string>
     <string name="memory_term_target">訳語</string>

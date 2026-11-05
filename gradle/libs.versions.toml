@@ -25,6 +25,9 @@ mlkitTextRecognitionKo = "16.0.1"
 mlkitTextRecognitionZh = "16.0.1"
 onnxruntime = "1.22.0"
 coil = "2.7.0"
+# Studio archive import: zip (data descriptors, Zip64, Deflate64, any name encoding) and 7z; xz adds 7z's LZMA / LZMA2.
+commonsCompress = "1.28.0"
+xz = "1.12"
 webkit = "1.14.0"
 junit5 = "5.11.4"
 turbine = "1.2.0"
@@ -83,6 +86,8 @@ mlkit-text-recognition-korean = { group = "com.google.mlkit", name = "text-recog
 mlkit-text-recognition-chinese = { group = "com.google.mlkit", name = "text-recognition-chinese", version.ref = "mlkitTextRecognitionZh" }
 onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commonsCompress" }
+xz = { group = "org.tukaani", name = "xz", version.ref = "xz" }
 okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit5" }

@@ -20,7 +20,7 @@ screen is translated step by step, see [FLOW.md](FLOW.md).
 1. **Source language right?** The bar shows it (`KO → EN`). Panelglass switches to Japanese, Korean or Chinese by
    itself when the page is clearly in one of them; a saved site's language always wins.
 2. **Engine suited to the series?** Gemini reads the bubbles itself and is the most accurate; the on-device models are
-   private and offline; Google Translate is free but literal.
+   private and offline; ML Kit is free but literal.
 3. **Names and pronouns in the glossary** (reader ⋮ › *Glossary & pronouns*), for the characters that matter.
 4. **A few translation notes** (Settings › *Translation notes*): tone, honorifics, how to treat missing subjects.
 5. **Sound effects mode** (Settings › *Sound effects*): *Replace* to erase the original effects.
@@ -32,9 +32,9 @@ screen is translated step by step, see [FLOW.md](FLOW.md).
 | **Gemini** (your key) | Reads each bubble from the image, so OCR errors do not reach it; follows notes and pronouns well | Needs a network; crops of the screen go to Google |
 | **Gemma 4 E2B** (on device, 8 GB RAM) | Natural dialogue; follows notes and glossary pronouns | 5–15 s per screen; occasionally switches language mid-sentence (cleaned up, see below) |
 | **Qwen 2.5 1.5B** (on device) | Runs on smaller phones | Weaker on tone and context |
-| **Google Translate** (on device, ML Kit) | Free, fast, offline | Literal; titles and honorifics go wrong (공자님 "young lord" came out as "Confucius"); ignores notes and pronouns, uses only glossary terms |
+| **ML Kit** (on device) | Free, fast, offline | Literal; titles and honorifics go wrong (공자님 "young lord" came out as "Confucius"); ignores notes and pronouns, uses only glossary terms |
 
-Notes and pronouns are used by **Gemini and the on-device models**. Google Translate has no prompt: it only replaces
+Notes and pronouns are used by **Gemini and the on-device models**. ML Kit has no prompt: it only replaces
 glossary terms.
 
 ## Source language: set it, or let the page decide
@@ -54,7 +54,7 @@ A wrong source language is the most damaging mistake: Korean read with the Japan
 Open a chapter, then **⋮ › Glossary & pronouns**.
 
 - **Names and terms.** Add a name or term as written on the page and how it should read in your language (60
-  characters each). Every engine uses these: the AI engines are told, Google Translate substitutes them.
+  characters each). Every engine uses these: the AI engines are told, ML Kit substitutes them.
 - **Pronoun.** Give a character *He*, *She* or *They*. Japanese and Korean often leave the subject out, and a model
   then guesses, usually *he*. With pronouns set, the AI engines receive a characters list:
 
@@ -70,7 +70,7 @@ Open a chapter, then **⋮ › Glossary & pronouns**.
   The narrator is a boy. The innkeeper speaks formally; the twins talk like kids.
   ```
 
-- **Scope.** The sheet shows what the notes apply to (*For rawkuma.net/manga*). For a saved site it is that site's
+- **Scope.** The sheet shows what the notes apply to (*For peppercarrot.com/ja*). For a saved site it is that site's
   own address and path, so two series on one site keep separate notes; for an unsaved page it is the host and first
   path segment. Save a series as a site to give it notes of its own.
 - Closing the sheet after a change translates what is on screen again with it.
@@ -149,7 +149,7 @@ How effects are found and read:
   than translated.
 - **Busy or rainbow art.** When the eraser cannot repaint the background cleanly, a caption is covered with a flat
   box in a colour taken from the art, which can look out of place.
-- **Joined balloons split one sentence.** Google Translate translates each balloon alone ("Good" / "Morning.").
+- **Joined balloons split one sentence.** ML Kit translates each balloon alone ("Good" / "Morning.").
 - **Notes on unsaved series are shared** by every series under the same host and first path segment.
 
 ## Measuring a change

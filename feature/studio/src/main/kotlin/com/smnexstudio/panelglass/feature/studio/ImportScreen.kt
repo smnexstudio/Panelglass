@@ -80,8 +80,17 @@ import com.smnexstudio.panelglass.core.ui.R as UiR
 
 private val IMAGE_TYPES = arrayOf("image/png", "image/jpeg", "image/webp", "image/avif", "image/gif", "image/*")
 private val PDF_TYPES = arrayOf("application/pdf")
-/** File managers label `.cbz` inconsistently; the importer decides by the extension and refuses a plain `.zip`. */
-private val CBZ_TYPES = arrayOf("application/vnd.comicbook+zip", "application/x-cbz", "application/zip", "application/octet-stream")
+/**
+ * File managers label comic archives inconsistently; the importer decides by the file's first bytes, so the picker
+ * offers every type they turn up as. RAR types are offered too, so a `.cbr` gets its own explanation instead of
+ * being greyed out.
+ */
+private val ARCHIVE_TYPES = arrayOf(
+    "application/vnd.comicbook+zip", "application/x-cbz", "application/zip", "application/x-zip-compressed",
+    "application/x-cb7", "application/x-7z-compressed",
+    "application/vnd.comicbook-rar", "application/x-cbr", "application/vnd.rar", "application/x-rar-compressed",
+    "application/octet-stream",
+)
 
 @Composable
 fun ImportScreen(
@@ -102,7 +111,7 @@ fun ImportScreen(
             when (vm.source) {
                 ImportSource.IMAGES -> many.launch(IMAGE_TYPES)
                 ImportSource.PDF -> one.launch(PDF_TYPES)
-                ImportSource.CBZ -> one.launch(CBZ_TYPES)
+                ImportSource.ARCHIVE -> one.launch(ARCHIVE_TYPES)
             }
         }
     }
@@ -145,8 +154,10 @@ private fun Reading(s: ImportUi.Reading, onCancel: () -> Unit) {
 private fun Failed(reason: ImportRefused.Reason, needed: Long, free: Long, onBack: () -> Unit) {
     val limits = remember { com.smnexstudio.panelglass.feature.studio.importer.ImportLimits() }
     val msg = when (reason) {
-        ImportRefused.Reason.NOT_CBZ -> stringResource(UiR.string.studio_error_not_cbz)
-        ImportRefused.Reason.NOT_A_ZIP -> stringResource(UiR.string.studio_error_not_zip)
+        ImportRefused.Reason.NOT_AN_ARCHIVE -> stringResource(UiR.string.studio_error_not_archive)
+        ImportRefused.Reason.RAR -> stringResource(UiR.string.studio_error_rar)
+        ImportRefused.Reason.ENCRYPTED_ARCHIVE -> stringResource(UiR.string.studio_error_encrypted_archive)
+        ImportRefused.Reason.UNSUPPORTED_COMPRESSION -> stringResource(UiR.string.studio_error_unsupported_compression)
         ImportRefused.Reason.ENCRYPTED_PDF -> stringResource(UiR.string.studio_error_encrypted_pdf)
         ImportRefused.Reason.NOT_A_PDF -> stringResource(UiR.string.studio_error_not_pdf)
         ImportRefused.Reason.TOO_LARGE -> stringResource(UiR.string.studio_error_too_large)
@@ -171,6 +182,9 @@ private fun skipReason(r: SkipReason): String = stringResource(
         SkipReason.TOO_LARGE -> UiR.string.studio_skip_too_large
         SkipReason.TOO_MANY_PIXELS -> UiR.string.studio_skip_too_many_pixels
         SkipReason.UNREADABLE -> UiR.string.studio_skip_unreadable
+        SkipReason.UNSUPPORTED_FORMAT -> UiR.string.studio_skip_unsupported_format
+        SkipReason.UNSUPPORTED_COMPRESSION -> UiR.string.studio_skip_unsupported_compression
+        SkipReason.NESTED_ARCHIVE -> UiR.string.studio_skip_nested_archive
     },
 )
 
@@ -185,6 +199,10 @@ private fun Review(vm: ImportViewModel, saving: Boolean) {
     val appendChapter by vm.appendChapter.collectAsStateWithLifecycle()
     val folders by vm.folders.collectAsStateWithLifecycle()
     val split by vm.split.collectAsStateWithLifecycle()
+    val series by vm.series.collectAsStateWithLifecycle()
+    val perSeries by vm.perSeries.collectAsStateWithLifecycle()
+    // Each series becomes its own manga, titled from the archive: only the languages are chosen here.
+    val bySeries = series.size > 1 && perSeries
     var pickDest by remember { mutableStateOf(false) }
     var pickSrc by remember { mutableStateOf(false) }
     var pickTgt by remember { mutableStateOf(false) }
@@ -202,21 +220,24 @@ private fun Review(vm: ImportViewModel, saving: Boolean) {
             } else {
                 SectionLabel(stringResource(UiR.string.studio_import_destination), inset = 0.dp)
                 TokenCard {
-                    ValueRow(stringResource(UiR.string.studio_field_manga), dest?.title ?: stringResource(UiR.string.studio_import_new_manga), onClick = { pickDest = true })
-                    if (dest == null) {
-                        CardDivider()
+                    if (!bySeries) ValueRow(stringResource(UiR.string.studio_field_manga), dest?.title ?: stringResource(UiR.string.studio_import_new_manga), onClick = { pickDest = true })
+                    if (dest == null || bySeries) {
+                        if (!bySeries) CardDivider()
                         ValueRow(stringResource(UiR.string.lang_translate_from), newManga.srcLang.uiName(), onClick = { pickSrc = true })
                         CardDivider()
                         ValueRow(stringResource(UiR.string.lang_translate_to), newManga.tgtLang.uiName(), onClick = { pickTgt = true })
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                if (dest == null) {
-                    StudioField(newManga.title, { vm.newManga.value = newManga.copy(title = it) }, stringResource(UiR.string.studio_field_manga_title))
-                    Spacer(Modifier.height(8.dp))
+                if (series.size > 1) SeriesSplit(series, perSeries) { vm.perSeries.value = it }
+                if (!bySeries) {
+                    if (dest == null) {
+                        StudioField(newManga.title, { vm.newManga.value = newManga.copy(title = it) }, stringResource(UiR.string.studio_field_manga_title))
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    if (folders.size > 1) FolderSplit(folders, split) { vm.split.value = it }
+                    if (folders.size < 2 || !split) ChapterNumberFields(draft) { vm.chapter.value = it }
                 }
-                if (folders.size > 1) FolderSplit(folders, split) { vm.split.value = it }
-                if (folders.size < 2 || !split) ChapterNumberFields(draft) { vm.chapter.value = it }
             }
             SectionLabel(pluralStringResource(UiR.plurals.studio_pages, pages.size, pages.size), inset = 0.dp)
             if (pages.size > 1) Text(stringResource(UiR.string.studio_import_order_hint), style = MaterialTheme.typography.bodySmall, color = Tokens.InkFaint)
@@ -297,6 +318,26 @@ private fun StagedTile(p: StagedPage, vm: ImportViewModel, number: Int, enabled:
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
         )
     }
+}
+
+/** A pack of several series: the switch, and the manga it will make with their chapter and page counts. */
+@Composable
+private fun SeriesSplit(series: List<SeriesGroup>, on: Boolean, onChange: (Boolean) -> Unit) {
+    TokenCard {
+        ToggleCardRow(stringResource(UiR.string.studio_import_series), on, secondary = stringResource(UiR.string.studio_import_series_note, series.size), onChange = onChange)
+        if (on) series.forEach { s ->
+            CardDivider()
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(s.title, fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 14.sp, color = Tokens.Ink, modifier = Modifier.weight(1f))
+                Text(
+                    pluralStringResource(UiR.plurals.studio_chapters, s.chapters.size, s.chapters.size) + " · " +
+                        pluralStringResource(UiR.plurals.studio_pages, s.pages, s.pages),
+                    fontFamily = Jakarta, fontSize = 12.5.sp, color = Tokens.InkSoft,
+                )
+            }
+        }
+    }
+    Spacer(Modifier.height(10.dp))
 }
 
 /** An archive with one folder per chapter: the switch, and the chapters it will make. */

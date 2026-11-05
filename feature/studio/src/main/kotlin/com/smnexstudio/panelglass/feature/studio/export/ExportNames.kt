@@ -12,6 +12,11 @@ import com.smnexstudio.panelglass.core.model.Manga
 object ExportNames {
     const val MAX_NAME = 80
     const val COMIC_INFO = "ComicInfo.xml"
+    /**
+     * The manga folder's cover, beside its chapters: what Mihon's local source (and Kavita, Komga) shows for the
+     * series. Without it Mihon showed none.
+     */
+    const val COVER = "cover.jpg"
     /** Ends a clean export's chapter name, so it never replaces the translated export beside it. */
     const val CLEAN_SUFFIX = " (Clean)"
 
@@ -78,6 +83,7 @@ object ExportNames {
         val date = Regex("^(\\d{4})-(\\d{2})-(\\d{2})$").matchEntire(c.releaseDate.trim())?.groupValues
         return ComicInfo(
             series = m.title,
+            localizedSeries = m.altTitle,
             number = c.numberLabel.orEmpty(),
             volume = c.volume,
             title = c.title,
@@ -93,6 +99,24 @@ object ExportNames {
             notes = c.notes,
             // The pages keep the original art's reading direction.
             manga = if (m.srcLang.rtlReading) "YesAndRightToLeft" else "",
+            publishingStatus = ComicInfo.publishingStatusOf(m.status),
         )
     }
+
+    /**
+     * The manga folder's own ComicInfo.xml: the series' details without any chapter's. Mihon's local source reads the
+     * series from this file (it copies one out of a chapter only when there is none), so it is written on every export
+     * and a changed status, summary or genre reaches the reader.
+     */
+    fun seriesInfo(m: Manga, clean: Boolean = false): ComicInfo = ComicInfo(
+        series = m.title,
+        localizedSeries = m.altTitle,
+        summary = m.summary,
+        writer = m.author,
+        penciller = m.artist,
+        genre = m.genres,
+        languageIso = if (clean) "" else m.tgtLang.code,
+        manga = if (m.srcLang.rtlReading) "YesAndRightToLeft" else "",
+        publishingStatus = ComicInfo.publishingStatusOf(m.status),
+    )
 }

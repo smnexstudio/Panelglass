@@ -49,7 +49,9 @@ class ImageImporterTest {
         val s = stager(ImportLimits(maxPixels = 10_000_000, maxFileBytes = 1_000_000))
         assertEquals(SkipReason.TOO_MANY_PIXELS, (s.stage("strip.png", Fixtures.png(1000, 20_000).inputStream()) as PageStager.Result.Skipped).reason)
         assertEquals(SkipReason.TOO_LARGE, (s.stage("big.png", Fixtures.png(10, 10, filler = 2_000_000).inputStream()) as PageStager.Result.Skipped).reason)
-        assertEquals(SkipReason.NOT_AN_IMAGE, (s.stage("photo.heic", Fixtures.heic().inputStream()) as PageStager.Result.Skipped).reason)
+        // A HEIC is an image the Studio can't decode on every Android 12 phone: said so, not "not an image".
+        assertEquals(SkipReason.UNSUPPORTED_FORMAT, (s.stage("photo.heic", Fixtures.heic().inputStream()) as PageStager.Result.Skipped).reason)
+        assertEquals(SkipReason.NOT_AN_IMAGE, (s.stage("notes.png", "invented text".toByteArray().inputStream()) as PageStager.Result.Skipped).reason)
         assertTrue(File(tmp, "studio/pages").listFiles().orEmpty().isEmpty())
     }
 

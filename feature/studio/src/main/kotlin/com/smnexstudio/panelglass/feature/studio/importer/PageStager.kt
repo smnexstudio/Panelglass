@@ -22,12 +22,19 @@ data class ImportLimits(
     val maxPages: Int = 1000,
 )
 
-/** Why a file was left out of an import. */
-enum class SkipReason { NOT_AN_IMAGE, TOO_LARGE, TOO_MANY_PIXELS, UNREADABLE }
+/**
+ * Why a file was left out of an import. [UNSUPPORTED_FORMAT]: an image the Studio can't decode (HEIC, JPEG XL, BMP,
+ * TIFF) or a RAR inside an archive; [UNSUPPORTED_COMPRESSION]: an archive entry packed with a method that can't be
+ * read; [NESTED_ARCHIVE]: an archive two levels deep.
+ */
+enum class SkipReason { NOT_AN_IMAGE, TOO_LARGE, TOO_MANY_PIXELS, UNREADABLE, UNSUPPORTED_FORMAT, UNSUPPORTED_COMPRESSION, NESTED_ARCHIVE }
 
 /** Why an import was refused as a whole; for [Reason.NO_SPACE], about how many bytes it [needed] and how many were [free] (0: unknown). */
 class ImportRefused(val reason: Reason, val needed: Long = 0, val free: Long = 0) : IOException(reason.name) {
-    enum class Reason { NOT_CBZ, NOT_A_ZIP, ENCRYPTED_PDF, NOT_A_PDF, TOO_LARGE, TOO_MANY_ENTRIES, TOO_MANY_PAGES, NO_PAGES, UNREADABLE, NO_SPACE }
+    enum class Reason {
+        NOT_AN_ARCHIVE, RAR, ENCRYPTED_ARCHIVE, UNSUPPORTED_COMPRESSION, ENCRYPTED_PDF, NOT_A_PDF,
+        TOO_LARGE, TOO_MANY_ENTRIES, TOO_MANY_PAGES, NO_PAGES, UNREADABLE, NO_SPACE,
+    }
 }
 
 /** A page written into its own directory, not in the database yet. [name] orders it and shows in the preview. */
@@ -60,7 +67,7 @@ class PageStager(private val files: StudioFiles, private val transcoder: Transco
             val copied = copyCapped(input, tmp, limits.maxFileBytes)
             if (copied < 0) return skip(rel, name, SkipReason.TOO_LARGE)
             val header = tmp.inputStream().buffered().use { ImageHeader.probe(it) }
-                ?: return skip(rel, name, SkipReason.NOT_AN_IMAGE)
+                ?: return skip(rel, name, if (tmp.inputStream().use { ImageHeader.isUnsupportedImage(it) }) SkipReason.UNSUPPORTED_FORMAT else SkipReason.NOT_AN_IMAGE)
             if (header.pixels > limits.maxPixels) return skip(rel, name, SkipReason.TOO_MANY_PIXELS)
             if (header.copyAsIs) {
                 val out = File(dir, "${StudioFiles.ORIGINAL}.${header.format.ext}")

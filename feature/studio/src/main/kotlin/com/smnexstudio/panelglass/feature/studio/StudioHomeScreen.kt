@@ -181,7 +181,7 @@ internal fun sourceName(s: ImportSource): String = stringResource(
     when (s) {
         ImportSource.IMAGES -> UiR.string.studio_source_images
         ImportSource.PDF -> UiR.string.studio_source_pdf
-        ImportSource.CBZ -> UiR.string.studio_source_cbz
+        ImportSource.ARCHIVE -> UiR.string.studio_source_archive
     },
 )
 
@@ -190,7 +190,7 @@ internal fun sourceNote(s: ImportSource): String = stringResource(
     when (s) {
         ImportSource.IMAGES -> UiR.string.studio_source_images_note
         ImportSource.PDF -> UiR.string.studio_source_pdf_note
-        ImportSource.CBZ -> UiR.string.studio_source_cbz_note
+        ImportSource.ARCHIVE -> UiR.string.studio_source_archive_note
     },
 )
 

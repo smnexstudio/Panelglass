@@ -38,6 +38,27 @@ class ImageHeaderTest {
         assertTrue(probe(Fixtures.webpLossy(10, 10))!!.copyAsIs)
     }
 
+    /** Many encoders write a generic main type (`mif1`) and list `avif` among the compatible ones. */
+    @Test fun avifBehindAGenericMainTypeIsAvif() {
+        assertEquals(ImageFormat.AVIF, probe(Fixtures.ftyp("mif1", "mif1", "miaf", "avif"))?.format)
+        assertNull(probe(Fixtures.ftyp("mif1", "mif1", "heic")))
+    }
+
+    @Test fun knownImagesTheStudioCannotDecodeAreToldApartFromJunk() {
+        fun unsupported(b: ByteArray) = ImageHeader.isUnsupportedImage(b.inputStream())
+        assertTrue(unsupported(Fixtures.heic()))
+        assertTrue(unsupported(Fixtures.ftyp("mif1", "mif1", "heic")))
+        assertTrue(unsupported(Fixtures.jxlCodestream()))
+        assertTrue(unsupported(Fixtures.jxlContainer()))
+        assertTrue(unsupported(Fixtures.bmp()))
+        assertTrue(unsupported("II*".toByteArray() + ByteArray(20)))
+        assertFalse(unsupported(Fixtures.avif()))
+        assertFalse(unsupported(Fixtures.ftyp("mif1", "mif1", "avif")))
+        assertFalse(unsupported(Fixtures.png(10, 10)))
+        assertFalse(unsupported("hello world, not an image at all".toByteArray()))
+        assertFalse(unsupported(ByteArray(0)))
+    }
+
     @Test fun heicAndJunkAreNotImages() {
         assertNull(probe(Fixtures.heic()))
         assertNull(probe("hello world, not an image at all".toByteArray()))

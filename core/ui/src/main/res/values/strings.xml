@@ -15,7 +15,7 @@
     <string name="action_edit">Edit</string>
     <string name="action_add">Add</string>
     <string name="action_add_key">Add key</string>
-    <string name="action_use_google_translate">Use Google Translate</string>
+    <string name="action_use_google_translate">Use ML Kit</string>
     <string name="action_use_on_device">Use on-device</string>
 
     <!-- Accessibility labels -->
@@ -200,8 +200,8 @@
     <string name="download_incomplete">Download incomplete; tap Retry</string>
     <string name="download_failed">Download failed</string>
 
-    <!-- Google Translate language packs -->
-    <string name="packs_title">Google Translate language packs</string>
+    <!-- ML Kit (on-device translation) language packs -->
+    <string name="packs_title">ML Kit language packs</string>
     <string name="packs_count">%1$d of %2$d languages on this phone</string>
     <string name="packs_downloading_one">Downloading %1$s…</string>
     <string name="packs_manage">Manage</string>
@@ -239,15 +239,15 @@
     <string name="studio_subtitle">Translate chapters into image files</string>
     <string name="studio_library">Your manga</string>
     <string name="studio_new_manga">New manga</string>
-    <string name="studio_empty">No manga yet. Import a chapter from images, a PDF or a CBZ.</string>
+    <string name="studio_empty">No manga yet. Import a chapter from images, a PDF or a comic archive (CBZ, ZIP, 7z).</string>
     <string name="studio_import">Import</string>
     <string name="studio_import_from">Import from</string>
     <string name="studio_source_images">Images</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP or AVIF, one or many pages at once</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Every page becomes an image</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Comic archive; its ComicInfo.xml fills in the details</string>
+    <string name="studio_source_archive">Comic archive</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 or 7z; its ComicInfo.xml fills in the details</string>
     <string name="studio_reviewed">%1$d/%2$d reviewed</string>
     <string name="studio_chapters_section">Chapters</string>
     <string name="studio_reorder_hint">Hold and drag to change the order.</string>
@@ -304,8 +304,13 @@
     <string name="studio_skip_too_large">file too large</string>
     <string name="studio_skip_too_many_pixels">image too large</string>
     <string name="studio_skip_unreadable">can\'t be read</string>
-    <string name="studio_error_not_cbz">Pick a .cbz file. Plain .zip archives aren\'t imported.</string>
-    <string name="studio_error_not_zip">This CBZ can\'t be opened. The archive is damaged or isn\'t a zip.</string>
+    <string name="studio_skip_unsupported_format">format not supported</string>
+    <string name="studio_skip_unsupported_compression">compression not supported</string>
+    <string name="studio_skip_nested_archive">archive inside an archive</string>
+    <string name="studio_error_not_archive">This file can\'t be opened as an archive. It\'s damaged, or it isn\'t a CBZ, ZIP, CB7 or 7z file.</string>
+    <string name="studio_error_rar">RAR archives (.cbr, .rar) can\'t be imported yet. Repack the pages as CBZ or 7z, then import them again.</string>
+    <string name="studio_error_encrypted_archive">This archive is password-protected. Remove the password, then import it again.</string>
+    <string name="studio_error_unsupported_compression">This archive uses a compression method that can\'t be read. Repack it as CBZ or 7z, then import it again.</string>
     <string name="studio_error_encrypted_pdf">This PDF is password-protected. Remove the password, then import it again.</string>
     <string name="studio_error_not_pdf">This file can\'t be opened as a PDF.</string>
     <string name="studio_error_too_large">This file is too large to import.</string>
@@ -390,7 +395,7 @@
     <string name="action_pause">Pause</string>
     <string name="action_resume">Resume</string>
     <string name="studio_only_charging">Studio runs only while charging</string>
-    <string name="studio_only_charging_note">A Studio chapter on Qwen or Gemma waits for the charger. The reader, Gemini and Google Translate are not affected.</string>
+    <string name="studio_only_charging_note">A Studio chapter on Qwen or Gemma waits for the charger. The reader, Gemini and ML Kit are not affected.</string>
     <string name="studio_chapter_short">Ch. %1$s</string>
     <string name="studio_stage_new">Not translated</string>
     <string name="studio_font">Font</string>
@@ -653,6 +658,8 @@
     <string name="studio_corners_sharp">Sharp</string>
     <string name="studio_import_split">One chapter per folder</string>
     <string name="studio_import_split_note">This archive holds %1$d folders. Each becomes its own chapter, numbered from its name.</string>
+    <string name="studio_import_series">One manga per series</string>
+    <string name="studio_import_series_note">This archive holds %1$d series. Each becomes its own manga; one already in the Studio with the same title gets its chapters.</string>
     <string name="studio_zoom_show">Show zoom</string>
     <string name="studio_zoom_hide">Hide zoom</string>
     <string name="studio_delete_bubble">Delete</string>
@@ -667,7 +674,7 @@
     <string name="memory_add_term">Add a name or term</string>
     <string name="memory_notes_label">Notes for the translator</string>
     <string name="memory_notes_hint">e.g. Ren is a woman. Keep honorifics like -san.</string>
-    <string name="memory_engine_note">Pronouns and notes are used by Gemini and the on-device models. Google Translate uses only the names and terms.</string>
+    <string name="memory_engine_note">Pronouns and notes are used by Gemini and the on-device models. ML Kit uses only the names and terms.</string>
     <string name="memory_term_title">Name or term</string>
     <string name="memory_term_source">Original, as on the page</string>
     <string name="memory_term_target">Translation</string>
