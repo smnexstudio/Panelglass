@@ -350,6 +350,20 @@
     <string name="studio_redo">Rehacer</string>
     <string name="studio_cleaning">Limpiando…</string>
     <string name="studio_cleaning_progress">Limpiando páginas… %1$d de %2$d</string>
+    <string name="studio_run_channel">Traducción del Estudio</string>
+    <string name="studio_run_channel_note">Progreso de un capítulo que se traduce en el Estudio</string>
+    <string name="studio_paused">En pausa</string>
+    <string name="studio_pausing">Se pausará tras esta página…</string>
+    <string name="studio_paused_hot">En pausa: el teléfono está demasiado caliente</string>
+    <string name="studio_paused_charger">En pausa: esperando el cargador</string>
+    <string name="studio_paused_saver">En pausa: el Ahorro de batería está activado</string>
+    <string name="studio_paused_battery">En pausa: batería por debajo del %1$d%%</string>
+    <string name="studio_paused_offline">En pausa: esperando la red</string>
+    <string name="studio_paused_reader">En pausa: el lector está usando el modelo en el dispositivo</string>
+    <string name="action_pause">Pausar</string>
+    <string name="action_resume">Reanudar</string>
+    <string name="studio_only_charging">El Estudio solo con el cargador</string>
+    <string name="studio_only_charging_note">Un capítulo del Estudio con Qwen o Gemma espera al cargador. El lector, Gemini y Google Traductor no se ven afectados.</string>
     <string name="studio_chapter_short">Cap. %1$s</string>
     <string name="studio_stage_new">Sin traducir</string>
     <string name="studio_font">Fuente</string>
@@ -658,7 +672,7 @@
     <string name="update_install_permission">Si Android lo pide, permite que Panelglass instale aplicaciones y vuelve a tocar Instalar.</string>
     <string name="update_failed_check">No se pudo buscar actualizaciones. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="update_failed_download">No se pudo descargar la actualización.</string>
-    <string name="compute_backend">Run models on</string>
-    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
-    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
+    <string name="compute_backend">Ejecutar modelos en</string>
+    <string name="compute_backend_gpu_note">Preferir GPU; usar CPU si la GPU no se puede inicializar</string>
+    <string name="compute_backend_cpu_note">Ejecutar los modelos integrados en la CPU</string>
 </resources>

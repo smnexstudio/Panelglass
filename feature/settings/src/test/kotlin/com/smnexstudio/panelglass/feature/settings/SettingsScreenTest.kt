@@ -26,6 +26,7 @@ import com.smnexstudio.panelglass.core.ui.uiName
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -104,6 +105,14 @@ class SettingsScreenTest {
         compose.onNodeWithText(s(UiR.string.theme_tag_panel_pop)).tap()
         eventually { current().appTheme == com.smnexstudio.panelglass.core.model.AppTheme.PANEL_POP }
         compose.onNodeWithContentDescription(s(UiR.string.cd_selected), useUnmergedTree = true).assertExists()
+    }
+
+    /** The Studio's "only while charging" switch: off by default, saved when turned on. */
+    @Test fun studioRunsCanWaitForTheCharger() {
+        screen()
+        assertFalse(current().studioOnlyWhileCharging)
+        switchOf(s(UiR.string.studio_only_charging)).tap()
+        eventually { current().studioOnlyWhileCharging }
     }
 
     /** TalkBack can name every button and switch on the screen. */

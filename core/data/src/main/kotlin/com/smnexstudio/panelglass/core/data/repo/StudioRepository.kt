@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.data.repo
 
 import androidx.room.withTransaction
+import com.smnexstudio.panelglass.core.model.StudioStage
 import com.smnexstudio.panelglass.core.data.db.ChapterSummary
 import com.smnexstudio.panelglass.core.data.db.MangaSummary
 import com.smnexstudio.panelglass.core.data.db.PanelglassDb
@@ -150,6 +151,14 @@ class StudioRepository @Inject constructor(private val db: PanelglassDb, val fil
     fun bubbles(pageId: Long): Flow<List<Bubble>> = dao.observeBubbles(pageId)
     suspend fun bubbleList(pageId: Long): List<Bubble> = dao.bubbles(pageId)
     suspend fun updatePage(page: StudioPage) = dao.updatePage(page)
+
+    /**
+     * Takes [stages] (and any failure) off every page of [chapterId] at once, in one transaction: a Translate again
+     * marks the whole chapter to be done again before it starts, so a run cut short carries the redo on.
+     */
+    suspend fun clearStages(chapterId: Long, stages: Set<StudioStage>) = db.withTransaction {
+        dao.pages(chapterId).forEach { dao.updatePage(it.copy(stages = it.stages - stages, failed = null)) }
+    }
     suspend fun updateBubble(bubble: Bubble) = dao.updateBubble(bubble)
     suspend fun addBubble(bubble: Bubble): Long = dao.insertBubbles(listOf(bubble.copy(id = 0))).single()
     suspend fun deleteBubble(bubble: Bubble) = dao.deleteBubble(bubble)

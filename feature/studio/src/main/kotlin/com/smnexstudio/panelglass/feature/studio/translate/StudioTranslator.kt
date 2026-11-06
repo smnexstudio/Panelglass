@@ -22,9 +22,13 @@ import com.smnexstudio.panelglass.core.model.StudioPage
 import com.smnexstudio.panelglass.core.model.StudioStage
 import com.smnexstudio.panelglass.core.model.TextRegion
 import com.smnexstudio.panelglass.core.model.TranslateConfig
+import android.os.Process
+import java.util.concurrent.Executors
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +39,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
@@ -50,9 +55,20 @@ data class ChapterRun(
     val failure: EngineFailure? = null,
     /** Pages left untranslated by failures that did not stop the run (a timeout, an unreadable reply). */
     val failedPages: Int = 0,
+    /** Why the run is waiting before its next page ([RunGate]); null while it works. */
+    val paused: PauseReason? = null,
 ) {
     val active: Boolean get() = phase == RunPhase.QUEUED || phase == RunPhase.READING || phase == RunPhase.TRANSLATING ||
         phase == RunPhase.CLEANING
+}
+
+/** Told when a chapter run starts, so it can be kept alive while the app is in the background ([StudioRunService]). */
+fun interface RunHost {
+    fun started(chapterId: Long)
+
+    companion object {
+        val NONE = RunHost { }
+    }
 }
 
 /**
@@ -72,23 +88,68 @@ class StudioTranslator @Inject constructor(
     private val resolver: EngineResolver,
     private val settings: SettingsRepository,
 ) {
-    /** App-wide: a run outlives the screen that started it. Tests run [run] directly. */
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /**
+     * App-wide: a run outlives the screen that started it. Its own thread runs at background priority, so what the
+     * user is doing (in this app or another) comes first. Tests run [run] directly.
+     */
+    private val scope = CoroutineScope(SupervisorJob() + RUN_DISPATCHER)
+
+    /** Where a run waits between pages, and who keeps it alive; bound by Hilt, open and nobody in tests. */
+    internal var gate: RunGate = RunGate.OPEN
+    private var host: RunHost = RunHost.NONE
+
+    @Inject fun bindRun(gate: RunGate, host: RunHost) {
+        this.gate = gate
+        this.host = host
+    }
     private val one = Mutex()
     private val jobs = ConcurrentHashMap<Long, Job>()
     private val _runs = MutableStateFlow<Map<Long, ChapterRun>>(emptyMap())
     val runs: StateFlow<Map<Long, ChapterRun>> = _runs.asStateFlow()
 
-    /** Reads and translates what [chapterId] is missing; [redo] reads and translates every page again. */
+    /**
+     * Reads and translates what [chapterId] is missing; [redo] reads and translates every page again (Translate
+     * again), by first taking every page's stages off ([run]), so a redo cut short carries on as one.
+     */
     fun start(chapterId: Long, redo: Boolean = false) {
         if (jobs[chapterId]?.isActive == true) return
+        gate.setUserPaused(false)
         set(ChapterRun(chapterId, RunPhase.QUEUED))
-        jobs[chapterId] = scope.launch { one.withLock { run(chapterId, redo) } }
+        host.started(chapterId)
+        jobs[chapterId] = scope.launch {
+            // Remembered until the run ends: a run the system stopped (the app killed, which skips `finally`) carries on
+            // at the next start. A run that ended any other way, an error included, is forgotten, never retried.
+            settings.setStudioRunChapter(chapterId)
+            try {
+                one.withLock { run(chapterId, redo) }
+            } finally {
+                withContext(NonCancellable) { settings.setStudioRunChapter(null) }
+            }
+        }
     }
 
     fun cancel(chapterId: Long) {
         jobs.remove(chapterId)?.cancel()
+        gate.setUserPaused(false)
         set(ChapterRun(chapterId, RunPhase.CANCELLED))
+    }
+
+    private val resumeChecked = AtomicBoolean(false)
+
+    /** Holds every run before its next page until [resume] (the notification's Pause). */
+    val userPaused: StateFlow<Boolean> get() = gate.userPaused
+    fun pause() = gate.setUserPaused(true)
+    fun resume() = gate.setUserPaused(false)
+
+    /**
+     * Carries on a run the system stopped: the chapter recorded when it started, from its first unfinished page (the
+     * app opened again). Nothing when no run was cut short. Once per process: the activity calls it from every
+     * onCreate (a rotation, a restore after the process was killed), and only a new process can find a run cut short.
+     */
+    suspend fun resumeInterrupted() {
+        if (!resumeChecked.compareAndSet(false, true)) return
+        val id = settings.studioRunChapter() ?: return
+        if (repo.getChapter(id) == null) settings.setStudioRunChapter(null) else start(id)
     }
 
     /** Forgets a finished run's status (the message was read). */
@@ -206,28 +267,37 @@ class StudioTranslator @Inject constructor(
             is Setup.Refused -> { set(ChapterRun(chapterId, RunPhase.FAILED, failure = s.failure)); return }
             null -> return
         }
+        // Translate again: every page loses its stages before anything is done (an engine that cannot be used has
+        // already stopped the run, so nothing is cleared for nothing). From here a redo is an ordinary run: each page
+        // missing a stage is done again, and a redo cut short (killed, cancelled) is finished by the next one.
+        if (redo) repo.clearStages(chapterId, CLEARED_BY_READING)
         val read = !cfg.engineId.readsCrops
+        // Before every page: the run waits while something stops it (paused, too hot, the reader using the model…).
+        suspend fun ready(state: ChapterRun) {
+            set(state)
+            gate.await(cfg.engineId) { why -> set(state.copy(paused = why)) }
+        }
 
         // ---- read: detector + OCR, every page first ----------------------------------------------------------
-        val toRead = repo.pageList(chapterId).filter { redo || needsReading(it, read) }
+        val toRead = repo.pageList(chapterId).filter { needsReading(it, read) }
         for ((i, page) in toRead.withIndex()) {
-            set(ChapterRun(chapterId, RunPhase.READING, i, toRead.size))
+            ready(ChapterRun(chapterId, RunPhase.READING, i, toRead.size))
             readPage(page, cfg, read)
         }
 
         // ---- translate: in page order, each page carrying the end of the one before --------------------------
         val pages = repo.pageList(chapterId)
-        val toTranslate = pages.count { redo || StudioStage.TRANSLATED !in it.stages }
+        val toTranslate = pages.count { StudioStage.TRANSLATED !in it.stages }
         var context = emptyList<ContextPair>()
         var done = 0
         var failedPages = 0
         var last: EngineFailure? = null
         for (page in pages) {
-            if (!redo && StudioStage.TRANSLATED in page.stages) {
+            if (StudioStage.TRANSLATED in page.stages) {
                 context = contextOf(repo.bubbleList(page.id))
                 continue
             }
-            set(ChapterRun(chapterId, RunPhase.TRANSLATING, done, toTranslate, last, failedPages))
+            ready(ChapterRun(chapterId, RunPhase.TRANSLATING, done, toTranslate, last, failedPages))
             try {
                 context = translatePage(page, cfg, context)
             } catch (e: EngineException) {
@@ -242,10 +312,10 @@ class StudioTranslator @Inject constructor(
             done++
         }
         // ---- clean: every read page whose clean layer is missing or out of date -------------------------------
-        val toClean = repo.pageList(chapterId).filter { StudioStage.DETECTED in it.stages && (redo || StudioStage.CLEANED !in it.stages) }
+        val toClean = repo.pageList(chapterId).filter { StudioStage.DETECTED in it.stages && StudioStage.CLEANED !in it.stages }
         for ((i, page) in toClean.withIndex()) {
-            set(ChapterRun(chapterId, RunPhase.CLEANING, i, toClean.size, last, failedPages))
-            cleanNow(page)
+            ready(ChapterRun(chapterId, RunPhase.CLEANING, i, toClean.size, last, failedPages))
+            cleanOff(page) // already off the main thread, at the run's low priority
         }
         if (toClean.isNotEmpty()) stages.cleaningDone()
         set(ChapterRun(chapterId, if (failedPages > 0) RunPhase.FAILED else RunPhase.DONE, done, toTranslate, last, failedPages))
@@ -363,6 +433,11 @@ class StudioTranslator @Inject constructor(
         /** A re-read replaces the bubbles, so what was made from the old ones goes too. */
         private val CLEARED_BY_READING = setOf(StudioStage.DETECTED, StudioStage.READ, StudioStage.TRANSLATED, StudioStage.CLEANED, StudioStage.REVIEWED)
         const val UNREADABLE_PAGE = "Unreadable page"
+
+        /** One thread at background priority for chapter runs (editor actions run on their caller's). */
+        private val RUN_DISPATCHER = Executors.newSingleThreadExecutor { work ->
+            Thread({ Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND); work.run() }, "studio-run")
+        }.asCoroutineDispatcher()
 
         private val json = Json { ignoreUnknownKeys = true }
 

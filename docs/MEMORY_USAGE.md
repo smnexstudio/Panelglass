@@ -17,6 +17,7 @@ Measured 2026-09-27. Re-measure when LiteRT-LM, a model file or the trim policy 
 - [Results: Qwen 2.5 1.5B on the CPU](#results-qwen-25-15b-on-the-cpu)
 - [Going to the background mid-translation](#going-to-the-background-mid-translation)
 - [Re-run, 2026-10-17](#re-run-2026-10-17)
+- [Leak check, 2026-10-30](#leak-check-2026-10-30)
 - [Comparison](#comparison)
 - [Observations](#observations)
 - [Reproducing](#reproducing)
@@ -309,6 +310,35 @@ What changed against 2026-09-27:
 - **Tightest point**: with Gemma 4 translating, the phone dropped to 824 MB available (from a lower start than on
   2026-09-27); nothing was killed.
 
+## Leak check, 2026-10-30
+
+Whether a screen used over and over leaves anything behind. Same phone, now on Android 17, debug build 0.3.0 with
+Gemma 4 E2B (GPU) as the engine. Each reading follows two forced garbage collections (`SIGUSR1` to the app's process)
+and takes the object counts and heaps from `dumpsys meminfo`.
+
+| Step | Activities | WebViews | Java heap | Native heap | Graphics | Total PSS |
+|---|---|---|---|---|---|---|
+| Sites, after launch | 1 | 1 (the spare) | 30.7 MB | 25.8 MB | 34.7 MB | 189 MB |
+| Reader opened and closed 10 times | 1 | 1 | 30.4 MB | 668 MB | 1,938 MB | 2,975 MB |
+| … 15 times | 1 | 2 | 33.4 MB | 402 MB | 1,944 MB | 2,971 MB |
+| Home pressed (UI hidden) | – | – | – | – | – | 169 MB |
+| Reader open, activity recreated 6 times (system font size) | **2** | 2 | 28.6 MB | 27.7 MB | 1,929 MB | 2,834 MB |
+| … then the reader closed | 1 | 2 | 30.5 MB | 29.5 MB | 1,931 MB | 2,806 MB |
+| Studio chapter screen | 1 | 1 | 30.4 MB | 80.1 MB | 134 MB | 475 MB |
+| Review editor opened, a page turned, closed 6 times | 1 | 1 | 30.5 MB | 81.3 MB | 117 MB | 452 MB |
+
+- **No leak that grows**: activities, windows, WebViews and the Java heap stay flat over 15 reader visits and 6 editor
+  visits; the total is the same after 10 and 15 reader visits.
+- **The on-device model stays loaded after the reader closes.** The reader pre-warms the selected engine when it
+  opens, and Gemma 4 on the GPU holds ~2.8 GB (the graphics and native jump on the first visit). Leaving the reader for
+  Sites or the Studio keeps it; it goes only when the app is hidden (`onTrimMemory`, here 2,971 → 169 MB) or under
+  memory pressure. Not a leak (it does not grow), but held while no screen needs it. A fix would release it a few
+  seconds after the reader closes, unless a Studio run uses it, at the cost of a reload on the next visit.
+- **The reader's WebView keeps one earlier activity after a recreation**, until the reader closes: 2 activities after 6
+  recreations, never more. Off screen, `ReaderScreen` only pauses its WebView, whose `MutableContextWrapper` still
+  points at the activity that showed it; `ReaderViewModel.hostedWebView` re-points it only when the reader shows again.
+  A fix would point the wrapper at the application context when the reader leaves the screen.
+
 ## Comparison
 
 App PSS in MB (WebView renderer not included):
@@ -370,3 +400,15 @@ Then press Start, turn pages, press Home, open the camera
 The first page load after a launch can stay black on Bilibili: ⋮ › Reload loads it. The phone's default 256 KiB log
 buffer loses pipeline lines within a minute; raise it for the run with `adb logcat -G 8M` and put it back afterwards
 (`adb logcat -G 256K`).
+
+For a leak check, repeat a screen (open and close it) many times, then collect garbage twice and read the counts:
+
+```bash
+PID=$(adb shell pidof $P)
+adb shell run-as $P kill -10 $PID; sleep 2; adb shell run-as $P kill -10 $PID; sleep 2   # SIGUSR1: a full GC
+adb shell dumpsys meminfo $P | grep -E "Activities|Views|WebViews|Java Heap|Native Heap|Graphics|TOTAL PSS"
+adb shell settings put system font_scale 1.15; adb shell settings put system font_scale 1.0   # recreates the activity
+```
+
+A count that grows with the repetitions is a leak. A frozen background app answers `dumpsys meminfo $P` with nothing:
+read its total from the system's list instead (`adb shell dumpsys meminfo | grep $P`).

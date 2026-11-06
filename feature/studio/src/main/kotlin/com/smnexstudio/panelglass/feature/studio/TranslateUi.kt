@@ -21,6 +21,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,7 @@ import com.smnexstudio.panelglass.core.ui.TokenCard
 import com.smnexstudio.panelglass.core.ui.Tokens
 import com.smnexstudio.panelglass.core.ui.uiName
 import com.smnexstudio.panelglass.feature.studio.translate.ChapterRun
+import com.smnexstudio.panelglass.feature.studio.translate.RunNotifications
 import com.smnexstudio.panelglass.feature.studio.translate.RunPhase
 import com.smnexstudio.panelglass.feature.studio.translate.StudioTranslator
 import java.io.File
@@ -87,6 +89,9 @@ internal fun TranslationCard(
     onTranslate: () -> Unit,
     onTranslateAgain: () -> Unit,
     onCancel: () -> Unit,
+    userPaused: Boolean = false,
+    onPause: () -> Unit = {},
+    onResume: () -> Unit = {},
     onChangeEngine: () -> Unit,
     onAddKey: (EngineId) -> Unit,
     onDownloadPacks: (List<String>) -> Unit,
@@ -108,11 +113,17 @@ internal fun TranslationCard(
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
                 when {
                     run != null && run.active -> {
-                        val label = when (run.phase) {
+                        val context = LocalContext.current
+                        val label = when {
+                            // Why it waits first (the phone too hot, the reader using the model…), then a pause to come.
+                            run.paused != null -> RunNotifications.pausedText(context, run.paused)
+                            userPaused -> stringResource(UiR.string.studio_pausing)
+                            else -> when (run.phase) {
                             RunPhase.READING -> stringResource(UiR.string.studio_reading_progress, run.done + 1, run.total)
                             RunPhase.TRANSLATING -> stringResource(UiR.string.studio_translating_progress, run.done + 1, run.total)
                             RunPhase.CLEANING -> stringResource(UiR.string.studio_cleaning_progress, run.done + 1, run.total)
                             else -> stringResource(UiR.string.studio_waiting)
+                            }
                         }
                         Text(label, style = MaterialTheme.typography.bodyMedium, color = Tokens.Ink)
                         Spacer(Modifier.height(8.dp))
@@ -123,6 +134,9 @@ internal fun TranslationCard(
                         Spacer(Modifier.height(6.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onCancel)
+                            Spacer(Modifier.width(4.dp))
+                            if (userPaused) TextAction(stringResource(UiR.string.action_resume), onClick = onResume)
+                            else TextAction(stringResource(UiR.string.action_pause), onClick = onPause)
                         }
                     }
                     else -> {

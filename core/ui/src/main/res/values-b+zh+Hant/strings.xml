@@ -344,6 +344,20 @@
     <string name="studio_redo">重做</string>
     <string name="studio_cleaning">正在清除…</string>
     <string name="studio_cleaning_progress">正在清除頁面… %1$d/%2$d</string>
+    <string name="studio_run_channel">工作室翻譯</string>
+    <string name="studio_run_channel_note">工作室中正在翻譯的章節進度</string>
+    <string name="studio_paused">已暫停</string>
+    <string name="studio_pausing">將在本頁之後暫停…</string>
+    <string name="studio_paused_hot">已暫停：手機溫度過高</string>
+    <string name="studio_paused_charger">已暫停：等待充電</string>
+    <string name="studio_paused_saver">已暫停：省電模式已開啟</string>
+    <string name="studio_paused_battery">已暫停：電量低於 %1$d%%</string>
+    <string name="studio_paused_offline">已暫停：等待網路</string>
+    <string name="studio_paused_reader">已暫停：閱讀器正在使用裝置端模型</string>
+    <string name="action_pause">暫停</string>
+    <string name="action_resume">繼續</string>
+    <string name="studio_only_charging">工作室僅在充電時執行</string>
+    <string name="studio_only_charging_note">使用 Qwen 或 Gemma 的工作室章節會等待充電。閱讀器、Gemini 和 Google 翻譯不受影響。</string>
     <string name="studio_chapter_short">第 %1$s 話</string>
     <string name="studio_stage_new">未翻譯</string>
     <string name="studio_font">字型</string>
@@ -643,7 +657,7 @@
     <string name="update_install_permission">如果 Android 要求，請允許 Panelglass 安裝應用程式，然後再次輕觸「安裝」。</string>
     <string name="update_failed_check">無法檢查更新。請檢查網路連線後再試一次。</string>
     <string name="update_failed_download">無法下載更新。</string>
-    <string name="compute_backend">Run models on</string>
-    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
-    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
+    <string name="compute_backend">模型執行裝置</string>
+    <string name="compute_backend_gpu_note">優先使用 GPU；若 GPU 無法初始化，則使用 CPU</string>
+    <string name="compute_backend_cpu_note">使用 CPU 執行內建模型</string>
 </resources>

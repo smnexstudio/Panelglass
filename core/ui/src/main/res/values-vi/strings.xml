@@ -344,6 +344,20 @@
     <string name="studio_redo">Làm lại</string>
     <string name="studio_cleaning">Đang xóa chữ…</string>
     <string name="studio_cleaning_progress">Đang xóa chữ… %1$d/%2$d</string>
+    <string name="studio_run_channel">Dịch trong Studio</string>
+    <string name="studio_run_channel_note">Tiến độ của chương đang được dịch trong Studio</string>
+    <string name="studio_paused">Đã tạm dừng</string>
+    <string name="studio_pausing">Sẽ tạm dừng sau trang này…</string>
+    <string name="studio_paused_hot">Đã tạm dừng: điện thoại quá nóng</string>
+    <string name="studio_paused_charger">Đã tạm dừng: đang chờ sạc</string>
+    <string name="studio_paused_saver">Đã tạm dừng: Trình tiết kiệm pin đang bật</string>
+    <string name="studio_paused_battery">Đã tạm dừng: pin dưới %1$d%%</string>
+    <string name="studio_paused_offline">Đã tạm dừng: đang chờ mạng</string>
+    <string name="studio_paused_reader">Đã tạm dừng: trình đọc đang dùng mô hình trên thiết bị</string>
+    <string name="action_pause">Tạm dừng</string>
+    <string name="action_resume">Tiếp tục</string>
+    <string name="studio_only_charging">Studio chỉ chạy khi sạc</string>
+    <string name="studio_only_charging_note">Chương Studio dùng Qwen hoặc Gemma sẽ chờ sạc. Trình đọc, Gemini và Google Dịch không bị ảnh hưởng.</string>
     <string name="studio_chapter_short">Ch. %1$s</string>
     <string name="studio_stage_new">Chưa dịch</string>
     <string name="studio_font">Phông</string>
@@ -643,7 +657,7 @@
     <string name="update_install_permission">Nếu Android hỏi, hãy cho phép Panelglass cài ứng dụng rồi nhấn Cài đặt lần nữa.</string>
     <string name="update_failed_check">Không kiểm tra được bản cập nhật. Hãy kiểm tra kết nối rồi thử lại.</string>
     <string name="update_failed_download">Không tải được bản cập nhật.</string>
-    <string name="compute_backend">Run models on</string>
-    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
-    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
+    <string name="compute_backend">Thiết bị chạy mô hình</string>
+    <string name="compute_backend_gpu_note">Ưu tiên GPU; dùng CPU nếu không thể khởi tạo GPU</string>
+    <string name="compute_backend_cpu_note">Chạy các mô hình tích hợp trên CPU</string>
 </resources>

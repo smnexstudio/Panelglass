@@ -103,6 +103,18 @@ class SettingsRepositoryTest {
         assertEquals("", repo.current().translationNotes)
     }
 
+    /** "Only while charging" is off until switched on; the running chapter is kept until the run clears it. */
+    @Test fun studioRunSettings() = runBlocking {
+        assertFalse(repo.current().studioOnlyWhileCharging)
+        repo.setStudioOnlyWhileCharging(true)
+        assertTrue(repo.current().studioOnlyWhileCharging)
+        assertNull(repo.studioRunChapter())
+        repo.setStudioRunChapter(42L)
+        assertEquals(42L, repo.studioRunChapter())
+        repo.setStudioRunChapter(null)
+        assertNull(repo.studioRunChapter())
+    }
+
     @Test fun translationNotesAreTrimmedAndCapped() = runBlocking {
         repo.setTranslationNotes("  " + "n".repeat(TranslationNotes.MAX_CHARS + 50) + "  ")
         assertEquals(TranslationNotes.MAX_CHARS, repo.current().translationNotes.length)

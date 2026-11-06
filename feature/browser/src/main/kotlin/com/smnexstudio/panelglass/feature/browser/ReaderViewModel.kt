@@ -13,6 +13,7 @@ import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
+import com.smnexstudio.panelglass.core.engine.local.LocalModelUse
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ui.languageName
 import com.smnexstudio.panelglass.core.engine.mt.PageTranslator
@@ -39,6 +40,8 @@ import com.smnexstudio.panelglass.core.data.repo.GlossaryRepository
 import com.smnexstudio.panelglass.core.model.GlossaryEntry
 import kotlinx.coroutines.joinAll
 import org.json.JSONObject
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -185,6 +188,7 @@ class ReaderViewModel @Inject constructor(
     private val packs: LanguagePackStore,
     val warmup: ReaderWarmup,
     private val glossary: GlossaryRepository,
+    private val localModelUse: LocalModelUse,
 ) : ViewModel(), MangaWebViewClient.Listener {
 
     private val _ui = MutableStateFlow(ReaderUiState())
@@ -561,6 +565,11 @@ class ReaderViewModel @Inject constructor(
         viewModelScope.launch { pageText.setTarget(settingsRepo.pageTranslateTarget()) }
         blockLists.ensureLoaded()
         viewModelScope.launch { blockLists.list.collect { list -> if (::client.isInitialized) client.blockList = list } }
+        // A Studio run on an on-device model waits while the screen is translated with one (one model at a time).
+        viewModelScope.launch {
+            combine(_screen, _ui) { screen, ui -> screen.active && ui.config?.engineId?.isLocalLlm == true }
+                .distinctUntilChanged().collect { localModelUse.reader.value = it }
+        }
     }
 
     /**
@@ -770,6 +779,7 @@ class ReaderViewModel @Inject constructor(
     override fun onProgressUrl(url: String) = _ui.update { it.copy(url = url, canGoBack = web?.canGoBack() == true) }
 
     override fun onCleared() {
+        localModelUse.reader.value = false
         web?.let { (it.parent as? ViewGroup)?.removeView(it); it.destroy() }
         web = null
     }

@@ -344,6 +344,20 @@
     <string name="studio_redo">やり直す</string>
     <string name="studio_cleaning">消去中…</string>
     <string name="studio_cleaning_progress">ページを消去中… %1$d / %2$d</string>
+    <string name="studio_run_channel">スタジオの翻訳</string>
+    <string name="studio_run_channel_note">スタジオで翻訳中の章の進み具合</string>
+    <string name="studio_paused">一時停止中</string>
+    <string name="studio_pausing">このページの後で一時停止します…</string>
+    <string name="studio_paused_hot">一時停止中：端末が熱くなっています</string>
+    <string name="studio_paused_charger">一時停止中：充電を待っています</string>
+    <string name="studio_paused_saver">一時停止中：バッテリーセーバーがオンです</string>
+    <string name="studio_paused_battery">一時停止中：バッテリー残量が%1$d%%未満です</string>
+    <string name="studio_paused_offline">一時停止中：ネットワークを待っています</string>
+    <string name="studio_paused_reader">一時停止中：リーダーが端末上のモデルを使用中です</string>
+    <string name="action_pause">一時停止</string>
+    <string name="action_resume">再開</string>
+    <string name="studio_only_charging">スタジオは充電中のみ実行</string>
+    <string name="studio_only_charging_note">Qwen や Gemma を使うスタジオの章は充電を待ちます。リーダー、Gemini、Google 翻訳には影響しません。</string>
     <string name="studio_chapter_short">第%1$s話</string>
     <string name="studio_stage_new">未翻訳</string>
     <string name="studio_font">フォント</string>
@@ -643,7 +657,7 @@
     <string name="update_install_permission">Android に確認されたら Panelglass にアプリのインストールを許可し、もう一度「インストール」をタップしてください。</string>
     <string name="update_failed_check">アップデートを確認できませんでした。接続を確認してもう一度お試しください。</string>
     <string name="update_failed_download">アップデートをダウンロードできませんでした。</string>
-    <string name="compute_backend">Run models on</string>
-    <string name="compute_backend_gpu_note">Prefer GPU; use CPU if the GPU cannot initialize</string>
-    <string name="compute_backend_cpu_note">Run the built-in models on the CPU</string>
+    <string name="compute_backend">モデルの実行デバイス</string>
+    <string name="compute_backend_gpu_note">GPU を優先し、GPU を初期化できない場合は CPU を使用</string>
+    <string name="compute_backend_cpu_note">内蔵モデルを CPU で実行</string>
 </resources>
