@@ -140,7 +140,7 @@ class ImportViewModelTest {
         repo.createManga(Manga(title = "Invented Series"))
         val first = repo.import(ImportTarget.NewChapter(repo.allMangas().single().id, Chapter(mangaId = 0, number = 2f)), emptyList())
         val info = "<ComicInfo><Series>invented series</Series><Number>3</Number><Title>Night</Title></ComicInfo>"
-        val vm = vm("source" to "CBZ")
+        val vm = vm("source" to "ARCHIVE")
         vm.onPicked(listOf(serve("x.cbz", cbz("01.png" to Fixtures.png(40, 60), "ComicInfo.xml" to info.toByteArray()))))
         reviewed(vm)
         assertEquals("Invented Series", vm.destManga.value?.title)
@@ -150,6 +150,24 @@ class ImportViewModelTest {
         val chapter = repo.getChapter(done(vm))!!
         assertEquals(repo.getChapter(first)!!.mangaId, chapter.mangaId)
         assertEquals("Night", chapter.title)
+    }
+
+    /** What a reader app writes about the series (Mihon: the description and its own status field) fills the new manga. */
+    @Test fun anArchivesSummaryAltTitleAndStatusFillTheNewManga() = runBlocking<Unit> {
+        val info = "<ComicInfo><Series>Invented Rivers</Series><LocalizedSeries>Kawa no Hanashi</LocalizedSeries>" +
+            "<Summary>An invented summary.</Summary><Number>1</Number>" +
+            "<ty:PublishingStatusTachiyomi xmlns:ty=\"http://www.w3.org/2001/XMLSchema\">Ongoing</ty:PublishingStatusTachiyomi></ComicInfo>"
+        val vm = vm("source" to "ARCHIVE")
+        vm.onPicked(listOf(serve("x.cbz", cbz("01.png" to Fixtures.png(40, 60), "ComicInfo.xml" to info.toByteArray()))))
+        reviewed(vm)
+        assertEquals("An invented summary.", vm.newManga.value.summary)
+        assertEquals("Kawa no Hanashi", vm.newManga.value.altTitle)
+        assertEquals(com.smnexstudio.panelglass.core.model.MangaStatus.ONGOING, vm.newManga.value.status)
+        vm.save()
+        val saved = repo.getManga(repo.getChapter(done(vm))!!.mangaId)!!
+        assertEquals("An invented summary.", saved.summary)
+        assertEquals("Kawa no Hanashi", saved.altTitle)
+        assertEquals(com.smnexstudio.panelglass.core.model.MangaStatus.ONGOING, saved.status)
     }
 
     /** Without a number of its own, a chapter for an existing manga is numbered after its last. */
@@ -165,7 +183,7 @@ class ImportViewModelTest {
     }
 
     @Test fun anArchiveWithAFolderPerChapterBecomesOneChapterEach() = runBlocking<Unit> {
-        val vm = vm("source" to "CBZ")
+        val vm = vm("source" to "ARCHIVE")
         vm.onPicked(listOf(serve("pack.cbz", cbz(
             "Chapter 66/01.png" to Fixtures.png(40, 60), "Chapter 66/02.png" to Fixtures.png(40, 60),
             "Chapter 67 - Rain/01.png" to Fixtures.png(40, 60),
@@ -182,6 +200,56 @@ class ImportViewModelTest {
         assertEquals(listOf(2, 1), chapters.map { repo.pageList(it.id).size })
     }
 
+    /**
+     * A reader app's download folder zipped whole (`<source>/<series>/<chapter>.cbz`): each series becomes its own
+     * manga, titled from its ComicInfo, and one already in the Studio gets its chapters.
+     */
+    @Test fun aPackOfSeveralSeriesBecomesOneMangaEach() = runBlocking<Unit> {
+        val earlier = repo.createManga(Manga(title = "Invented Stars"))
+        fun chapter(series: String, n: Int, pages: Int) = cbz(
+            *((1..pages).map { "%02d.png".format(it) to Fixtures.png(40, 60) } +
+                ("ComicInfo.xml" to "<ComicInfo><Series>$series</Series><Number>$n</Number><Writer>Someone</Writer><Summary>About $series.</Summary></ComicInfo>".toByteArray())).toTypedArray(),
+        )
+        val pack = cbz(
+            "Source/Invented Stars/Chapter 1.cbz" to chapter("Invented Stars", 1, 2),
+            "Source/Invented Stars/Chapter 2.cbz" to chapter("Invented Stars", 2, 1),
+            "Source/Paper Moons/Chapter 1.cbz" to chapter("Paper Moons", 1, 3),
+        )
+        val vm = vm("source" to "ARCHIVE")
+        vm.onPicked(listOf(serve("pack.zip", pack)))
+        reviewed(vm)
+        assertEquals(listOf("Invented Stars" to 2, "Paper Moons" to 1), vm.series.value.map { it.title to it.chapters.size })
+        assertTrue(vm.bySeries())
+        assertTrue("no title to type: each series has its own", vm.canSave(null, vm.chapter.value, Manga(title = "")))
+        vm.save()
+        done(vm)
+        val all = repo.allMangas().associateBy { it.title }
+        assertEquals(setOf("Invented Stars", "Paper Moons"), all.keys)
+        assertEquals(earlier, all.getValue("Invented Stars").id)
+        assertEquals(listOf(1f, 2f), repo.chapterList(earlier).map { it.number })
+        val moons = all.getValue("Paper Moons")
+        assertEquals("Someone", moons.author)
+        assertEquals("About Paper Moons.", moons.summary)
+        assertEquals(listOf(3), repo.chapterList(moons.id).map { repo.pageList(it.id).size })
+    }
+
+    @Test fun aPackOfSeveralSeriesCanStillGoToOneManga() = runBlocking<Unit> {
+        val pack = cbz(
+            "Source/Invented Stars/Chapter 1/01.png" to Fixtures.png(40, 60),
+            "Source/Paper Moons/Chapter 1/01.png" to Fixtures.png(40, 60),
+        )
+        val vm = vm("source" to "ARCHIVE")
+        vm.onPicked(listOf(serve("pack.zip", pack)))
+        reviewed(vm)
+        assertEquals(2, vm.series.value.size) // told apart by the folders holding the chapters
+        vm.perSeries.value = false
+        assertFalse(vm.bySeries())
+        vm.newManga.value = vm.newManga.value.copy(title = "Everything")
+        vm.save()
+        done(vm)
+        assertEquals(listOf("Everything"), repo.allMangas().map { it.title })
+    }
+
     @Test fun pagesAddedToAChapterJoinIt() = runBlocking<Unit> {
         val mangaId = repo.createManga(Manga(title = "Stardust"))
         val chapterId = repo.import(ImportTarget.NewChapter(mangaId, Chapter(mangaId = 0, number = 1f)), emptyList())
@@ -196,15 +264,15 @@ class ImportViewModelTest {
     }
 
     @Test fun aRefusedPickSaysWhyAndStagesNothing() = runBlocking<Unit> {
-        val vm = vm("source" to "CBZ")
-        vm.onPicked(listOf(serve("pages.zip", cbz("01.png" to Fixtures.png(40, 60)))))
-        assertEquals(ImportUi.Failed(ImportRefused.Reason.NOT_CBZ), reviewed(vm))
+        val vm = vm("source" to "ARCHIVE")
+        vm.onPicked(listOf(serve("pages.cbz", "not an archive".toByteArray())))
+        assertEquals(ImportUi.Failed(ImportRefused.Reason.NOT_AN_ARCHIVE), reviewed(vm))
         assertTrue(leftovers().isEmpty())
     }
 
     /** A rotation or a process death rebuilds the view model from its saved state: the picker is not opened twice. */
     @Test fun thePickerIsNotOpenedAgainWhenTheScreenIsRebuilt() {
-        val saved = SavedStateHandle(mapOf("source" to "CBZ"))
+        val saved = SavedStateHandle(mapOf("source" to "ARCHIVE"))
         val first = models.keep(ImportViewModel(importer, repo, settings, saved))
         assertFalse(first.pickerLaunched)
         first.pickerLaunched = true
@@ -212,7 +280,7 @@ class ImportViewModelTest {
         val restored = SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) })
         val again = models.keep(ImportViewModel(importer, repo, settings, restored))
         assertTrue(again.pickerLaunched)
-        assertEquals(com.smnexstudio.panelglass.feature.studio.importer.ImportSource.CBZ, again.source)
+        assertEquals(com.smnexstudio.panelglass.feature.studio.importer.ImportSource.ARCHIVE, again.source)
     }
 
     @Test fun anEmptyPickDoesNothing() {

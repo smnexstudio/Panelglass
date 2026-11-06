@@ -3,6 +3,7 @@ package com.smnexstudio.panelglass.feature.studio.export
 import com.smnexstudio.panelglass.core.model.Chapter
 import com.smnexstudio.panelglass.core.model.Lang
 import com.smnexstudio.panelglass.core.model.Manga
+import com.smnexstudio.panelglass.core.model.MangaStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -78,5 +79,27 @@ class ExportNamesTest {
         assertEquals("fr", ko.languageIso)
         assertEquals("", ko.manga)
         assertNull(ko.year)
+        // Mihon's status field follows the manga; an unknown status writes none.
+        assertEquals("", info.publishingStatus)
+        assertEquals("Ongoing", ExportNames.comicInfo(m.copy(status = MangaStatus.ONGOING), c, 1).publishingStatus)
+    }
+
+    @Test fun seriesInfoHoldsTheSeriesAndNoChapter() {
+        val m = Manga(title = "Stardust", altTitle = "Hoshikuzu", author = "A", artist = "B", summary = "S", genres = "Drama", status = MangaStatus.HIATUS, srcLang = Lang.JA, tgtLang = Lang.EN)
+        val info = ExportNames.seriesInfo(m)
+        assertEquals("Stardust", info.series)
+        assertEquals("Hoshikuzu", info.localizedSeries)
+        assertEquals("Hoshikuzu", ExportNames.comicInfo(m, Chapter(mangaId = 1, number = 1f), 1).localizedSeries)
+        assertEquals("S", info.summary)
+        assertEquals("A", info.writer)
+        assertEquals("B", info.penciller)
+        assertEquals("Drama", info.genre)
+        assertEquals("On hiatus", info.publishingStatus)
+        assertEquals("en", info.languageIso)
+        assertEquals("YesAndRightToLeft", info.manga)
+        assertEquals("", info.number)
+        assertEquals("", info.title)
+        assertNull(info.pageCount)
+        assertEquals("", ExportNames.seriesInfo(m, clean = true).languageIso)
     }
 }

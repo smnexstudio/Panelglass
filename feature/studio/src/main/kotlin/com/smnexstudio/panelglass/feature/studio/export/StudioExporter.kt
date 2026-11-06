@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.smnexstudio.panelglass.core.model.Chapter
+import com.smnexstudio.panelglass.core.model.Manga
 import com.smnexstudio.panelglass.core.model.StudioPage
 import java.io.FilterOutputStream
 import java.io.IOException
@@ -245,6 +246,30 @@ class StudioExporter @Inject constructor(
 
     private class PageUnreadable : IOException()
 
+    /**
+     * The manga folder's own files, beside its chapters, replaced on every export: `ComicInfo.xml` with the series'
+     * details (status included) and `cover.jpg`, the Studio's cover or, when none was set, the first page of the
+     * manga's first chapter as the export shows it. Readers of local folders (Mihon, Kavita, Komga) take the series
+     * from these. A first page that can't be drawn leaves the folder without a cover rather than failing the export.
+     */
+    private suspend fun writeSeriesFiles(
+        target: ExportTarget, mangaDir: String, manga: Manga, firstPages: List<StudioPage>, content: ExportContent,
+    ) {
+        val info = ExportNames.seriesInfo(manga, clean = content == ExportContent.CLEAN).toXml().toByteArray(Charsets.UTF_8)
+        target.write(mangaDir, ExportNames.COMIC_INFO, "text/xml") { it.write(info) }
+        val set = repo.files.cover(manga.id)
+        val bytes = if (set.isFile && set.length() > 0) {
+            set.readBytes()
+        } else {
+            val first = firstPages.firstOrNull() ?: return
+            val buf = java.io.ByteArrayOutputStream()
+            // Drawn into memory first, so a page that fails leaves no half-written cover behind.
+            if (!composer.write(first, manga.tgtLang, buf, PageQuality.JPEG, content)) return
+            buf.toByteArray()
+        }
+        target.write(mangaDir, ExportNames.COVER, PageQuality.JPEG.mime) { it.write(bytes) }
+    }
+
     /** The export itself; tests call it directly. */
     internal suspend fun export(
         mangaId: Long, chapterIds: List<Long>, uri: String?, format: ExportFormat, quality: PageQuality = PageQuality.PNG,
@@ -322,6 +347,7 @@ class StudioExporter @Inject constructor(
                     set(state.copy(files = state.files + ExportedFile(chapter.id, name, pages.size, bytes)))
                 }
             }
+            writeSeriesFiles(target, mangaDir, manga, order.firstOrNull()?.let { pagesOf[it.id] ?: repo.pageList(it.id) }.orEmpty(), content)
             // Several chapters went into the manga's folder: name the folder, not the last chapter.
             val where = if (chapters.size > 1) "$label/$mangaName" else state.where
             set(state.copy(phase = ExportPhase.DONE, where = where))

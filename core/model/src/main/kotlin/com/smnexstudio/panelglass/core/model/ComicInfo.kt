@@ -7,6 +7,8 @@ package com.smnexstudio.panelglass.core.model
  */
 data class ComicInfo(
     val series: String = "",
+    /** The series' other title (Anansi 2.1 `LocalizedSeries`; Kavita and Komga read it). Mihon writes none. */
+    val localizedSeries: String = "",
     val number: String = "",
     val volume: Int? = null,
     val title: String = "",
@@ -22,13 +24,28 @@ data class ComicInfo(
     val notes: String = "",
     /** `YesAndRightToLeft` for right-to-left reading, as ComicInfo's `Manga` field. */
     val manga: String = "",
+    /**
+     * Mihon's (and Tachiyomi's) own field, `ty:PublishingStatusTachiyomi`: `Ongoing`, `Completed`, `On hiatus`, … The
+     * Anansi schema has no status, and Mihon's local source shows "Unknown" without it. [status] reads it.
+     */
+    val publishingStatus: String = "",
 ) {
+    /** [publishingStatus] as the Studio's status; anything else, or nothing, is unknown. */
+    val status: MangaStatus get() = when (publishingStatus.trim().lowercase()) {
+        "ongoing" -> MangaStatus.ONGOING
+        "completed", "publishing finished" -> MangaStatus.COMPLETED
+        "on hiatus" -> MangaStatus.HIATUS
+        "cancelled" -> MangaStatus.CANCELLED
+        else -> MangaStatus.UNKNOWN
+    }
+
     fun toXml(): String = buildString {
         append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
         append("<ComicInfo xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ")
         append("xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n")
         field("Title", title)
         field("Series", series)
+        field("LocalizedSeries", localizedSeries)
         field("Number", number)
         field("Volume", volume?.toString())
         field("Summary", summary)
@@ -42,17 +59,31 @@ data class ComicInfo(
         field("PageCount", pageCount?.toString())
         field("LanguageISO", languageIso)
         field("Manga", manga)
+        // As Mihon writes it: the prefix declared on the element itself.
+        field("ty:PublishingStatusTachiyomi", publishingStatus, " xmlns:ty=\"$MIHON_NS\"")
         append("</ComicInfo>\n")
     }
 
-    private fun StringBuilder.field(name: String, value: String?) {
+    private fun StringBuilder.field(name: String, value: String?, attributes: String = "") {
         if (value.isNullOrBlank()) return
-        append("  <").append(name).append('>').append(escape(value.trim())).append("</").append(name).append(">\n")
+        append("  <").append(name).append(attributes).append('>').append(escape(value.trim())).append("</").append(name).append(">\n")
     }
 
     companion object {
         /** Bigger than any real ComicInfo.xml; the importer reads no more than this. */
         const val MAX_BYTES = 256 * 1024
+
+        /** The namespace Mihon writes its `ty:` fields in (its serializer matches the namespace, not the prefix). */
+        const val MIHON_NS = "http://www.w3.org/2001/XMLSchema"
+
+        /** The [publishingStatus] Mihon reads for [s]; empty for an unknown status (the field is then left out). */
+        fun publishingStatusOf(s: MangaStatus): String = when (s) {
+            MangaStatus.ONGOING -> "Ongoing"
+            MangaStatus.COMPLETED -> "Completed"
+            MangaStatus.HIATUS -> "On hiatus"
+            MangaStatus.CANCELLED -> "Cancelled"
+            MangaStatus.UNKNOWN -> ""
+        }
 
         fun escape(s: String): String = buildString(s.length) {
             for (c in s) when (c) {
@@ -71,7 +102,7 @@ data class ComicInfo(
         /** The elements [parse] reads; every other one is passed over. */
         private val FIELDS = setOf(
             "Series", "Number", "Volume", "Title", "Summary", "Writer", "Penciller", "Genre", "LanguageISO", "PageCount",
-            "Year", "Month", "Day", "Notes", "Manga",
+            "Year", "Month", "Day", "Notes", "Manga", "PublishingStatusTachiyomi", "LocalizedSeries",
         )
 
         /**
@@ -85,6 +116,7 @@ data class ComicInfo(
             val f = fields(root(stripDeclarations(xml)) ?: return ComicInfo())
             return ComicInfo(
                 series = f["Series"].orEmpty(),
+                localizedSeries = f["LocalizedSeries"].orEmpty(),
                 number = f["Number"].orEmpty(),
                 volume = f["Volume"]?.toIntOrNull(),
                 title = f["Title"].orEmpty(),
@@ -99,6 +131,7 @@ data class ComicInfo(
                 day = f["Day"]?.toIntOrNull(),
                 notes = f["Notes"].orEmpty(),
                 manga = f["Manga"].orEmpty(),
+                publishingStatus = f["PublishingStatusTachiyomi"].orEmpty(),
             )
         }
 
@@ -165,7 +198,10 @@ data class ComicInfo(
             return if (k < s.length && s[k] == '>') k + 1 else null
         }
 
-        /** The first complete element of each of [FIELDS] in [body], as text. */
+        /**
+         * The first complete element of each of [FIELDS] in [body], as text, keyed by its local name: a namespace
+         * prefix (`ty:PublishingStatusTachiyomi`) is dropped, and the closing tag must carry the same prefix.
+         */
         private fun fields(body: String): Map<String, String> {
             val f = HashMap<String, String>()
             // A field with no closing tag after its first opening has none after a later one either: searched once.
@@ -176,16 +212,17 @@ data class ComicInfo(
                 if (lt < 0) break
                 i = lt + 1
                 var j = i
-                while (j < body.length && (body[j].isLetterOrDigit() || body[j] == '_' || body[j] == '.' || body[j] == '-')) j++
-                val name = body.substring(i, j)
+                while (j < body.length && (body[j].isLetterOrDigit() || body[j] == '_' || body[j] == '.' || body[j] == '-' || body[j] == ':')) j++
+                val qname = body.substring(i, j)
+                val name = qname.substringAfter(':')
                 if (name !in FIELDS || name in f || name in unclosed) continue
                 val gt = tagEnd(body, j) ?: continue
-                var close = body.indexOf("</$name", gt + 1)
+                var close = body.indexOf("</$qname", gt + 1)
                 var end: Int? = null
                 while (close >= 0) {
-                    end = closeEnd(body, close + 2 + name.length)
+                    end = closeEnd(body, close + 2 + qname.length)
                     if (end != null) break
-                    close = body.indexOf("</$name", close + 1)
+                    close = body.indexOf("</$qname", close + 1)
                 }
                 if (end == null) { unclosed += name; continue }
                 f[name] = text(body.substring(gt + 1, close))

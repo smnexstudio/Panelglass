@@ -26,8 +26,11 @@ enum class EngineId(
     DEEPL("DeepL", KeyRequirement.USER_KEY, offered = false),
     PAPAGO("Papago", KeyRequirement.USER_KEY, offered = false),
     DEEPSEEK("DeepSeek", KeyRequirement.USER_KEY, offered = false),
-    /** Google's ML Kit on-device translation: free, no key, language packs downloaded on first use. */
-    GOOGLE("Google Translate", KeyRequirement.NONE),
+    /**
+     * Google's ML Kit on-device translation: free, no key, language packs downloaded on first use. Named with
+     * "(ML Kit)" so it is never taken for the Google Translate app or its cloud service.
+     */
+    GOOGLE("Google Translate (ML Kit)", KeyRequirement.NONE),
     OPENROUTER("OpenRouter", KeyRequirement.USER_KEY, "", offered = false),
     /** On-device models on LiteRT-LM, translating the on-device OCR text (see `LocalModel` for the files). */
     QWEN15_LOCAL("Qwen 2.5 1.5B (on-device)", KeyRequirement.NONE),

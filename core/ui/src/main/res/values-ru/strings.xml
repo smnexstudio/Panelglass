@@ -9,7 +9,7 @@
     <string name="action_edit">Изменить</string>
     <string name="action_add">Добавить</string>
     <string name="action_add_key">Добавить ключ</string>
-    <string name="action_use_google_translate">Использовать Google Переводчик</string>
+    <string name="action_use_google_translate">Использовать ML Kit</string>
     <string name="action_use_on_device">Переводить на устройстве</string>
 
     <string name="cd_selected">Выбрано</string>
@@ -182,7 +182,7 @@
     <string name="download_incomplete">Скачивание не завершено; нажмите «Повторить»</string>
     <string name="download_failed">Не удалось скачать</string>
 
-    <string name="packs_title">Языковые пакеты Google Переводчика</string>
+    <string name="packs_title">Языковые пакеты ML Kit</string>
     <string name="packs_count">На телефоне %1$d из %2$d языков</string>
     <string name="packs_downloading_one">Загрузка: %1$s…</string>
     <string name="packs_manage">Управление</string>
@@ -220,15 +220,15 @@
     <string name="studio_subtitle">Перевод глав в файлы изображений</string>
     <string name="studio_library">Ваша манга</string>
     <string name="studio_new_manga">Новая манга</string>
-    <string name="studio_empty">Манги пока нет. Импортируйте главу из изображений, PDF или CBZ.</string>
+    <string name="studio_empty">Манги пока нет. Импортируйте главу из изображений, PDF или CBZ/ZIP/7z.</string>
     <string name="studio_import">Импорт</string>
     <string name="studio_import_from">Импорт из</string>
     <string name="studio_source_images">Изображения</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP или AVIF, одна или много страниц сразу</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Каждая страница станет изображением</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Архив комикса; данные берутся из его ComicInfo.xml</string>
+    <string name="studio_source_archive">Архив комикса</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 или 7z; данные берутся из его ComicInfo.xml</string>
     <string name="studio_reviewed">Проверено %1$d/%2$d</string>
     <string name="studio_chapters_section">Главы</string>
     <string name="studio_reorder_hint">Удерживайте и перетащите, чтобы изменить порядок.</string>
@@ -285,8 +285,13 @@
     <string name="studio_skip_too_large">слишком большой файл</string>
     <string name="studio_skip_too_many_pixels">слишком большое изображение</string>
     <string name="studio_skip_unreadable">не читается</string>
-    <string name="studio_error_not_cbz">Выберите файл .cbz. Обычные архивы .zip не импортируются.</string>
-    <string name="studio_error_not_zip">Не удаётся открыть этот CBZ. Архив повреждён или это не zip.</string>
+    <string name="studio_skip_unsupported_format">формат не поддерживается</string>
+    <string name="studio_skip_unsupported_compression">сжатие не поддерживается</string>
+    <string name="studio_skip_nested_archive">архив внутри архива</string>
+    <string name="studio_error_not_archive">Не удаётся открыть этот файл как архив. Он повреждён или это не CBZ, ZIP, CB7 или 7z.</string>
+    <string name="studio_error_rar">Архивы RAR (.cbr, .rar) пока нельзя импортировать. Перепакуйте страницы в CBZ или 7z и импортируйте их снова.</string>
+    <string name="studio_error_encrypted_archive">Этот архив защищён паролем. Снимите пароль и импортируйте его снова.</string>
+    <string name="studio_error_unsupported_compression">Этот архив сжат способом, который нельзя прочитать. Перепакуйте его в CBZ или 7z и импортируйте снова.</string>
     <string name="studio_error_encrypted_pdf">Этот PDF защищён паролем. Снимите пароль и импортируйте файл снова.</string>
     <string name="studio_error_not_pdf">Этот файл не открывается как PDF.</string>
     <string name="studio_error_too_large">Файл слишком большой для импорта.</string>
@@ -375,7 +380,7 @@
     <string name="action_pause">Пауза</string>
     <string name="action_resume">Продолжить</string>
     <string name="studio_only_charging">Студия только при зарядке</string>
-    <string name="studio_only_charging_note">Глава Студии на Qwen или Gemma ждёт зарядки. Читалку, Gemini и Google Переводчик это не затрагивает.</string>
+    <string name="studio_only_charging_note">Глава Студии на Qwen или Gemma ждёт зарядки. Читалку, Gemini и ML Kit это не затрагивает.</string>
     <string name="studio_chapter_short">Гл. %1$s</string>
     <string name="studio_stage_new">Не переведено</string>
     <string name="studio_font">Шрифт</string>
@@ -654,6 +659,8 @@
     <string name="studio_corners_sharp">Острые</string>
     <string name="studio_import_split">Глава на каждую папку</string>
     <string name="studio_import_split_note">В этом архиве %1$d папок. Каждая станет отдельной главой с номером из её названия.</string>
+    <string name="studio_import_series">Отдельная манга для каждой серии</string>
+    <string name="studio_import_series_note">В этом архиве %1$d серии. Каждая станет отдельной мангой; если в Студии уже есть манга с тем же названием, главы добавятся в неё.</string>
     <string name="studio_zoom_show">Показать масштаб</string>
     <string name="studio_zoom_hide">Скрыть масштаб</string>
     <string name="studio_delete_bubble">Удалить</string>
@@ -668,7 +675,7 @@
     <string name="memory_add_term">Добавить имя или термин</string>
     <string name="memory_notes_label">Заметки для перевода</string>
     <string name="memory_notes_hint">напр. Рэн — женщина. Сохранять обращения вроде -сан.</string>
-    <string name="memory_engine_note">Местоимения и заметки используют Gemini и модели на устройстве. Google Переводчик использует только имена и термины.</string>
+    <string name="memory_engine_note">Местоимения и заметки используют Gemini и модели на устройстве. ML Kit использует только имена и термины.</string>
     <string name="memory_term_title">Имя или термин</string>
     <string name="memory_term_source">Оригинал, как на странице</string>
     <string name="memory_term_target">Перевод</string>

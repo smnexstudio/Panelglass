@@ -9,7 +9,7 @@
     <string name="action_edit">Editar</string>
     <string name="action_add">Añadir</string>
     <string name="action_add_key">Añadir clave</string>
-    <string name="action_use_google_translate">Usar Google Traductor</string>
+    <string name="action_use_google_translate">Usar ML Kit</string>
     <string name="action_use_on_device">Usar en el dispositivo</string>
 
     <string name="cd_selected">Seleccionado</string>
@@ -174,7 +174,7 @@
     <string name="download_incomplete">Descarga incompleta; toca Reintentar</string>
     <string name="download_failed">La descarga falló</string>
 
-    <string name="packs_title">Paquetes de idioma de Google Traductor</string>
+    <string name="packs_title">Paquetes de idioma de ML Kit</string>
     <string name="packs_count">%1$d de %2$d idiomas en este teléfono</string>
     <string name="packs_downloading_one">Descargando %1$s…</string>
     <string name="packs_manage">Gestionar</string>
@@ -212,15 +212,15 @@
     <string name="studio_subtitle">Traduce capítulos a archivos de imagen</string>
     <string name="studio_library">Tus mangas</string>
     <string name="studio_new_manga">Nuevo manga</string>
-    <string name="studio_empty">Aún no hay mangas. Importa un capítulo desde imágenes, un PDF o un CBZ.</string>
+    <string name="studio_empty">Aún no hay mangas. Importa un capítulo desde imágenes, un PDF o un CBZ/ZIP/7z.</string>
     <string name="studio_import">Importar</string>
     <string name="studio_import_from">Importar desde</string>
     <string name="studio_source_images">Imágenes</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP o AVIF, una o muchas páginas a la vez</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Cada página se convierte en una imagen</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Archivo de cómic; su ComicInfo.xml completa los datos</string>
+    <string name="studio_source_archive">Archivo de cómic</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 o 7z; su ComicInfo.xml completa los datos</string>
     <string name="studio_reviewed">%1$d/%2$d revisadas</string>
     <string name="studio_chapters_section">Capítulos</string>
     <string name="studio_reorder_hint">Mantén pulsado y arrastra para cambiar el orden.</string>
@@ -277,8 +277,13 @@
     <string name="studio_skip_too_large">archivo demasiado grande</string>
     <string name="studio_skip_too_many_pixels">imagen demasiado grande</string>
     <string name="studio_skip_unreadable">no se puede leer</string>
-    <string name="studio_error_not_cbz">Elige un archivo .cbz. Los archivos .zip normales no se importan.</string>
-    <string name="studio_error_not_zip">No se puede abrir este CBZ. El archivo está dañado o no es un zip.</string>
+    <string name="studio_skip_unsupported_format">formato no compatible</string>
+    <string name="studio_skip_unsupported_compression">compresión no compatible</string>
+    <string name="studio_skip_nested_archive">archivo dentro de otro archivo</string>
+    <string name="studio_error_not_archive">Este archivo no se puede abrir como archivo comprimido. Está dañado o no es un CBZ, ZIP, CB7 ni 7z.</string>
+    <string name="studio_error_rar">Todavía no se pueden importar archivos RAR (.cbr, .rar). Vuelve a empaquetar las páginas como CBZ o 7z y luego impórtalas de nuevo.</string>
+    <string name="studio_error_encrypted_archive">Este archivo comprimido está protegido con contraseña. Quita la contraseña y vuelve a importarlo.</string>
+    <string name="studio_error_unsupported_compression">Este archivo comprimido usa un método de compresión que no se puede leer. Vuelve a empaquetarlo como CBZ o 7z y luego impórtalo de nuevo.</string>
     <string name="studio_error_encrypted_pdf">Este PDF está protegido con contraseña. Quita la contraseña y vuelve a importarlo.</string>
     <string name="studio_error_not_pdf">Este archivo no se puede abrir como PDF.</string>
     <string name="studio_error_too_large">Este archivo es demasiado grande para importarlo.</string>
@@ -363,7 +368,7 @@
     <string name="action_pause">Pausar</string>
     <string name="action_resume">Reanudar</string>
     <string name="studio_only_charging">El Estudio solo con el cargador</string>
-    <string name="studio_only_charging_note">Un capítulo del Estudio con Qwen o Gemma espera al cargador. El lector, Gemini y Google Traductor no se ven afectados.</string>
+    <string name="studio_only_charging_note">Un capítulo del Estudio con Qwen o Gemma espera al cargador. El lector, Gemini y ML Kit no se ven afectados.</string>
     <string name="studio_chapter_short">Cap. %1$s</string>
     <string name="studio_stage_new">Sin traducir</string>
     <string name="studio_font">Fuente</string>
@@ -624,6 +629,8 @@
     <string name="studio_corners_sharp">Rectas</string>
     <string name="studio_import_split">Un capítulo por carpeta</string>
     <string name="studio_import_split_note">Este archivo tiene %1$d carpetas. Cada una será un capítulo, numerado según su nombre.</string>
+    <string name="studio_import_series">Un manga por serie</string>
+    <string name="studio_import_series_note">Este archivo contiene %1$d series. Cada una se convierte en su propio manga; si ya hay uno con el mismo título en el Studio, recibe sus capítulos.</string>
     <string name="studio_zoom_show">Mostrar zoom</string>
     <string name="studio_zoom_hide">Ocultar zoom</string>
     <string name="studio_delete_bubble">Eliminar</string>
@@ -638,7 +645,7 @@
     <string name="memory_add_term">Añadir un nombre o término</string>
     <string name="memory_notes_label">Notas para la traducción</string>
     <string name="memory_notes_hint">p. ej. Ren es una mujer. Mantener honoríficos como -san.</string>
-    <string name="memory_engine_note">Gemini y los modelos en el dispositivo usan los pronombres y las notas. Google Traductor solo usa los nombres y términos.</string>
+    <string name="memory_engine_note">Gemini y los modelos en el dispositivo usan los pronombres y las notas. ML Kit solo usa los nombres y términos.</string>
     <string name="memory_term_title">Nombre o término</string>
     <string name="memory_term_source">Original, como en la página</string>
     <string name="memory_term_target">Traducción</string>

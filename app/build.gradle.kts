@@ -63,7 +63,13 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    packaging {
+        resources {
+            excludes += listOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/versions/*/module-info.class")
+            // Each Apache Commons jar (Studio archive import) ships its own; joined, every notice stays in the APK.
+            merges += listOf("/META-INF/LICENSE.txt", "/META-INF/NOTICE.txt")
+        }
+    }
     // Studio fonts are mapped straight from the APK by Font.Builder(assets, …), so they are stored uncompressed.
     androidResources { noCompress += listOf("ttf", "otf") }
     testOptions {

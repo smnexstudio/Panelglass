@@ -13,9 +13,31 @@ class ComicInfoTest {
         series = "Blue Box", number = "12.5", volume = 2, title = "Match point", summary = "Line one\nLine two",
         writer = "Kouji Miura", penciller = "Kouji Miura", genre = "Romance, Sports", languageIso = "en", pageCount = 20,
         year = 2026, month = 9, day = 30, notes = "Translated with Panelglass", manga = "YesAndRightToLeft",
+        publishingStatus = "Ongoing", localizedSeries = "Invented Other Title",
     )
 
     @Test fun roundTrip() = assertEquals(full, ComicInfo.parse(full.toXml()))
+
+    /** Mihon's own status field, in the form its downloads carry: the `ty` prefix declared on the element. */
+    @Test fun mihonsPublishingStatusIsReadAndWrittenAsMihonWritesIt() {
+        val mihon = "<ComicInfo xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><Series>Invented</Series>" +
+            "<ty:PublishingStatusTachiyomi xmlns:ty=\"http://www.w3.org/2001/XMLSchema\">Completed</ty:PublishingStatusTachiyomi></ComicInfo>"
+        val read = ComicInfo.parse(mihon)
+        assertEquals("Completed", read.publishingStatus)
+        assertEquals(MangaStatus.COMPLETED, read.status)
+        val xml = ComicInfo(series = "Invented", publishingStatus = "On hiatus").toXml()
+        assertTrue("<ty:PublishingStatusTachiyomi xmlns:ty=\"http://www.w3.org/2001/XMLSchema\">On hiatus</ty:PublishingStatusTachiyomi>" in xml, xml)
+        assertFalse("PublishingStatusTachiyomi" in ComicInfo(series = "Invented").toXml(), "an unknown status is left out")
+    }
+
+    @Test fun statusesMapBothWays() {
+        for (s in MangaStatus.entries) {
+            assertEquals(s, ComicInfo(publishingStatus = ComicInfo.publishingStatusOf(s)).status)
+        }
+        assertEquals(MangaStatus.COMPLETED, ComicInfo(publishingStatus = "Publishing finished").status)
+        assertEquals(MangaStatus.UNKNOWN, ComicInfo(publishingStatus = "Licensed").status)
+        assertEquals("", ComicInfo.publishingStatusOf(MangaStatus.UNKNOWN))
+    }
 
     @Test fun blankFieldsAreLeftOut() {
         val xml = ComicInfo(series = "A").toXml()

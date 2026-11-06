@@ -106,7 +106,7 @@ internal fun anchorFor(
 /**
  * Position (CSS pixels) of a patch anchored to an image, from where that image is [now]; null when it is not on
  * screen. The patch stays on its art whatever moved it: a reader re-centring its page in its own layer (bilibili,
- * 11 px), scroll anchoring when a lazy image above the viewport finished loading (rawkuma: the art stayed put on
+ * 11 px), scroll anchoring when a lazy image above the viewport finished loading (a Japanese reader site: the art stayed put on
  * screen while the scroll offset jumped 94 px), or a zoom.
  */
 internal fun anchoredPosition(anchor: Anchor, now: ImageLayout): Pair<Float, Float>? {
@@ -799,7 +799,7 @@ class ReaderViewModel @Inject constructor(
         const val EDGE_MARGIN = 8
         /**
          * How long a capture taken over still-downloading pages waits for them to finish, and how often it asks.
-         * A chapter that requests all its pages at once can take over a minute per page on mobile data (rawkuma:
+         * A chapter that requests all its pages at once can take over a minute per page on mobile data (one site:
          * 70-78 s); the wait ends as soon as the reader scrolls or stops.
          */
         const val LOAD_FOLLOW_UP_MS = 180_000L

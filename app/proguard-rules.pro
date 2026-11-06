@@ -10,6 +10,13 @@
 -keep class com.google.ai.edge.litertlm.** { *; }
 -keepclasseswithmembernames,includedescriptorclasses class * { native <methods>; }
 
+# Apache Commons Compress (Studio archive import) refers to optional codecs and tooling it never loads here:
+# zstd, Brotli, ASM (Pack200) and OSGi. They are not on the classpath, by choice.
+-dontwarn com.github.luben.zstd.**
+-dontwarn org.brotli.dec.**
+-dontwarn org.objectweb.asm.**
+-dontwarn org.osgi.**
+
 # Failure types are logged by class name (TranslationPipeline "Image failed: ..."); keep the names readable.
 -keepnames class com.smnexstudio.panelglass.core.model.EngineFailure
 -keepnames class com.smnexstudio.panelglass.core.model.EngineFailure$*

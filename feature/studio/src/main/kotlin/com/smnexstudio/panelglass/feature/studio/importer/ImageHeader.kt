@@ -19,11 +19,12 @@ data class ImageHeader(val format: ImageFormat, val width: Int, val height: Int,
     companion object {
         private val COPYABLE = setOf(ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP)
         private val AVIF_BRANDS = setOf("avif", "avis")
+        private val HEIF_BRANDS = setOf("heic", "heix", "heim", "heis", "hevc", "hevx", "mif1", "msf1", "miaf")
 
         /** Null when the stream is not an image the Studio takes (HEIC included: not every Android 12 phone decodes it). */
         fun probe(input: InputStream): ImageHeader? = try {
             val d = DataInputStream(input)
-            val head = ByteArray(30)
+            val head = ByteArray(HEAD)
             val n = readUpTo(d, head)
             when {
                 n >= 24 && head.startsWith(PNG_SIG) && head.ascii(12, 4) == "IHDR" ->
@@ -32,11 +33,44 @@ data class ImageHeader(val format: ImageFormat, val width: Int, val height: Int,
                 n >= 30 && head.ascii(0, 4) == "RIFF" && head.ascii(8, 4) == "WEBP" -> webp(head)
                 n >= 10 && (head.ascii(0, 6) == "GIF87a" || head.ascii(0, 6) == "GIF89a") ->
                     ImageHeader(ImageFormat.GIF, head.le16(6), head.le16(8), animated = true)
-                n >= 12 && head.ascii(4, 4) == "ftyp" && head.ascii(8, 4) in AVIF_BRANDS -> ImageHeader(ImageFormat.AVIF, 0, 0)
+                n >= 12 && head.ascii(4, 4) == "ftyp" && isAvif(head, n) -> ImageHeader(ImageFormat.AVIF, 0, 0)
                 else -> null
             }
         } catch (_: java.io.IOException) {
             null
+        }
+
+        /**
+         * An AVIF's `ftyp` box: `avif` / `avis` as its main type, or among its compatible types behind a generic one
+         * (`mif1`, `msf1`, `miaf`: many encoders write those first). A HEIC lists `heic` there instead, and is refused.
+         */
+        private fun brands(h: ByteArray, n: Int): List<String> {
+            val box = minOf(h.be32(0).toLong().coerceIn(0, n.toLong()).toInt(), n)
+            val list = mutableListOf(h.ascii(8, 4))
+            var i = 16 // after the main type and its minor version
+            while (i + 4 <= box) { list += h.ascii(i, 4); i += 4 }
+            return list
+        }
+
+        private fun isAvif(h: ByteArray, n: Int): Boolean = brands(h, n).any { it in AVIF_BRANDS }
+
+        /**
+         * True for an image the Studio recognises but can't decode on every Android 12 phone: HEIC / HEIF, JPEG XL,
+         * BMP and TIFF. A file that [probe] takes is never one of these.
+         */
+        fun isUnsupportedImage(input: InputStream): Boolean = try {
+            val h = ByteArray(HEAD)
+            val n = readUpTo(input, h)
+            when {
+                n >= 12 && h.ascii(4, 4) == "ftyp" -> !isAvif(h, n) && brands(h, n).any { it in HEIF_BRANDS }
+                n >= 2 && h.u8(0) == 0xFF && h.u8(1) == 0x0A -> true // JPEG XL codestream
+                n >= 12 && h.be32(0) == 12 && h.ascii(4, 4) == "JXL " -> true // JPEG XL container
+                n >= 14 && h.ascii(0, 2) == "BM" -> true
+                n >= 4 && (h.ascii(0, 4) == "II*\u0000" || h.ascii(0, 4) == "MM\u0000*") -> true
+                else -> false
+            }
+        } catch (_: java.io.IOException) {
+            false
         }
 
         private fun webp(h: ByteArray): ImageHeader? = when (h.ascii(12, 4)) {
@@ -87,6 +121,9 @@ data class ImageHeader(val format: ImageFormat, val width: Int, val height: Int,
         }
 
         private const val MAX_JPEG_SCAN = 4 * 1024 * 1024
+
+        /** Bytes read before deciding: enough for a WebP VP8X header and an `ftyp` box with a dozen compatible types. */
+        private const val HEAD = 64
         private val PNG_SIG = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
 
         private fun readUpTo(d: InputStream, buf: ByteArray): Int {

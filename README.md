@@ -42,7 +42,7 @@ and the next screen is translated as soon as the page settles; translations stay
 It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
 site does with its pages, Panelglass sees the same pixels you do.
 
-For files you already have there is the **Studio**: import a chapter (images, PDF or CBZ), translate it on the
+For files you already have there is the **Studio**: import a chapter (images, PDF, CBZ, ZIP or 7z), translate it on the
 phone, check and restyle every bubble, and export the lettered pages as images, CBZ or ZIP for Kavita, Komga or any
 comic reader, or the clean, text-free pages to letter elsewhere. See [Studio](#studio-translate-your-own-chapters).
 
@@ -50,25 +50,28 @@ comic reader, or the clean, text-free pages to letter elsewhere. See [Studio](#s
 ## Screenshots
 
 <p align="center">
-  <img src="docs/ScreenRecordings/translate-ja-en.gif" width="280" alt="Panelglass Android manga translator demo - real-time in-place Japanese to English speech bubble translation">
+  <img src="docs/ScreenRecordings/translate-peppercarrot.gif" width="280" alt="Panelglass Android comic translator demo - real-time in-place Japanese to English speech bubble translation of the Japanese edition of Pepper&amp;Carrot">
   <br>
   <sub>Real time, on a phone, fully offline (Gemma 4 E2B): the bubbles are redrawn in English as the model finishes them.<br>
-  <a href="docs/ScreenRecordings/translate-while-scrolling.mp4">Watch the full recording</a> (70 s): translating while
-  scrolling through a chapter; waiting stretches are sped up and labelled.</sub>
+  <a href="docs/ScreenRecordings/translate-peppercarrot.mp4">Watch the full recording</a> (70 s, real speed): two screens
+  of a chapter translated while scrolling, then Stop puts the original back.</sub>
 </p>
 
 <table>
   <tr>
-    <td align="center"><img src="docs/Screenshots/reader-original-ja.jpg" width="240" alt="Raw Japanese manga page open in Panelglass reader, before translation"></td>
-    <td align="center"><img src="docs/Screenshots/reader-translated-en.jpg" width="240" alt="Japanese manga page with speech bubbles redrawn in English using on-device Gemma 4 AI"></td>
-    <td align="center"><img src="docs/Screenshots/reader-translated-hi.jpg" width="240" alt="Japanese manga page with speech bubbles redrawn in Hindi"></td>
+    <td align="center"><img src="docs/Screenshots/reader-peppercarrot-ja.jpg" width="240" alt="Japanese comic page open in the Panelglass reader, before translation"></td>
+    <td align="center"><img src="docs/Screenshots/reader-peppercarrot-en.jpg" width="240" alt="The same page with its speech bubbles redrawn in English by on-device Gemma 4"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Before: the raw Japanese page</sub></td>
+    <td align="center"><sub>Before: the Japanese page, as the site serves it</sub></td>
     <td align="center"><sub>After: translated into English, fully on device (Gemma 4 E2B)</sub></td>
-    <td align="center"><sub>…or into Hindi</sub></td>
   </tr>
 </table>
+
+<sub>The comic in these captures is <a href="https://www.peppercarrot.com">Pepper&amp;Carrot</a> by David Revoy, Episode 3
+"The Secret Ingredients", read in its Japanese translation by guruguru on peppercarrot.com. It is published under
+<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the English lettering in the captures is
+Panelglass's machine translation, not the official English edition.</sub>
 
 <table>
   <tr>
@@ -91,8 +94,8 @@ comic reader, or the clean, text-free pages to letter elsewhere. See [Studio](#s
 
 ### Studio
 
-Import a chapter (images, PDF or CBZ), translate it on the phone, check and restyle every bubble, then export the
-lettered pages, or the clean pages without any text.
+Import a chapter (images, PDF, or a CBZ / ZIP / 7z archive), translate it on the phone, check and restyle every
+bubble, then export the lettered pages, or the clean pages without any text.
 
 <table>
   <tr>
@@ -112,7 +115,7 @@ lettered pages, or the clean pages without any text.
     <td align="center"><img src="docs/Screenshots/studio-library.jpg" width="180" alt="Panelglass Studio manga library with covers"></td>
     <td align="center"><img src="docs/Screenshots/studio-manga.jpg" width="180" alt="Panelglass Studio manga details with author, artist, status, languages and chapters"></td>
     <td align="center"><img src="docs/Screenshots/studio-chapter.jpg" width="180" alt="Panelglass Studio chapter with its translation progress and cleaned pages"></td>
-    <td align="center"><img src="docs/Screenshots/studio-export.png" width="180" alt="Panelglass Studio export as ZIP, images or CBZ"></td>
+    <td align="center"><img src="docs/Screenshots/studio-export.jpg" width="180" alt="Panelglass Studio export as ZIP, images or CBZ"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your manga</sub></td>
@@ -121,6 +124,11 @@ lettered pages, or the clean pages without any text.
     <td align="center"><sub>Export as images, ZIP or CBZ</sub></td>
   </tr>
 </table>
+
+<sub>The chapters in these captures are <a href="https://www.peppercarrot.com">Pepper&amp;Carrot</a> by David Revoy,
+Episodes 1–3 in their Japanese translation by guruguru, imported into the Studio as CBZ files
+(<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). The English lettering is Panelglass's machine
+translation, restyled in the Studio.</sub>
 
 <sub>Artwork belongs to its creators and is shown only to demonstrate the translation.</sub>
 
@@ -133,7 +141,7 @@ lettered pages, or the clean pages without any text.
   | Engine | Runs | Needs | Best for |
   |---|---|---|---|
   | **Gemini** | Google's API | Your own API key | Best quality and speed. Reads each balloon itself, so no on-device OCR is needed. Any Gemini or Gemma model your key can use. |
-  | **Google Translate** | On device (ML Kit) | Nothing (~30 MB language packs) | Free and offline |
+  | **Google Translate (ML Kit)** | On device (Google's ML Kit) | Nothing (~30 MB language packs) | Free and offline |
   | **Qwen 2.5 1.5B** | On device (LiteRT-LM; GPU, or CPU on phones under 6 GB) | One-time 1.6 GB download | Offline LLM translation |
   | **Gemma 4 E2B** | On device (LiteRT-LM, GPU when available) | One-time 2.6 GB download, 8 GB RAM | Offline LLM translation, higher quality |
 
@@ -160,7 +168,7 @@ lettered pages, or the clean pages without any text.
 - **Translate the page itself.** ⋮ › *Translate page* translates the site's own text (titles, chapter lists,
   comments) in place, like Chrome's translate bar: the language is detected, English is the default target, and
   both can be changed. On-device with ML Kit; *Show original* puts the page back.
-- **Studio for your own files.** Import images, a PDF or a CBZ, translate the whole chapter, review and restyle
+- **Studio for your own files.** Import images, a PDF or a comic archive (CBZ, ZIP, CB7, 7z), translate the whole chapter, review and restyle
   every bubble, and export images, CBZ or ZIP, translated or clean ([more](#studio-translate-your-own-chapters)).
 - **Four themes and 21 lettering fonts** (a comic font for every target language, or your own), and a
   *Try a translation* box to check an engine before reading.
@@ -190,9 +198,11 @@ Italian, Portuguese, Russian, Indonesian, Vietnamese. Target: all of those, plus
 The **Studio** tab works on files you already have instead of a website. It uses the reader's detector, OCR and
 engines, so it runs fully offline too.
 
-1. **Import** a chapter: images (drag them into order), a PDF or a `.cbz`. A ComicInfo.xml fills in the title,
-   number and credits, and a CBZ with a folder per chapter imports as several chapters. Each manga gets a cover,
-   its details and a chapter list.
+1. **Import** a chapter: images (drag them into order), a PDF or a comic archive (`.cbz`, `.zip`, `.cb7` or `.7z`,
+   such as the chapters Mihon and other readers download). A ComicInfo.xml fills in the title, number and credits;
+   an archive with a folder per chapter, or a `.zip` of chapter archives, imports as several chapters, and a pack of
+   several series (a reader app's download folder zipped whole) as one manga per series. RAR (`.cbr`) isn't
+   supported yet. Each manga gets a cover, its details and a chapter list.
 2. **Translate** the whole chapter with the engine chosen in Settings. Every page is read, translated and cleaned;
    it keeps going in the background with a progress notification, pauses when the phone is hot or low on battery,
    and can be paused, cancelled, or continued later.
@@ -243,9 +253,9 @@ flowchart LR
    drawn over the page, anchored to its page image so it moves with it as you scroll.
 
 With Gemini (`gemini-3.5-flash-lite`), one screen of a raw Japanese chapter (8 balloons) takes about **6–9 s** on the
-emulator, against about 25 s through on-device OCR. On a phone, fully offline with Gemma 4 E2B, the first screen took
-about 17 s and the next about 11 s; a dense page fills in four bubbles at a time, roughly every 15 s
-([recording](docs/ScreenRecordings/translate-while-scrolling.mp4)).
+emulator, against about 25 s through on-device OCR. On a phone, fully offline with Gemma 4 E2B, a screen fills in
+four bubbles at a time; in the recording above, the first screen (7 patches) is finished about 25 s in
+([recording](docs/ScreenRecordings/translate-peppercarrot.mp4)).
 
 ## Getting started
 
@@ -268,11 +278,12 @@ Panelglass is not on Google Play. Each release is published on GitHub:
 ### Set up
 
 1. Open **Settings → Translation** and choose the source and target languages.
-2. Choose an engine under **Translation model**. **Google Translate** is selected on a new install:
-   - **Google Translate**: free and on the device. The Japanese, Korean and Chinese language packs (~30 MB each)
+2. Choose an engine under **Translation model**. **Google Translate (ML Kit)** is selected on a new install:
+   - **Google Translate (ML Kit)**: free and on the device, with Google's ML Kit translation (not the Google
+     Translate app or its cloud service). The Japanese, Korean and Chinese language packs (~30 MB each)
      download by themselves when the app first starts; English is built in. Any other language is downloaded only
      when you ask: tap **Download** when the reader says a pack is missing, or pick languages under **Models →
-     Google Translate language packs**, where each one can also be deleted.
+     ML Kit language packs**, where each one can also be deleted.
    - **Gemini**: tap its name, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
      (a *flash* or *flash-lite* model is fastest) and save.
    - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: download the model under **Models**. The engine picker then shows it as

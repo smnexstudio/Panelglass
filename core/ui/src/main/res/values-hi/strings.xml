@@ -9,7 +9,7 @@
     <string name="action_edit">बदलें</string>
     <string name="action_add">जोड़ें</string>
     <string name="action_add_key">कुंजी जोड़ें</string>
-    <string name="action_use_google_translate">Google अनुवाद इस्तेमाल करें</string>
+    <string name="action_use_google_translate">ML Kit इस्तेमाल करें</string>
     <string name="action_use_on_device">डिवाइस पर अनुवाद करें</string>
 
     <string name="cd_selected">चुना गया</string>
@@ -174,7 +174,7 @@
     <string name="download_incomplete">डाउनलोड पूरा नहीं हुआ; फिर से कोशिश करें पर टैप करें</string>
     <string name="download_failed">डाउनलोड नहीं हो सका</string>
 
-    <string name="packs_title">Google अनुवाद के भाषा पैक</string>
+    <string name="packs_title">ML Kit के भाषा पैक</string>
     <string name="packs_count">इस फ़ोन पर %2$d में से %1$d भाषाएँ</string>
     <string name="packs_downloading_one">%1$s डाउनलोड हो रही है…</string>
     <string name="packs_manage">प्रबंधित करें</string>
@@ -212,15 +212,15 @@
     <string name="studio_subtitle">अध्यायों का अनुवाद करके उन्हें इमेज फ़ाइलें बनाएँ</string>
     <string name="studio_library">आपकी मांगा</string>
     <string name="studio_new_manga">नई मांगा</string>
-    <string name="studio_empty">अभी कोई मांगा नहीं है। इमेज, PDF या CBZ से कोई अध्याय इंपोर्ट करें।</string>
+    <string name="studio_empty">अभी कोई मांगा नहीं है। इमेज, PDF या CBZ/ZIP/7z से कोई अध्याय इंपोर्ट करें।</string>
     <string name="studio_import">इंपोर्ट</string>
     <string name="studio_import_from">यहाँ से इंपोर्ट करें</string>
     <string name="studio_source_images">इमेज</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP या AVIF, एक या कई पेज एक साथ</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">हर पेज एक इमेज बन जाता है</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">कॉमिक आर्काइव; इसकी ComicInfo.xml से जानकारी भरी जाती है</string>
+    <string name="studio_source_archive">कॉमिक आर्काइव</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7 या 7z; इसकी ComicInfo.xml से जानकारी भरी जाती है</string>
     <string name="studio_reviewed">%1$d/%2$d जाँचे गए</string>
     <string name="studio_chapters_section">अध्याय</string>
     <string name="studio_reorder_hint">क्रम बदलने के लिए दबाकर रखें और खींचें।</string>
@@ -277,8 +277,13 @@
     <string name="studio_skip_too_large">फ़ाइल बहुत बड़ी है</string>
     <string name="studio_skip_too_many_pixels">इमेज बहुत बड़ी है</string>
     <string name="studio_skip_unreadable">पढ़ी नहीं जा सकती</string>
-    <string name="studio_error_not_cbz">.cbz फ़ाइल चुनें। सामान्य .zip आर्काइव इंपोर्ट नहीं किए जाते।</string>
-    <string name="studio_error_not_zip">यह CBZ नहीं खुल सकती। आर्काइव खराब है या zip नहीं है।</string>
+    <string name="studio_skip_unsupported_format">फ़ॉर्मैट समर्थित नहीं है</string>
+    <string name="studio_skip_unsupported_compression">कंप्रेशन समर्थित नहीं है</string>
+    <string name="studio_skip_nested_archive">आर्काइव के अंदर आर्काइव</string>
+    <string name="studio_error_not_archive">यह फ़ाइल आर्काइव के रूप में नहीं खुल सकती। यह खराब है, या CBZ, ZIP, CB7 या 7z फ़ाइल नहीं है।</string>
+    <string name="studio_error_rar">RAR आर्काइव (.cbr, .rar) अभी इंपोर्ट नहीं किए जा सकते। पेजों को CBZ या 7z में दोबारा पैक करें, फिर दोबारा इंपोर्ट करें।</string>
+    <string name="studio_error_encrypted_archive">यह आर्काइव पासवर्ड से सुरक्षित है। पासवर्ड हटाएँ, फिर दोबारा इंपोर्ट करें।</string>
+    <string name="studio_error_unsupported_compression">यह आर्काइव ऐसे कंप्रेशन तरीके का इस्तेमाल करता है जिसे पढ़ा नहीं जा सकता। इसे CBZ या 7z में दोबारा पैक करें, फिर दोबारा इंपोर्ट करें।</string>
     <string name="studio_error_encrypted_pdf">यह PDF पासवर्ड से सुरक्षित है। पासवर्ड हटाएँ, फिर दोबारा इंपोर्ट करें।</string>
     <string name="studio_error_not_pdf">यह फ़ाइल PDF के रूप में नहीं खुल सकती।</string>
     <string name="studio_error_too_large">यह फ़ाइल इंपोर्ट करने के लिए बहुत बड़ी है।</string>
@@ -363,7 +368,7 @@
     <string name="action_pause">रोकें</string>
     <string name="action_resume">फिर शुरू करें</string>
     <string name="studio_only_charging">स्टूडियो सिर्फ़ चार्ज होते समय</string>
-    <string name="studio_only_charging_note">Qwen या Gemma वाला स्टूडियो अध्याय चार्जर का इंतज़ार करता है। रीडर, Gemini और Google अनुवाद पर असर नहीं पड़ता।</string>
+    <string name="studio_only_charging_note">Qwen या Gemma वाला स्टूडियो अध्याय चार्जर का इंतज़ार करता है। रीडर, Gemini और ML Kit पर असर नहीं पड़ता।</string>
     <string name="studio_chapter_short">अध्याय %1$s</string>
     <string name="studio_stage_new">अनुवाद नहीं हुआ</string>
     <string name="studio_font">फ़ॉन्ट</string>
@@ -624,6 +629,8 @@
     <string name="studio_corners_sharp">नुकीले</string>
     <string name="studio_import_split">हर फ़ोल्डर एक अध्याय</string>
     <string name="studio_import_split_note">इस आर्काइव में %1$d फ़ोल्डर हैं। हर एक अपने नाम की संख्या से अलग अध्याय बनेगा।</string>
+    <string name="studio_import_series">हर सीरीज़ का अलग मांगा</string>
+    <string name="studio_import_series_note">इस आर्काइव में %1$d सीरीज़ हैं। हर एक अपना मांगा बनती है; स्टूडियो में उसी नाम का मांगा हो तो अध्याय उसी में जुड़ते हैं।</string>
     <string name="studio_zoom_show">ज़ूम दिखाएँ</string>
     <string name="studio_zoom_hide">ज़ूम छिपाएँ</string>
     <string name="studio_delete_bubble">हटाएँ</string>
@@ -638,7 +645,7 @@
     <string name="memory_add_term">नाम या शब्द जोड़ें</string>
     <string name="memory_notes_label">अनुवाद के लिए नोट्स</string>
     <string name="memory_notes_hint">जैसे: रेन एक महिला है। -san जैसे आदरसूचक शब्द रखें।</string>
-    <string name="memory_engine_note">सर्वनाम और नोट्स Gemini और डिवाइस पर चलने वाले मॉडल इस्तेमाल करते हैं। Google अनुवाद सिर्फ़ नाम और शब्द इस्तेमाल करता है।</string>
+    <string name="memory_engine_note">सर्वनाम और नोट्स Gemini और डिवाइस पर चलने वाले मॉडल इस्तेमाल करते हैं। ML Kit सिर्फ़ नाम और शब्द इस्तेमाल करता है।</string>
     <string name="memory_term_title">नाम या शब्द</string>
     <string name="memory_term_source">मूल, जैसा पेज पर है</string>
     <string name="memory_term_target">अनुवाद</string>

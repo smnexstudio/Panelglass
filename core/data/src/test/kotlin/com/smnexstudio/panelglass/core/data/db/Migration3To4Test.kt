@@ -30,9 +30,9 @@ class Migration3To4Test {
         val db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name).apply { parentFile?.mkdirs() }, null)
         // Room's own v3 schema (the generated PanelglassDb_Impl before the Studio).
         V3_SCHEMA.forEach(db::execSQL)
-        db.execSQL("INSERT INTO sites (name, url, pinned, sortOrder, sourceLang, adBlockEnabled, autoTranslate) VALUES ('Kuma', 'https://rawkuma.net/', 1, 0, 'JA', 1, 0)")
-        db.execSQL("INSERT INTO history (url, title, host, visitedAt) VALUES ('https://rawkuma.net/a/', 'A', 'rawkuma.net', 42)")
-        db.execSQL("INSERT INTO glossary (seriesKey, source, target) VALUES ('rawkuma.net/manga', '先輩', 'senpai')")
+        db.execSQL("INSERT INTO sites (name, url, pinned, sortOrder, sourceLang, adBlockEnabled, autoTranslate) VALUES ('Example', 'https://example.org/', 1, 0, 'JA', 1, 0)")
+        db.execSQL("INSERT INTO history (url, title, host, visitedAt) VALUES ('https://example.org/a/', 'A', 'example.org', 42)")
+        db.execSQL("INSERT INTO glossary (seriesKey, source, target) VALUES ('example.org/manga', '先輩', 'senpai')")
         db.execSQL("INSERT INTO sfx_cache (`key`, translated) VALUES ('どん|ja|en', 'BOOM')")
         db.execSQL("INSERT INTO url_etag (url, etag, imageHash, seenAt) VALUES ('https://x/1.jpg', NULL, 'h', 1)")
         db.version = 3
@@ -53,10 +53,10 @@ class Migration3To4Test {
         try {
             val sites = db.sites().all()
             assertEquals(1, sites.size)
-            assertEquals("Kuma", sites[0].name)
+            assertEquals("Example", sites[0].name)
             assertTrue(sites[0].pinned)
-            assertEquals(listOf("https://rawkuma.net/a/"), db.history().observeRecent().first().map { it.url })
-            assertEquals(mapOf("先輩" to "senpai"), db.glossary().forSeries("rawkuma.net/manga").associate { it.source to it.target })
+            assertEquals(listOf("https://example.org/a/"), db.history().observeRecent().first().map { it.url })
+            assertEquals(mapOf("先輩" to "senpai"), db.glossary().forSeries("example.org/manga").associate { it.source to it.target })
             assertEquals("BOOM", db.sfxCache().get("どん|ja|en"))
         } finally {
             db.close()

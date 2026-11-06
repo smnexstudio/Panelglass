@@ -110,6 +110,52 @@ class StudioExporterTest {
         assertEquals("a ZIP is another file", 0, e.existing(m, listOf(ch), null, ExportFormat.ZIP))
     }
 
+    /**
+     * Mihon's local source (and Kavita, Komga) take a series' cover from `cover.jpg` in its folder and its details
+     * from the folder's ComicInfo.xml; without them Mihon showed no cover and "Unknown" status.
+     */
+    @Test fun theMangaFolderGetsItsCoverAndSeriesDetails() = runBlocking {
+        val (m, ch) = manga(2)
+        repo.updateManga(repo.getManga(m)!!.copy(status = com.smnexstudio.panelglass.core.model.MangaStatus.ONGOING, summary = "Invented"))
+        val e = exporter()
+        e.export(m, listOf(ch), null, ExportFormat.CBZ)
+        val dir = File(downloads, "Stardust")
+        assertEquals(listOf("Ch 012 - Bread.cbz", "ComicInfo.xml", "cover.jpg"), dir.list()!!.sorted())
+        // No cover was set: the first page, as the export shows it.
+        assertEquals("page:a1:EN", File(dir, "cover.jpg").readText())
+        val series = ComicInfo.parse(File(dir, "ComicInfo.xml").readText())
+        assertEquals("Stardust", series.series)
+        assertEquals("Invented", series.summary)
+        assertEquals("Ongoing", series.publishingStatus)
+        assertEquals("", series.number)
+        ZipFile(File(dir, "Ch 012 - Bread.cbz")).use { z ->
+            assertEquals("Ongoing", ComicInfo.parse(z.getInputStream(z.getEntry("ComicInfo.xml")).readBytes().decodeToString()).publishingStatus)
+        }
+        assertEquals(ExportPhase.DONE, e.run.value!!.phase)
+    }
+
+    @Test fun theStudiosCoverIsExportedAndAChangedOneReplacesIt() = runBlocking {
+        val (m, ch) = manga(1)
+        val cover = repo.files.cover(m).apply { parentFile!!.mkdirs(); writeText("studio-cover-1") }
+        val e = exporter()
+        e.export(m, listOf(ch), null, ExportFormat.IMAGES)
+        assertEquals("studio-cover-1", File(downloads, "Stardust/cover.jpg").readText())
+        cover.writeText("studio-cover-2")
+        e.export(m, listOf(ch), null, ExportFormat.IMAGES)
+        assertEquals("studio-cover-2", File(downloads, "Stardust/cover.jpg").readText())
+    }
+
+    @Test fun aFirstPageThatCannotBeDrawnLeavesNoCoverButTheExportSucceeds() = runBlocking {
+        val (m, _) = manga(2)
+        val later = repo.import(ImportTarget.NewChapter(m, Chapter(mangaId = 0, number = 13f)), pages(1, "b"))
+        composer.failOn = "a1" // the manga's first page
+        val e = exporter()
+        e.export(m, listOf(later), null, ExportFormat.CBZ)
+        assertEquals(ExportPhase.DONE, e.run.value!!.phase)
+        assertFalse(File(downloads, "Stardust/cover.jpg").exists())
+        assertTrue(File(downloads, "Stardust/ComicInfo.xml").isFile)
+    }
+
     @Test fun aSecondExportReplacesFilesAndDropsPagesBeyondTheEnd() = runBlocking {
         val (m, ch) = manga(2)
         val dir = File(downloads, "Stardust/Ch 012 - Bread").apply { mkdirs() }
@@ -133,7 +179,7 @@ class StudioExporterTest {
         e.export(m, listOf(ch), null, ExportFormat.CBZ)
         assertEquals(0, e.existing(m, listOf(ch), null, ExportFormat.CBZ, ExportContent.CLEAN))
         e.export(m, listOf(ch), null, ExportFormat.CBZ, content = ExportContent.CLEAN)
-        assertEquals(listOf("Ch 012 - Bread (Clean).cbz", "Ch 012 - Bread.cbz"), File(downloads, "Stardust").list()!!.sorted())
+        assertEquals(listOf("Ch 012 - Bread (Clean).cbz", "Ch 012 - Bread.cbz", "ComicInfo.xml", "cover.jpg"), File(downloads, "Stardust").list()!!.sorted())
         ZipFile(File(downloads, "Stardust/Ch 012 - Bread (Clean).cbz")).use { z ->
             assertEquals("clean:a2", z.getInputStream(z.getEntry("002.png")).readBytes().decodeToString())
             val info = ComicInfo.parse(z.getInputStream(z.getEntry("ComicInfo.xml")).readBytes().decodeToString())
@@ -157,7 +203,7 @@ class StudioExporterTest {
         val ch2 = repo.import(ImportTarget.NewChapter(m, Chapter(mangaId = m, language = Lang.FR)), pages(2, "b"))
         val e = exporter()
         e.export(m, listOf(ch1, ch2), null, ExportFormat.IMAGES)
-        assertEquals(listOf("Ch 012 - Bread", "Chapter 2"), File(downloads, "Stardust").list()!!.sorted())
+        assertEquals(listOf("Ch 012 - Bread", "Chapter 2", "ComicInfo.xml", "cover.jpg"), File(downloads, "Stardust").list()!!.sorted())
         assertEquals("the chapter's own language letters it", "page:b1:FR", File(downloads, "Stardust/Chapter 2/001.png").readText())
         assertEquals(3, e.run.value!!.written)
         assertEquals("several chapters: the manga's folder is named", "Panelglass/Stardust", e.run.value!!.where)

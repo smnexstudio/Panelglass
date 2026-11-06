@@ -70,7 +70,7 @@ alters a requirement updates this list in the same pull request.
 
 | ID | Requirement | Evidence |
 |---|---|---|
-| FR-16 | Import images, a PDF or a CBZ into a new or existing manga or chapter, with ComicInfo.xml read and a chapter per folder when the archive has one. | `StudioImporterTest`, `ImportViewModelTest`, `CbzImporterTest`, `ImageImporterTest`, `FolderChaptersTest` |
+| FR-16 | Import images, a PDF or a comic archive (zip or 7z, whatever its name) into a new or existing manga or chapter, with ComicInfo.xml read and a chapter per folder or per inner archive. | `StudioImporterTest`, `ImportViewModelTest`, `ArchiveImporterTest`, `ImageImporterTest`, `FolderChaptersTest` |
 | FR-17 | Translate a chapter with the chosen engine, in the background with a progress notification (Pause, Resume, Cancel); a stopped, failed or killed run continues from the first unfinished page. | `StudioTranslatorTest`, `RunNotificationsTest`; phone check |
 | FR-18 | Review each bubble: edit the original and translation, re-translate, add, dismiss or delete bubbles, undo and redo, mark pages reviewed. | `ReviewSavingTest`, `ReviewPanelsTest`, `PageCanvasGestureTest` |
 | FR-19 | Clean and letter pages: fonts, size, colour, outline, fill, reshaped bubbles, brush, sound-effect presets and transforms. | `PageCleanerTest`, `StudioRendererTest`, `SfxRendererTest`, `ReviewPanelsTest` |
@@ -97,7 +97,7 @@ alters a requirement updates this list in the same pull request.
 | NFR-4 | Nothing is backed up or copied to a new phone; uninstalling removes everything. | `ManifestPolicyTest` |
 | NFR-5 | Every downloaded file is verified: models against a SHA-256 pinned to a commit, the update APK against its release checksum and Android's signature check; update URLs must resolve under this repository's releases. | `ModelPinningTest`, `SystemDownloadsIntegrityTest`, `ReleaseInfoTest` |
 | NFR-6 | Pages cannot reach the app: no JavaScript interface, no file or content access, the helper scripts are frozen, page text is data and never instructions to a model. | `NavigationPolicyTest`, `LlmContractTest`; code review |
-| NFR-7 | Untrusted input is bounded: archive paths cannot leave their folder, sizes and page counts are capped before decoding, page-script replies (1 MB), block lists (32 MB) and model replies (`LlmContract.outputBudget`) are capped. | `CbzImporterTest`, `ImageImporterTest`, `StudioDaoTest`, `BlockListRepositoryTest` |
+| NFR-7 | Untrusted input is bounded: archive paths cannot leave their folder, sizes and page counts are capped before decoding, page-script replies (1 MB), block lists (32 MB) and model replies (`LlmContract.outputBudget`) are capped. | `ArchiveImporterTest`, `ImageImporterTest`, `StudioDaoTest`, `BlockListRepositoryTest` |
 
 **Reliability**
 

@@ -149,22 +149,38 @@ class StudioImporterTest {
     @Test fun aCbzIsStagedWithItsComicInfoAndTitle() = runBlocking<Unit> {
         val info = "<ComicInfo><Series>Invented Series</Series><Number>3</Number></ComicInfo>"
         val bytes = cbz("02.png" to Fixtures.png(40, 60), "01.png" to Fixtures.png(40, 60), "ComicInfo.xml" to info.toByteArray())
-        val staging = importer.cbz(serve("Invented Series 03.cbz", bytes)) { _, _ -> }
+        val staging = importer.archive(serve("Invented Series 03.cbz", bytes)) { _, _ -> }
         assertEquals(listOf("01.png", "02.png"), staging.pages.map { it.name })
         assertEquals("Invented Series", staging.comicInfo?.series)
         assertEquals("Invented Series 03", staging.sourceName)
     }
 
-    /** Only `.cbz` is taken: a plain `.zip` is refused by its name, before it is read. */
-    @Test fun aZipThatIsNotACbzIsRefused() {
-        val uri = serve("pages.zip", cbz("01.png" to Fixtures.png(40, 60)))
-        assertEquals(ImportRefused.Reason.NOT_CBZ, refusal { importer.cbz(uri) { _, _ -> } })
+    /** The name doesn't decide: a plain `.zip`, a `.7z`, and a 7z named `.cbz` all import. */
+    @Test fun zipAnd7zImportWhateverTheirName() = runBlocking<Unit> {
+        val zip = importer.archive(serve("pages.zip", cbz("01.png" to Fixtures.png(40, 60)))) { _, _ -> }
+        assertEquals(listOf("01.png"), zip.pages.map { it.name })
+        val seven = Fixtures.sevenZ(listOf("02.png" to Fixtures.png(40, 60), "01.png" to Fixtures.png(40, 60)))
+        assertEquals(listOf("01.png", "02.png"), importer.archive(serve("pages.cb7", seven)) { _, _ -> }.pages.map { it.name })
+        assertEquals(2, importer.archive(serve("disguised.cbz", seven)) { _, _ -> }.pages.size)
+        assertEquals(emptyList<String>(), File(context.cacheDir, "import").list()?.toList().orEmpty())
+    }
+
+    @Test fun anInnerArchiveSkippedForAReasonIsListed() = runBlocking<Unit> {
+        val pack = cbz("Chapter 1.cbz" to cbz("01.png" to Fixtures.png(40, 60)), "Chapter 2.cbr" to Fixtures.rar())
+        val staging = importer.archive(serve("pack.zip", pack)) { _, _ -> }
+        assertEquals(listOf("Chapter 1/01.png"), staging.pages.map { it.name })
+        assertEquals(listOf("Chapter 2.cbr" to SkipReason.UNSUPPORTED_FORMAT), staging.skipped)
+    }
+
+    @Test fun aRarOrSomethingElseIsRefusedAndLeavesNothing() {
+        assertEquals(ImportRefused.Reason.RAR, refusal { importer.archive(serve("chapter.cbr", Fixtures.rar())) { _, _ -> } })
+        assertEquals(ImportRefused.Reason.NOT_AN_ARCHIVE, refusal { importer.archive(serve("notes.cbz", "invented".toByteArray())) { _, _ -> } })
         assertEquals(emptyList<String>(), leftovers())
     }
 
-    @Test fun aCbzWithoutPagesIsRefusedAndLeavesNothing() {
+    @Test fun anArchiveWithoutPagesIsRefusedAndLeavesNothing() {
         val uri = serve("empty.cbz", cbz("readme.txt" to "invented".toByteArray()))
-        assertEquals(ImportRefused.Reason.NO_PAGES, refusal { importer.cbz(uri) { _, _ -> } })
+        assertEquals(ImportRefused.Reason.NO_PAGES, refusal { importer.archive(uri) { _, _ -> } })
         assertEquals(emptyList<String>(), leftovers())
     }
 

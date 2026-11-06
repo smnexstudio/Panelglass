@@ -29,7 +29,7 @@ class Migration4To5Test {
         val db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name).apply { parentFile?.mkdirs() }, null)
         // Room's own v4 schema (the generated PanelglassDb_Impl before pronouns and notes).
         V4_SCHEMA.forEach(db::execSQL)
-        db.execSQL("INSERT INTO glossary (seriesKey, source, target) VALUES ('rawkuma.net/manga', '先輩', 'senpai')")
+        db.execSQL("INSERT INTO glossary (seriesKey, source, target) VALUES ('example.org/manga', '先輩', 'senpai')")
         db.version = 4
         db.close()
     }
@@ -46,11 +46,11 @@ class Migration4To5Test {
     @Test fun glossarySurvivesWithoutPronounAndTakesOne() = runBlocking {
         val db = open()
         try {
-            val old = db.glossary().forSeries("rawkuma.net/manga").single()
+            val old = db.glossary().forSeries("example.org/manga").single()
             assertEquals("senpai", old.target)
             assertNull(old.pronoun)
-            db.glossary().upsert(GlossaryEntry(seriesKey = "rawkuma.net/manga", source = "ユキ", target = "Yuki", pronoun = Pronoun.SHE))
-            assertEquals(Pronoun.SHE, db.glossary().forSeries("rawkuma.net/manga").single { it.source == "ユキ" }.pronoun)
+            db.glossary().upsert(GlossaryEntry(seriesKey = "example.org/manga", source = "ユキ", target = "Yuki", pronoun = Pronoun.SHE))
+            assertEquals(Pronoun.SHE, db.glossary().forSeries("example.org/manga").single { it.source == "ユキ" }.pronoun)
         } finally {
             db.close()
         }
@@ -59,11 +59,11 @@ class Migration4To5Test {
     @Test fun seriesNotesAreStoredPerSeries() = runBlocking {
         val db = open()
         try {
-            db.seriesNotes().put(SeriesNotes("rawkuma.net/manga/a", "Ren is a woman."))
-            assertEquals("Ren is a woman.", db.seriesNotes().get("rawkuma.net/manga/a"))
-            assertNull(db.seriesNotes().get("rawkuma.net/manga/b"))
-            db.seriesNotes().delete("rawkuma.net/manga/a")
-            assertNull(db.seriesNotes().get("rawkuma.net/manga/a"))
+            db.seriesNotes().put(SeriesNotes("example.org/manga/a", "Ren is a woman."))
+            assertEquals("Ren is a woman.", db.seriesNotes().get("example.org/manga/a"))
+            assertNull(db.seriesNotes().get("example.org/manga/b"))
+            db.seriesNotes().delete("example.org/manga/a")
+            assertNull(db.seriesNotes().get("example.org/manga/a"))
         } finally {
             db.close()
         }

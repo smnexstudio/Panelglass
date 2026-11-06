@@ -9,7 +9,7 @@
     <string name="action_edit">Ubah</string>
     <string name="action_add">Tambah</string>
     <string name="action_add_key">Tambah kunci</string>
-    <string name="action_use_google_translate">Gunakan Google Terjemahan</string>
+    <string name="action_use_google_translate">Gunakan ML Kit</string>
     <string name="action_use_on_device">Terjemahkan di perangkat</string>
 
     <string name="cd_selected">Dipilih</string>
@@ -170,7 +170,7 @@
     <string name="download_incomplete">Unduhan belum selesai; ketuk Coba lagi</string>
     <string name="download_failed">Unduhan gagal</string>
 
-    <string name="packs_title">Paket bahasa Google Terjemahan</string>
+    <string name="packs_title">Paket bahasa ML Kit</string>
     <string name="packs_count">%1$d dari %2$d bahasa di ponsel ini</string>
     <string name="packs_downloading_one">Mengunduh %1$s…</string>
     <string name="packs_manage">Kelola</string>
@@ -208,15 +208,15 @@
     <string name="studio_subtitle">Terjemahkan bab menjadi file gambar</string>
     <string name="studio_library">Manga Anda</string>
     <string name="studio_new_manga">Manga baru</string>
-    <string name="studio_empty">Belum ada manga. Impor bab dari gambar, PDF, atau CBZ.</string>
+    <string name="studio_empty">Belum ada manga. Impor bab dari gambar, PDF, atau CBZ/ZIP/7z.</string>
     <string name="studio_import">Impor</string>
     <string name="studio_import_from">Impor dari</string>
     <string name="studio_source_images">Gambar</string>
     <string name="studio_source_images_note">PNG, JPEG, WebP, atau AVIF, satu atau banyak halaman sekaligus</string>
     <string name="studio_source_pdf">PDF</string>
     <string name="studio_source_pdf_note">Setiap halaman menjadi gambar</string>
-    <string name="studio_source_cbz">CBZ</string>
-    <string name="studio_source_cbz_note">Arsip komik; ComicInfo.xml-nya mengisi detail</string>
+    <string name="studio_source_archive">Arsip komik</string>
+    <string name="studio_source_archive_note">CBZ, ZIP, CB7, atau 7z; ComicInfo.xml-nya mengisi detail</string>
     <string name="studio_reviewed">%1$d/%2$d ditinjau</string>
     <string name="studio_chapters_section">Bab</string>
     <string name="studio_reorder_hint">Tahan lalu seret untuk mengubah urutan.</string>
@@ -273,8 +273,13 @@
     <string name="studio_skip_too_large">file terlalu besar</string>
     <string name="studio_skip_too_many_pixels">gambar terlalu besar</string>
     <string name="studio_skip_unreadable">tidak dapat dibaca</string>
-    <string name="studio_error_not_cbz">Pilih file .cbz. Arsip .zip biasa tidak diimpor.</string>
-    <string name="studio_error_not_zip">CBZ ini tidak dapat dibuka. Arsipnya rusak atau bukan zip.</string>
+    <string name="studio_skip_unsupported_format">format tidak didukung</string>
+    <string name="studio_skip_unsupported_compression">kompresi tidak didukung</string>
+    <string name="studio_skip_nested_archive">arsip di dalam arsip</string>
+    <string name="studio_error_not_archive">File ini tidak dapat dibuka sebagai arsip. File rusak, atau bukan file CBZ, ZIP, CB7, atau 7z.</string>
+    <string name="studio_error_rar">Arsip RAR (.cbr, .rar) belum dapat diimpor. Kemas ulang halamannya sebagai CBZ atau 7z, lalu impor lagi.</string>
+    <string name="studio_error_encrypted_archive">Arsip ini dilindungi sandi. Hapus sandinya, lalu impor lagi.</string>
+    <string name="studio_error_unsupported_compression">Arsip ini memakai metode kompresi yang tidak dapat dibaca. Kemas ulang sebagai CBZ atau 7z, lalu impor lagi.</string>
     <string name="studio_error_encrypted_pdf">PDF ini dilindungi sandi. Hapus sandinya, lalu impor lagi.</string>
     <string name="studio_error_not_pdf">File ini tidak dapat dibuka sebagai PDF.</string>
     <string name="studio_error_too_large">File ini terlalu besar untuk diimpor.</string>
@@ -357,7 +362,7 @@
     <string name="action_pause">Jeda</string>
     <string name="action_resume">Lanjutkan</string>
     <string name="studio_only_charging">Studio hanya saat mengisi daya</string>
-    <string name="studio_only_charging_note">Bab Studio dengan Qwen atau Gemma menunggu pengisi daya. Pembaca, Gemini, dan Google Terjemahan tidak terpengaruh.</string>
+    <string name="studio_only_charging_note">Bab Studio dengan Qwen atau Gemma menunggu pengisi daya. Pembaca, Gemini, dan ML Kit tidak terpengaruh.</string>
     <string name="studio_chapter_short">Bab %1$s</string>
     <string name="studio_stage_new">Belum diterjemahkan</string>
     <string name="studio_font">Font</string>
@@ -609,6 +614,8 @@
     <string name="studio_corners_sharp">Tajam</string>
     <string name="studio_import_split">Satu bab per folder</string>
     <string name="studio_import_split_note">Arsip ini berisi %1$d folder. Masing-masing menjadi bab tersendiri, bernomor dari namanya.</string>
+    <string name="studio_import_series">Satu manga per seri</string>
+    <string name="studio_import_series_note">Arsip ini berisi %1$d seri. Masing-masing menjadi manga sendiri; manga berjudul sama yang sudah ada di Studio mendapat bab-babnya.</string>
     <string name="studio_zoom_show">Tampilkan zoom</string>
     <string name="studio_zoom_hide">Sembunyikan zoom</string>
     <string name="studio_delete_bubble">Hapus</string>
@@ -623,7 +630,7 @@
     <string name="memory_add_term">Tambah nama atau istilah</string>
     <string name="memory_notes_label">Catatan untuk penerjemah</string>
     <string name="memory_notes_hint">mis. Ren seorang perempuan. Pertahankan sapaan seperti -san.</string>
-    <string name="memory_engine_note">Kata ganti dan catatan dipakai oleh Gemini dan model di perangkat. Google Terjemahan hanya memakai nama dan istilah.</string>
+    <string name="memory_engine_note">Kata ganti dan catatan dipakai oleh Gemini dan model di perangkat. ML Kit hanya memakai nama dan istilah.</string>
     <string name="memory_term_title">Nama atau istilah</string>
     <string name="memory_term_source">Asli, seperti di halaman</string>
     <string name="memory_term_target">Terjemahan</string>

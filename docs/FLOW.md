@@ -108,7 +108,7 @@ flowchart TD
     D2 --> E[Drop boxes outside the ROI,<br/>under controls, already done,<br/>or cut by the screen edge]
     E --> F{Engine reads crops?}
     F -- "Gemini" --> G[One UNREAD placeholder<br/>per text box]
-    F -- "Google Translate / on-device LLM" --> H[OCR each box<br/>manga-ocr or ML Kit, high-contrast retry<br/>unsure free-text readings dropped<br/>+ full-page ML Kit backstop]
+    F -- "ML Kit / on-device LLM" --> H[OCR each box<br/>manga-ocr or ML Kit, high-contrast retry<br/>unsure free-text readings dropped<br/>+ full-page ML Kit backstop]
     G --> I[Build regions<br/>one per detector box, one per balloon]
     H --> I
     I --> J[Classify each region<br/>ENCLOSED · CAPTION · FREE · SFX · IN_SCENE]
@@ -241,8 +241,8 @@ Key points:
 | Failure | What the user sees | Offered fix |
 |---|---|---|
 | `MissingKey` | "Gemini needs an API key" | Opens the key sheet |
-| `QuotaExceeded` | "… quota exhausted" | Switch to Google Translate |
-| `Network`, `Unavailable`, `Overloaded` | "… is unavailable right now" | Switch to Google Translate (unless it is the one failing) |
+| `QuotaExceeded` | "… quota exhausted" | Switch to ML Kit |
+| `Network`, `Unavailable`, `Overloaded` | "… is unavailable right now" | Switch to ML Kit (unless it is the one failing) |
 | Watchdog timeout | "… took too long" | Scroll or Re-translate |
 | `ModelMissing` | The model is not downloaded | Settings › Models |
 

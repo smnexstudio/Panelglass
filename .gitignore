@@ -75,10 +75,18 @@ debug-dump/
 *.onnx.fp32
 
 # --- Raw screen recordings (too large for GitHub; edited versions are committed) ---
+# A phone's own recordings (`screen-<date>-…mp4`, 100 MB and more, with sound) stay out wherever they are put;
+# only the edited, silent, small cut beside them is committed.
 docs/ScreenRecordings/raw/
+docs/ScreenRecordings/screen-*.mp4
+docs/Screenshots/screen-*.*
+# A phone's full-size screenshots (`Screenshot_<date>_….png`, ~2 MB each), wherever they are dropped under
+# docs/Screenshots/: only the cut-down JPEGs the README uses are committed.
+docs/Screenshots/**/Screenshot_*
 
 # --- Test material ---------------------------------------------------------------
-# Commercial manga used to test on this machine: copyrighted, never published.
+# Comics used to test on this machine, never published from here: commercial manga (copyrighted) and openly
+# licensed ones (Pepper&Carrot, CC BY 4.0) alike — keep test chapters out of the repository either way.
 docs/TestAssests/
 
 # JVM crash logs
