@@ -7,10 +7,11 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-08
+
 ### Changed
 
-- The free on-device engine is now named **Google Translate (ML Kit)** in the engine picker, Settings, the reader and
-  the Studio, so it is not mistaken for the Google Translate app or its cloud service. It works exactly as before.
+- The free on-device engine is now named **Google Translate (ML Kit)** in the engine picker, Settings, the reader and the Studio, so it is not mistaken for the Google Translate app or its cloud service. It works exactly as before.
 - **README demo and screenshots**: the reader recording, its preview, the before/after captures and every Studio
   screenshot now show the openly licensed webcomic [Pepper&amp;Carrot](https://www.peppercarrot.com) by David Revoy
   (CC BY 4.0, Japanese translation by guruguru) instead of commercial manga, with its credit in the README and NOTICE.
