@@ -111,9 +111,9 @@
     <string name="key_hint">Chave de API</string>
     <string name="key_hint_saved">Chave de API (salva · deixe em branco para manter)</string>
     <string name="key_model">Modelo</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">Endereço do servidor</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">O endereço do seu servidor. Apenas HTTPS. Um endereço completo …/chat/completions também funciona.</string>
     <string name="key_models_loading">Carregando modelos…</string>
     <plurals name="key_models_count">
         <item quantity="one">%d modelo para esta chave</item>
@@ -682,5 +682,8 @@
     <string name="update_install_permission">Se o Android pedir, permita que o Panelglass instale apps e toque em Instalar de novo.</string>
     <string name="update_failed_check">Não foi possível verificar atualizações. Verifique sua conexão e tente de novo.</string>
     <string name="update_failed_download">Não foi possível baixar a atualização.</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">Parece um modelo muito pequeno (cerca de 1B). Modelos tão pequenos geralmente não seguem o formato de tradução; um de 7B ou mais funciona muito melhor.</string>
+    <string name="key_host_changed">Este endereço aponta para %1$s, mas a sua chave guardada foi inserida para %2$s. Enviar essa chave para %1$s?</string>
+    <string name="key_host_new_key">Inserir nova chave</string>
+    <string name="key_host_keep">Manter chave</string>
 </resources>

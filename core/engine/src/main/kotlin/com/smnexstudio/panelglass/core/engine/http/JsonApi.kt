@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.engine.http
 
 import android.util.Log
+import com.smnexstudio.panelglass.core.data.di.HttpsOnly
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -36,12 +37,32 @@ interface JsonApi {
 /**
  * Shared HTTP plumbing for the paid engines: performs the call and maps status codes onto the
  * typed [EngineFailure] set. Response bodies are never logged; they may echo the key.
+ *
+ * Engine calls get their own client, derived from the app's shared one:
+ * - **No redirects.** A 307/308 would re-send the whole request (page text, notes, glossary) to another host, and
+ *   OkHttp drops only `Authorization` across hosts, not Gemini's `x-goog-api-key`. An API has no reason to redirect a
+ *   call, so a 3xx is a typed failure that names the problem instead.
+ * - **HTTPS only** on every hop ([HttpsOnly] as a network interceptor), on top of Android's cleartext policy.
+ * - **Replies capped** at [maxReplyBytes] ([ReplyCap]): the user's own server is not one we vouch for.
+ *
+ * [httpsOnly] is off only in JVM tests, whose MockWebServer speaks plain HTTP.
  */
 @Singleton
-class HttpEngineSupport @Inject constructor(
-    val okHttp: OkHttpClient,
+class HttpEngineSupport(
+    shared: OkHttpClient,
     val json: Json,
+    httpsOnly: Boolean,
+    maxReplyBytes: Long = MAX_REPLY_BYTES,
 ) {
+    @Inject constructor(shared: OkHttpClient, json: Json) : this(shared, json, httpsOnly = true)
+
+    val okHttp: OkHttpClient = shared.newBuilder()
+        .followRedirects(false)
+        .followSslRedirects(false)
+        .addInterceptor(ReplyCap(maxReplyBytes))
+        .apply { if (httpsOnly) addNetworkInterceptor(HttpsOnly()) }
+        .build()
+
     val api: JsonApi = Retrofit.Builder()
         .baseUrl("https://localhost/")
         .client(okHttp)
@@ -55,7 +76,7 @@ class HttpEngineSupport @Inject constructor(
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")
-            throw EngineException(EngineFailure.Network(engine), e)
+            throw EngineException(ioFailure(engine, e), e)
         } catch (e: SerializationException) {
             // A 200 that is no JSON (a captive portal, a proxy's page): an unusable reply, typed like any other.
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")
@@ -71,7 +92,7 @@ class HttpEngineSupport @Inject constructor(
             api.get(url, headers)
         } catch (e: IOException) {
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")
-            throw EngineException(EngineFailure.Network(engine), e)
+            throw EngineException(ioFailure(engine, e), e)
         } catch (e: SerializationException) {
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")
             throw EngineException(EngineFailure.Malformed(engine), e)
@@ -88,8 +109,15 @@ class HttpEngineSupport @Inject constructor(
         } catch (_: Exception) { }
     }
 
+    /** An oversized reply is an unusable one, not a network problem; anything else that failed to arrive is. */
+    private fun ioFailure(engine: EngineId, e: IOException): EngineFailure =
+        if (e is ReplyTooLarge) EngineFailure.Malformed(engine) else EngineFailure.Network(engine)
+
     companion object {
         private const val TAG = "HttpEngine"
+
+        /** Far above any real reply (8,192 output tokens is ~50 KB; Gemini's model list ~200 KB). */
+        const val MAX_REPLY_BYTES = 4L * 1024 * 1024
 
         fun mapStatus(engine: EngineId, code: Int, body: String, retryAfter: String?): EngineFailure {
             val lower = body.lowercase()
@@ -99,6 +127,8 @@ class HttpEngineSupport @Inject constructor(
                 429 -> if ("quota" in lower || "billing" in lower || "insufficient" in lower || "exceeded your current" in lower) EngineFailure.QuotaExceeded(engine)
                 else EngineFailure.RateLimited(engine, (retryAfter?.toLongOrNull()?.times(1000)) ?: 2_000)
                 456 -> EngineFailure.QuotaExceeded(engine) // DeepL: character limit reached
+                // Redirects are not followed (see the class): the address is not the API's own.
+                301, 302, 303, 307, 308 -> EngineFailure.Unavailable(engine, "HTTP $code: the server redirects this address; use the address it redirects to")
                 // Any other 400 is the provider refusing *our request* (an option the chosen model does not support, an
                 // unknown field): the provider's reason is what the user needs, not "unusable reply".
                 400 -> if ("api key" in lower || "api_key" in lower) EngineFailure.MissingKey(engine)

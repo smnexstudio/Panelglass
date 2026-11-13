@@ -109,9 +109,9 @@
     <string name="key_hint">คีย์ API</string>
     <string name="key_hint_saved">คีย์ API (บันทึกแล้ว · เว้นว่างไว้เพื่อใช้คีย์เดิม)</string>
     <string name="key_model">โมเดล</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">ที่อยู่เซิร์ฟเวอร์</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">ที่อยู่ของเซิร์ฟเวอร์คุณ ใช้ได้เฉพาะ HTTPS ที่อยู่เต็มแบบ …/chat/completions ก็ใช้ได้</string>
     <string name="key_models_loading">กำลังโหลดโมเดล…</string>
     <plurals name="key_models_count">
         <item quantity="other">คีย์นี้ใช้ได้กับ %d โมเดล</item>
@@ -667,5 +667,8 @@
     <string name="update_install_permission">หาก Android ถาม ให้อนุญาตให้ Panelglass ติดตั้งแอป แล้วแตะติดตั้งอีกครั้ง</string>
     <string name="update_failed_check">ตรวจหาอัปเดตไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
     <string name="update_failed_download">ดาวน์โหลดอัปเดตไม่ได้</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">ดูเหมือนเป็นโมเดลที่เล็กมาก (ประมาณ 1B) โมเดลขนาดนี้มักทำตามรูปแบบการแปลไม่ได้ โมเดล 7B ขึ้นไปทำงานได้ดีกว่ามาก</string>
+    <string name="key_host_changed">ที่อยู่นี้ชี้ไปที่ %1$s แต่คีย์ที่บันทึกไว้ถูกป้อนสำหรับ %2$s ส่งคีย์นั้นไปที่ %1$s หรือไม่</string>
+    <string name="key_host_new_key">ป้อนคีย์ใหม่</string>
+    <string name="key_host_keep">เก็บคีย์ไว้</string>
 </resources>

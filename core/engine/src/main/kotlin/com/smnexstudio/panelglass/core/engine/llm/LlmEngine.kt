@@ -63,11 +63,22 @@ abstract class LlmEngine(
         } catch (e: EngineException) {
             if (e.failure !is EngineFailure.Malformed) throw e
             if (selfContainedRetry) {
-                // One fresh request, carrying the input with it: the same images, no assistant turn.
-                val again = listOf(
-                    Turn("user", LlmContract.retryUserMessage(payload, req.readImages.isNotEmpty()), montage, crops),
-                )
-                LlmContract.parse(id, complete(key, system, again, budget), req.items)
+                // Keep what the reply got right and ask only for the rest: one fresh request carrying just those
+                // items (no assistant turn), so a partly bad reply costs a small second call, not the page again.
+                val kept = LlmContract.salvage(first, req.items)
+                val missing = req.items.filter { it.i !in kept }
+                // Every item was there, only wrapped in junk the strict parse refuses: no second call at all.
+                if (missing.isEmpty()) return req.items.map { kept.getValue(it.i) }
+                val missingIds = missing.map { it.i }.toSet()
+                val read = req.readImages.keys.filter { it in missingIds }.toSet()
+                val again = listOf(Turn(
+                    "user",
+                    LlmContract.retryUserMessage(LlmContract.userPayload(missing, read), read.isNotEmpty()),
+                    montage, crops.filter { (label, _) -> label.removePrefix("Item ").toIntOrNull() in missingIds },
+                ))
+                val rest = LlmContract.parse(id, complete(key, system, again, LlmContract.outputBudget(missing.size)), missing)
+                    .associateBy { it.i }
+                req.items.map { kept[it.i] ?: rest.getValue(it.i) }
             } else {
                 turns += Turn("assistant", first)
                 turns += Turn("user", LlmContract.repairPrompt())

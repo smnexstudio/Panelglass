@@ -32,18 +32,18 @@ class LlmContractTest {
     @Test
     fun parseToleratesProseAndFences() {
         val raw = "Sure! ```json\n[{\"i\":0,\"text\":\"Hi\"},{\"i\":1,\"text\":\"BAM\"},{\"i\":2,\"text\":\"Ty\"}]\n```"
-        assertEquals(3, LlmContract.parse(EngineId.CLAUDE, raw, items).size)
+        assertEquals(3, LlmContract.parse(EngineId.CUSTOM, raw, items).size)
     }
 
     @Test
     fun lengthMismatchIsMalformed() {
-        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.OPENAI, """[{"i":0,"text":"Hi"}]""", items) }
+        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.CUSTOM, """[{"i":0,"text":"Hi"}]""", items) }
         assertTrue(e.failure is EngineFailure.Malformed)
     }
 
     @Test
     fun garbageIsMalformed() {
-        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.OPENAI, "not json at all", items) }
+        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.CUSTOM, "not json at all", items) }
         assertTrue(e.failure is EngineFailure.Malformed)
     }
 
@@ -150,8 +150,8 @@ class LlmContractTest {
         val rl = HttpEngineSupport.mapStatus(EngineId.GEMINI, 429, "slow down", "5")
         assertTrue(rl is EngineFailure.RateLimited && rl.retryAfterMs == 5_000L)
         assertTrue(HttpEngineSupport.mapStatus(EngineId.DEEPL, 456, "", null) is EngineFailure.QuotaExceeded)
-        assertTrue(HttpEngineSupport.mapStatus(EngineId.CLAUDE, 529, "", null) is EngineFailure.Overloaded)
-        assertTrue(HttpEngineSupport.mapStatus(EngineId.OPENAI, 501, "", null) is EngineFailure.Unavailable)
+        assertTrue(HttpEngineSupport.mapStatus(EngineId.CUSTOM, 529, "", null) is EngineFailure.Overloaded)
+        assertTrue(HttpEngineSupport.mapStatus(EngineId.CUSTOM, 501, "", null) is EngineFailure.Unavailable)
     }
 
     @Test

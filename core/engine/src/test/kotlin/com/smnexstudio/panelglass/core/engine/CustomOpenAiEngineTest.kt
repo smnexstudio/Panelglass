@@ -230,6 +230,38 @@ class CustomOpenAiEngineTest {
     }
 
     @Test
+    fun aPartlyGoodReplyKeepsWhatItGotAndAsksOnlyForTheRest() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        // Item 1 is missing: the reply is refused, but item 0 is a good translation.
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"[{\"i\":0,\"text\":\"Hello\"}]"}}]}"""))
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"[{\"i\":1,\"text\":\"Thanks\"}]"}}]}"""))
+        val engine = engine()
+
+        val out = engine.translate(req)
+
+        assertEquals(listOf("Hello", "Thanks"), out.map { it.text })
+        assertEquals(2, server.requestCount)
+        server.takeRequest()
+        val second = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
+        val user = second["messages"]!!.jsonArray[1].jsonObject["content"]!!.jsonPrimitive.content
+        // Only the missing item goes out again; the one already translated is not paid for twice.
+        assertTrue(user.contains("\"i\":1") && user.contains("ありがとう"), user)
+        assertFalse(user.contains("\"i\":0") || user.contains("こんにちは"), user)
+        // The reply cap follows the smaller request.
+        assertEquals(com.smnexstudio.panelglass.core.engine.llm.LlmContract.outputBudget(1), second["max_tokens"]!!.jsonPrimitive.content.toInt())
+    }
+
+    @Test
+    fun aReplyWithEveryItemAmongJunkNeedsNoSecondCall() = runBlocking {
+        keys.set(EngineId.CUSTOM, "sk-custom")
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"[{\"i\":0,\"text\":\"Hello\"},\"oops\",{\"i\":1,\"text\":\"Thanks\"}]"}}]}"""))
+        val engine = engine()
+
+        assertEquals(listOf("Hello", "Thanks"), engine.translate(req).map { it.text })
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun aSecondGarbledReplyIsMalformed() = runBlocking {
         keys.set(EngineId.CUSTOM, "sk-custom")
         server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"nope"}}]}"""))

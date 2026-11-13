@@ -189,26 +189,61 @@ object LlmContract {
      * is not usable and the next one is tried.
      */
     private fun usable(candidate: String): List<JsonElement>? {
-        val el = try { lenient.parseToJsonElement(candidate) } catch (e: Exception) { return null }
-        val list: List<JsonElement> = when (el) {
-            is JsonArray -> el.toList()
-            is JsonObject -> {
-                if (el.containsKey("i")) listOf(el)
-                else {
-                    // {"translations": [...]} and the like: exactly one value that is a list.
-                    val lists = el.values.filter { it is JsonArray }
-                    if (lists.size != 1) return null
-                    (lists[0] as JsonArray).toList()
-                }
-            }
-            else -> return null
-        }
+        val list = elementsOf(candidate) ?: return null
         if (list.isEmpty()) return null
         for (item in list) {
             val obj = item as? JsonObject ?: return null
             if (!obj.containsKey("i")) return null
         }
         return list
+    }
+
+    /**
+     * The elements a candidate lists, whatever they are: an array's elements, a bare object with an `i`, or the one
+     * list inside a wrapper object (`{"translations": [...]}`). Null when the candidate is no JSON or holds no list.
+     */
+    private fun elementsOf(candidate: String): List<JsonElement>? {
+        val el = try { lenient.parseToJsonElement(candidate) } catch (e: Exception) { return null }
+        return when (el) {
+            is JsonArray -> el.toList()
+            is JsonObject -> {
+                if (el.containsKey("i")) listOf(el)
+                else {
+                    // {"translations": [...]} and the like: exactly one value that is a list.
+                    val lists = el.values.filter { it is JsonArray }
+                    if (lists.size != 1) null else (lists[0] as JsonArray).toList()
+                }
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * The requested items a reply that [parse] refused still answered correctly, by `i`.
+     *
+     * A reply that misses one bubble, or garbles one, still holds good translations for the others: the retry then
+     * asks only for the rest, so a bad reply from a paid server costs a small second call rather than the whole page
+     * again. An item counts only with a requested `i` and a string text; an `i` that comes twice is ambiguous and is
+     * asked again. The candidate that keeps the most items wins.
+     */
+    fun salvage(raw: String, expected: List<RegionItem>): Map<Int, TranslatedItem> {
+        val want = expected.map { it.i }.toSet()
+        var best: Map<Int, TranslatedItem> = emptyMap()
+        for (candidate in candidates(raw)) {
+            val elements = elementsOf(candidate) ?: continue
+            val found = HashMap<Int, TranslatedItem>()
+            val twice = HashSet<Int>()
+            for (el in elements) {
+                val obj = el as? JsonObject ?: continue
+                val i = intOf(obj["i"]) ?: continue
+                if (i !in want) continue
+                val text = textOf(obj) ?: continue
+                if (found.put(i, TranslatedItem(i, text, sourceOf(obj))) != null) twice += i
+            }
+            twice.forEach { found.remove(it) }
+            if (found.size > best.size) best = found
+        }
+        return best
     }
 
     /** The `i` of an item, read safely: an int, or a number written as a string. */

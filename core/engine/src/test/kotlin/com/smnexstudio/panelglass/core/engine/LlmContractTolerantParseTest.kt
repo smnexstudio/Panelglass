@@ -121,4 +121,22 @@ class LlmContractTolerantParseTest {
         malformed("""[{"i":0,"text":42}]""")
         malformed("""[{"i":0,"text":true}]""")
     }
+
+    private val two = one + RegionItem(1, "img1", RegionKind.ENCLOSED, "ありがとう")
+
+    private fun salvaged(raw: String) = LlmContract.salvage(raw, two).mapValues { it.value.text }
+
+    @Test fun salvageKeepsTheGoodItemsOfAReplyThatParseRefuses() {
+        assertEquals(mapOf(0 to "Hello"), salvaged("""[{"i":0,"text":"Hello"},{"i":1}]"""))
+        assertEquals(mapOf(0 to "Hello", 1 to "Thanks"), salvaged("""Sure: [{"i":0,"text":"Hello"},"oops",{"i":1,"text":"Thanks"}]"""))
+    }
+
+    @Test fun salvageDropsAnIdThatComesTwiceAndOneNotAskedFor() {
+        assertEquals(mapOf(1 to "Thanks"), salvaged("""[{"i":0,"text":"A"},{"i":0,"text":"B"},{"i":1,"text":"Thanks"},{"i":7,"text":"x"}]"""))
+    }
+
+    @Test fun salvageOfGarbageIsEmpty() {
+        assertEquals(emptyMap<Int, String>(), salvaged("I am sorry, I cannot do that."))
+        assertEquals(emptyMap<Int, String>(), salvaged("""[{"i":0,"text":5}]"""))
+    }
 }

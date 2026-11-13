@@ -4,16 +4,12 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
 import com.smnexstudio.panelglass.core.engine.http.HttpEngineSupport
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.LocalEngines
 import com.smnexstudio.panelglass.core.engine.local.ModelStores
 import com.smnexstudio.panelglass.core.engine.mt.DeepLEngine
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -58,6 +54,7 @@ class HttpFailureWireTest {
     private fun support(readTimeoutMs: Long = 5_000) = HttpEngineSupport(
         OkHttpClient.Builder().readTimeout(readTimeoutMs, TimeUnit.MILLISECONDS).build(),
         Json { ignoreUnknownKeys = true; isLenient = true },
+        httpsOnly = false,
     )
 
     private suspend fun gemini(support: HttpEngineSupport = support()): GeminiEngine {
@@ -119,8 +116,8 @@ class HttpFailureWireTest {
         val locals = LocalEngines(context, ModelStores(context, SystemDownloads(context)))
         settings.setEngine(EngineId.GEMINI)
         return EngineRegistry(
-            locals, gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(s, keys, settings), ClaudeEngine(s, keys, settings), OpenAiEngine(s, keys, settings),
-            DeepLEngine(s, keys), PapagoEngine(s, keys), DeepSeekEngine(s, keys),
+            locals, gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(s, keys, settings),
+            DeepLEngine(s, keys),
             GoogleTranslateEngine(), OpenRouterEngine(s, keys, settings), keys, settings,
         )
     }

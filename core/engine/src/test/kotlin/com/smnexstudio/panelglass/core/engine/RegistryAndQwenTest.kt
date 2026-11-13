@@ -1,12 +1,11 @@
 package com.smnexstudio.panelglass.core.engine
 
 import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.core.app.ApplicationProvider
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
 import com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.ByteLevel
 import com.smnexstudio.panelglass.core.engine.local.LlmRunner
@@ -20,7 +19,6 @@ import com.smnexstudio.panelglass.core.data.download.SystemDownloads
 import com.smnexstudio.panelglass.core.engine.local.LocalPrompt
 import com.smnexstudio.panelglass.core.engine.mt.DeepLEngine
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -61,8 +59,7 @@ class RegistryAndQwenTest {
 
     private fun registry() = EngineRegistry(
         locals, GeminiEngine(support, keys, settings), CustomOpenAiEngine(support, keys, settings),
-        ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
-        DeepLEngine(support, keys), PapagoEngine(support, keys), DeepSeekEngine(support, keys),
+        DeepLEngine(support, keys),
         GoogleTranslateEngine(), OpenRouterEngine(support, keys, settings), keys, settings,
     )
 
@@ -105,9 +102,13 @@ class RegistryAndQwenTest {
             EngineId.entries.filter { it.offered }.toSet(),
         )
         // Selected in an older version, key and all: it says so instead of quietly becoming another engine.
-        keys.set(EngineId.CLAUDE, "sk-ant"); settings.setEngine(EngineId.CLAUDE)
+        keys.set(EngineId.OPENROUTER, "sk-or"); settings.setEngine(EngineId.OPENROUTER)
         val r = registry().resolveSelected()
-        assertTrue(r is EngineResolution.Failed && r.failure is EngineFailure.Unavailable && r.failure.engine == EngineId.CLAUDE)
+        assertTrue(r is EngineResolution.Failed && r.failure is EngineFailure.Unavailable && r.failure.engine == EngineId.OPENROUTER)
+        // Claude, OpenAI, DeepSeek and Papago were removed on 2026-11-13 (Custom AI reaches the OpenAI-compatible
+        // ones): a name saved by an older version reads back as the default engine.
+        ds.edit { it[stringPreferencesKey("engineId")] = "CLAUDE" }
+        assertEquals(com.smnexstudio.panelglass.core.model.Settings().engineId, settings.current().engineId)
     }
 
     @Test

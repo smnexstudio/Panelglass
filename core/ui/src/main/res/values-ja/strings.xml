@@ -109,9 +109,9 @@
     <string name="key_hint">API キー</string>
     <string name="key_hint_saved">API キー（保存済み · 空欄のままで維持）</string>
     <string name="key_model">モデル</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">サーバーのアドレス</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">サーバーのアドレスです。HTTPS のみ。…/chat/completions までの完全なアドレスでも使えます。</string>
     <string name="key_models_loading">モデルを読み込み中…</string>
     <plurals name="key_models_count">
         <item quantity="other">このキーで使えるモデル: %d 件</item>
@@ -667,5 +667,8 @@
     <string name="update_install_permission">Android に確認されたら Panelglass にアプリのインストールを許可し、もう一度「インストール」をタップしてください。</string>
     <string name="update_failed_check">アップデートを確認できませんでした。接続を確認してもう一度お試しください。</string>
     <string name="update_failed_download">アップデートをダウンロードできませんでした。</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">とても小さなモデル（約 1B）のようです。この大きさのモデルは翻訳の形式に従えないことが多く、7B 以上のほうがずっとうまく動きます。</string>
+    <string name="key_host_changed">このアドレスは %1$s を指していますが、保存されたキーは %2$s 用に入力されたものです。このキーを %1$s に送信しますか？</string>
+    <string name="key_host_new_key">新しいキーを入力</string>
+    <string name="key_host_keep">キーを維持</string>
 </resources>

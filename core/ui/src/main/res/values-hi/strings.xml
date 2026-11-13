@@ -111,9 +111,9 @@
     <string name="key_hint">API कुंजी</string>
     <string name="key_hint_saved">API कुंजी (सेव है · बनाए रखने के लिए खाली छोड़ें)</string>
     <string name="key_model">मॉडल</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">सर्वर का पता</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">आपके सर्वर का पता। केवल HTTPS। पूरा …/chat/completions पता भी काम करता है।</string>
     <string name="key_models_loading">मॉडल लोड हो रहे हैं…</string>
     <plurals name="key_models_count">
         <item quantity="one">इस कुंजी के लिए %d मॉडल</item>
@@ -682,5 +682,8 @@
     <string name="update_install_permission">अगर Android पूछे, तो Panelglass को ऐप इंस्टॉल करने की अनुमति दें, फिर दोबारा इंस्टॉल करें पर टैप करें।</string>
     <string name="update_failed_check">अपडेट नहीं देखे जा सके। अपना कनेक्शन जांचें और फिर से कोशिश करें।</string>
     <string name="update_failed_download">अपडेट डाउनलोड नहीं हो सका।</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">यह बहुत छोटा मॉडल लगता है (लगभग 1B)। इतने छोटे मॉडल आमतौर पर अनुवाद का प्रारूप नहीं मान पाते; 7B या बड़ा मॉडल कहीं बेहतर काम करता है।</string>
+    <string name="key_host_changed">यह पता %1$s की ओर है, लेकिन आपकी सहेजी गई कुंजी %2$s के लिए डाली गई थी। क्या वह कुंजी %1$s को भेजें?</string>
+    <string name="key_host_new_key">नई कुंजी डालें</string>
+    <string name="key_host_keep">कुंजी रखें</string>
 </resources>

@@ -398,16 +398,13 @@ Contributions are welcome. Pick an item, open an issue to say you are on it, and
 
 ### Engines
 
-- [ ] **Claude** (`llm/ClaudeEngine`): verify the Messages API on a device; add a model dropdown.
-- [ ] **OpenAI** (`llm/OpenAiEngine`): verify on a device; model dropdown from `/v1/models`.
 - [ ] **OpenRouter** (`llm/OpenRouterEngine`): verify on a device; model dropdown from `/api/v1/models`.
-- [ ] **DeepSeek** (`llm/DeepSeekEngine`): verify on a device (text only).
 - [ ] **DeepL** (`mt/DeepLEngine`): verify the free and pro hosts, and glossary context.
-- [ ] **Papago** (`mt/PapagoEngine`): verify the NCP endpoint and key pair.
 
 These exist as `@PlannedEngine` placeholders: request formats are unit-tested, but none has run against the real
 service. To offer one, finish its checks, set `offered = true` on its `EngineId`, remove `@PlannedEngine`, and add a
-model list if the provider hosts several (see `GeminiEngine.listModels`).
+model list if the provider hosts several (see `GeminiEngine.listModels`). OpenAI, DeepSeek and other
+OpenAI-compatible providers need no engine of their own: **Custom AI** reaches them at their own address.
 
 ### Quality and performance
 

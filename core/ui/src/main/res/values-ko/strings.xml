@@ -109,9 +109,9 @@
     <string name="key_hint">API 키</string>
     <string name="key_hint_saved">API 키 (저장됨 · 비워 두면 유지)</string>
     <string name="key_model">모델</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">서버 주소</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">서버의 주소입니다. HTTPS만 가능합니다. …/chat/completions까지 포함한 전체 주소도 됩니다.</string>
     <string name="key_models_loading">모델 불러오는 중…</string>
     <plurals name="key_models_count">
         <item quantity="other">이 키로 사용할 수 있는 모델 %d개</item>
@@ -667,5 +667,8 @@
     <string name="update_install_permission">Android에서 요청하면 Panelglass의 앱 설치를 허용한 다음 다시 설치를 탭하세요.</string>
     <string name="update_failed_check">업데이트를 확인하지 못했습니다. 연결을 확인하고 다시 시도하세요.</string>
     <string name="update_failed_download">업데이트를 다운로드하지 못했습니다.</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">매우 작은 모델(약 1B)로 보입니다. 이렇게 작은 모델은 보통 번역 형식을 따르지 못하며, 7B 이상이 훨씬 잘 작동합니다.</string>
+    <string name="key_host_changed">이 주소는 %1$s을(를) 가리키지만, 저장된 키는 %2$s용으로 입력되었습니다. 이 키를 %1$s(으)로 보낼까요?</string>
+    <string name="key_host_new_key">새 키 입력</string>
+    <string name="key_host_keep">키 유지</string>
 </resources>

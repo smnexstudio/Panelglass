@@ -109,9 +109,9 @@
     <string name="key_hint">API 密钥</string>
     <string name="key_hint_saved">API 密钥（已保存 · 留空则保留）</string>
     <string name="key_model">模型</string>
-    <string name="key_base_url">Server address</string>
+    <string name="key_base_url">服务器地址</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">你的服务器地址。仅限 HTTPS。完整的 …/chat/completions 地址也可以。</string>
     <string name="key_models_loading">正在加载模型…</string>
     <plurals name="key_models_count">
         <item quantity="other">此密钥可用 %d 个模型</item>
@@ -667,5 +667,8 @@
     <string name="update_install_permission">如果 Android 提示，请允许 Panelglass 安装应用，然后再次点按“安装”。</string>
     <string name="update_failed_check">无法检查更新。请检查网络连接后重试。</string>
     <string name="update_failed_download">无法下载更新。</string>
-    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_small_model_warning">这看起来是一个非常小的模型（约 1B）。这么小的模型通常无法遵循翻译格式；7B 或更大的模型效果好得多。</string>
+    <string name="key_host_changed">此地址指向 %1$s，但你保存的密钥是为 %2$s 输入的。要将该密钥发送到 %1$s 吗？</string>
+    <string name="key_host_new_key">输入新密钥</string>
+    <string name="key_host_keep">保留密钥</string>
 </resources>

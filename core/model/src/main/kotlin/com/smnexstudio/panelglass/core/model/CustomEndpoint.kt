@@ -49,6 +49,17 @@ object CustomEndpoint {
         return scheme + "://" + host + authoritySuffix(uri) + path
     }
 
+    /**
+     * The server [raw] points at: its host in lower case, plus the port when the address names one. Null when [raw] is
+     * not a usable address. Two addresses with the same host are the same server whatever their paths, so a saved key
+     * goes on to the new one without a question; a different host is asked about first (the key sheet).
+     */
+    fun host(raw: String, allowHttp: Boolean = false): String? {
+        val base = normalize(raw, allowHttp) ?: return null
+        val uri = URI(base)
+        return uri.host.lowercase(Locale.ROOT) + authoritySuffix(uri)
+    }
+
     /** The port, when the address names one. */
     private fun authoritySuffix(uri: URI): String = if (uri.port != -1) ":${uri.port}" else ""
 

@@ -19,10 +19,7 @@ import com.smnexstudio.panelglass.core.engine.BatchingTranslator
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.SfxDictionary
 import com.smnexstudio.panelglass.core.engine.http.HttpEngineSupport
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.ChatPrompt
 import com.smnexstudio.panelglass.core.engine.local.LlmRunner
@@ -31,7 +28,6 @@ import com.smnexstudio.panelglass.core.engine.local.LocalModel
 import com.smnexstudio.panelglass.core.engine.local.ModelStores
 import com.smnexstudio.panelglass.core.engine.mt.DeepLEngine
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -103,8 +99,8 @@ class TranslationPipelineTest {
         val http = HttpEngineSupport(OkHttpClient(), Json { ignoreUnknownKeys = true })
         locals = LocalEngines(context, ModelStores(context, SystemDownloads(context)))
         val registry = EngineRegistry(
-            locals, GeminiEngine(http, keys, settings), com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(http, keys, settings), ClaudeEngine(http, keys, settings), OpenAiEngine(http, keys, settings),
-            DeepLEngine(http, keys), PapagoEngine(http, keys), DeepSeekEngine(http, keys),
+            locals, GeminiEngine(http, keys, settings), com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(http, keys, settings),
+            DeepLEngine(http, keys),
             GoogleTranslateEngine(), OpenRouterEngine(http, keys, settings), keys, settings,
         )
         cache = PatchCache(File(root, "patches"))

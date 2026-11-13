@@ -5,11 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.data.db.PanelglassDb
 import com.smnexstudio.panelglass.core.data.repo.SfxCacheRepository
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
 import com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.LlmRunner
 import com.smnexstudio.panelglass.core.engine.local.ModelStore
@@ -21,7 +18,6 @@ import com.smnexstudio.panelglass.core.engine.local.ModelStores
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
 import com.smnexstudio.panelglass.core.engine.mt.DeepLEngine
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -67,8 +63,7 @@ class BatchingTranslatorTest {
     private val gemini = GeminiEngine(support, keys, settings)
     private val registry = EngineRegistry(
         locals, gemini, CustomOpenAiEngine(support, keys, settings),
-        ClaudeEngine(support, keys, settings), OpenAiEngine(support, keys, settings),
-        DeepLEngine(support, keys), PapagoEngine(support, keys), DeepSeekEngine(support, keys),
+        DeepLEngine(support, keys),
         GoogleTranslateEngine(), OpenRouterEngine(support, keys, settings), keys, settings,
     )
     private val translator = BatchingTranslator(registry, SfxDictionary(context), SfxCacheRepository(db))

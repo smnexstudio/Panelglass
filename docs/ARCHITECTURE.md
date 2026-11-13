@@ -260,14 +260,23 @@ flowchart LR
 | Qwen 2.5 1.5B | `QWEN15_LOCAL` | On device (LiteRT-LM) | No |
 | Gemma 4 E2B | `GEMMA4_LOCAL` | On device (LiteRT-LM), 8 GB RAM devices | No |
 
-Claude, OpenAI, OpenRouter, DeepSeek, DeepL and Papago exist in code as `@PlannedEngine` placeholders: hidden from
-the picker and refused by the registry.
+OpenRouter and DeepL exist in code as `@PlannedEngine` placeholders: hidden from the picker and refused by the
+registry. OpenAI, DeepSeek and other OpenAI-compatible providers are reached through Custom AI; their placeholders,
+with Claude's and Papago's, were removed on 2026-11-13, and a saved choice of one reads back as the default engine.
 
 - **Custom AI's address.** The user names the server's base address and the model in Settings; the key goes to the
   key store, the address to the settings store (it is not a secret). `CustomEndpoint` reduces the address to its
   base — a pasted `…/chat/completions` is stripped — and requires HTTPS; the engine then calls
   `<base>/chat/completions`. No version segment is ever appended. The request is text only: the on-device OCR reads
-  the page, so no crop or montage is sent.
+  the page, so no crop or montage is sent. A malformed reply is retried once, self-contained (no assistant turn: a
+  home server may rewrite the history), and only for what is missing: `LlmContract.salvage` keeps every requested
+  item the reply got right, and the retry carries just the rest, with a reply cap for that many items. The key is
+  meant for one server: when the sheet is saved with an address
+  on another host and no new key typed (`keyHostChange`), it asks whether to keep the key or enter a new one.
+- **Engine HTTP guards.** `HttpEngineSupport` derives the engines' client from the shared one: redirects are not
+  followed (a 3xx is `Unavailable` naming the redirect: a 307/308 would re-send the page text, and OkHttp keeps
+  Gemini's `x-goog-api-key` across hosts), `HttpsOnly` runs as a network interceptor, and `ReplyCap` stops a reply
+  (or an error page) past 4 MB as `Malformed`.
 
 - **Retries.** Only transient failures are retried, on the same engine and model (`EngineRetry`): rate limits up to
   3 times, overload (HTTP 500/502/503/504/529) up to 2 times, back-off capped at 4 s.
