@@ -7,60 +7,41 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-15
+
 ### Added
 
-- **Notifications are asked for at the first open** (Android 13+), so the first-start downloads and Studio runs show
-  their progress. Asked once; no storage permission is asked for or needed (the Studio uses the system pickers).
-- A finished download the system saved under another name (`model-1.part`) is now found and kept; leftover
-  numbered copies are deleted.
-- **First-open setup.** After the notification question, the app lists what it still needs (manga-ocr ~140 MB, LaMa
-  ~208 MB on phones with 4 GB of RAM or more, the Japanese, Korean and Chinese language packs) with the total size,
-  and asks Wi-Fi only (the default) or Wi-Fi or mobile data. Nothing downloads before that answer; Later asks again at
-  the next open. A model you delete afterwards is not downloaded again.
-- **Download over Wi-Fi only** (Settings › Models & downloads, on by default): every model and language-pack download
-  waits for Wi-Fi unless it is turned off. Changing it applies to downloads already waiting too: those that have
-  received nothing are queued again under the new choice, ML Kit's language packs included. A model row says
-  "waiting for Wi-Fi" while it is held back.
-- **Default export folder.** Settings › Studio › Default folder can now be changed: Downloads (`Download/Panelglass`)
-  or any folder you pick. Every manga without a folder of its own exports there; the export screen's folder choice
-  offers "Default: <folder>" beside picking one for the manga.
-- **Custom AI providers.** The Custom AI key sheet offers DeepSeek, Grok, GPT, Claude and OpenRouter by name:
-  picking one fills in its address (locked), and **Custom** takes any other. Settings › Engine & keys shows the
-  provider with the model ("DeepSeek · deepseek-chat"). Nothing new is stored: the provider is read from the saved
-  address.
-- **Custom AI**, a translation engine for your own OpenAI-compatible server. Name its address and the model in
-  Settings and paste your key: the app sends a plain text Chat Completions request to `<your address>/chat/completions`
-  and reads the text on the device, so no image ever leaves the phone. The address must be HTTPS; a pasted
-  `…/chat/completions` address is accepted and no `/v1` is added for you. Replies from home servers are read
-  tolerantly (a bare object, a fenced or wrapped array, text parts), a malformed reply is retried in one self-contained
-  request that asks only for the bubbles the reply missed or garbled (the good ones are kept, so a bad reply never
-  costs the whole page twice), and the key sheet warns when the model name gives away a model of about a billion parameters or less
-  (saving is still allowed).
-- **Privacy policy and licences in the app**: Settings › About & updates › Privacy and Licences open the
-  [privacy policy](PRIVACY.md) and the [licences](LICENSES.md) that shipped with your version, readable offline, with
-  a link to the same page on GitHub. The policy now also says what Google's ML Kit libraries report to Google
-  (diagnostics such as the device model and app version; never your text or pages).
+- **Notifications are asked for at the first open** (Android 13+), so the first-start downloads and Studio runs show their progress. Asked once; no storage permission is asked for or needed (the Studio uses the system pickers).
+- A finished download the system saved under another name (`model-1.part`) is now found and kept; leftover numbered copies are deleted.
+- **First-open setup.** After the notification question, the app lists what it still needs (manga-ocr ~140 MB, LaMa ~208 MB on phones with 4 GB of RAM or more, the Japanese, Korean and Chinese language packs) with the total size, and asks Wi-Fi only (the default) or Wi-Fi or mobile data. Nothing downloads before that answer; Later asks again at the next open. A model you delete afterwards is not downloaded again.
+- **Download over Wi-Fi only** (Settings › Models & downloads, on by default): every model and language-pack download waits for Wi-Fi unless it is turned off. Changing it applies to downloads already waiting too: those that have received nothing are queued again under the new choice, ML Kit's language packs included. A model row says "waiting for Wi-Fi" while it is held back.
+- **Default export folder.** Settings › Studio › Default folder can now be changed: Downloads (`Download/Panelglass`) or any folder you pick. Every manga without a folder of its own exports there; the export screen's folder choice offers "Default: <folder>" beside picking one for the manga.
+- **Custom AI providers.** The Custom AI key sheet offers DeepSeek, Grok, GPT, Claude and OpenRouter by name: picking one fills in its address (locked), and **Custom** takes any other. Settings › Engine & keys shows the provider with the model ("DeepSeek · deepseek-chat"). Nothing new is stored: the provider is read from the saved address.
+- **Custom AI**, a translation engine for your own OpenAI-compatible server. Name its address and the model in Settings and paste your key: the app sends a plain text Chat Completions request to `<your address>/chat/completions` and reads the text on the device, so no image ever leaves the phone. The address must be HTTPS; a pasted `…/chat/completions` address is accepted and no `/v1` is added for you. Replies from home servers are read tolerantly (a bare object, a fenced or wrapped array, text parts), a malformed reply is retried in one self-contained request that asks only for the bubbles the reply missed or garbled (the good ones are kept, so a bad reply never costs the whole page twice), and the key sheet warns when the model name gives away a model of about a billion parameters or less (saving is still allowed).
+- **Privacy policy and licences in the app**: Settings › About & updates › Privacy and Licences open the [privacy policy](PRIVACY.md) and the [licences](LICENSES.md) that shipped with your version, readable offline, with a link to the same page on GitHub. The policy now also says what Google's ML Kit libraries report to Google (diagnostics such as the device model and app version; never your text or pages).
 
 ### Changed
 
-- **Settings, redesigned**: one long page became a hub with search and eight pages: Engine & keys, Languages, notes &
-  sound effects, Models & downloads, Reader, Studio, Storage, Appearance & language, About & updates. Each hub row says
-  what its page holds now; on a tablet or a wide window the page opens beside the hub.
-  - **Engine & keys** lists every engine as a choice, the free ones on the phone first; the chosen cloud engine shows
-    its model (and Custom AI its address), and the Try box sits next to it.
-  - **Languages**: a button swaps From and To, recent language pairs are one tap away, translation notes are edited in
-    place with Reset to default, and the glossary count is shown.
-  - **Storage** shows what Panelglass takes and what is free; **Reader** can clear the translated pages cache, update
-    the block lists now, and set the language Translate page uses.
+- **Settings, redesigned**: one long page became a hub with search and eight pages: Engine & keys, Languages, notes & sound effects, Models & downloads, Sites, Studio, Storage, Appearance & language, About & updates. Each hub row says what its page holds now; on a tablet or a wide window the page opens beside the hub.
+  - **Engine & keys** lists every engine as a choice, the free ones on the phone first; the chosen cloud engine shows its model (and Custom AI its address), and the Try box sits next to it.
+  - **Languages**: a button swaps From and To, recent language pairs are one tap away, translation notes are edited in place with Reset to default, and the glossary count is shown.
+  - **Storage** shows what Panelglass takes and what is free; **Sites** can clear the translated pages cache, update the block lists now, and set the language Translate page uses.
   - **About** links to the release notes, the source code, a new issue, the licences and the privacy notes.
+- The Settings page for the reader is now called **Sites**, and the Sites and Studio rows use the same icons as the bottom tabs.
+
+### Fixed
+
+- Pressing **Update** on the block lists while they were already updating said "Update failed"; it now waits for that update and shows its result.
+- The storage bar on Models & downloads now follows a model being downloaded or deleted, instead of keeping the old total.
+- Picking From and then To in quick succession no longer undoes one of the two, and no longer adds the in-between pair to the recent pairs.
+- When the default export folder is gone (its permission taken back, its SD card removed), the export screen offers `Download/Panelglass` for that manga instead of only the missing folder.
+- Switches in the Paper & Ink theme have a white knob, so the dark track no longer hides them.
 
 ### Security
 
 - Model downloads refuse cleartext addresses, and the update client refuses cleartext requests and redirects.
-- Translation engines no longer follow redirects (a redirect would re-send the page text, and for Gemini the key, to
-  another host), refuse plain HTTP on every hop, and stop reading a reply past 4 MB.
-- Changing the Custom AI address to another server while keeping the saved key now asks first: keep the key for the
-  new server, or enter a new one.
+- Translation engines no longer follow redirects (a redirect would re-send the page text, and for Gemini the key, to another host), refuse plain HTTP on every hop, and stop reading a reply past 4 MB.
+- Changing the Custom AI address to another server while keeping the saved key now asks first: keep the key for the new server, or enter a new one.
 
 ## [0.5.0] - 2026-11-08
 
