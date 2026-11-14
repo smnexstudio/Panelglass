@@ -103,6 +103,18 @@ class SettingsRepositoryTest {
         assertEquals("", repo.current().translationNotes)
     }
 
+    /** The Studio's default export folder is Downloads (null) until one is picked; null or blank goes back. */
+    @Test fun studioExportFolder() = runBlocking {
+        assertNull(repo.current().studioExportFolder)
+        repo.setStudioExportFolder("content://tree/comics")
+        assertEquals("content://tree/comics", repo.current().studioExportFolder)
+        repo.setStudioExportFolder(" ")
+        assertNull(repo.current().studioExportFolder)
+        repo.setStudioExportFolder("content://tree/comics")
+        repo.setStudioExportFolder(null)
+        assertNull(repo.current().studioExportFolder)
+    }
+
     /** "Only while charging" is off until switched on; the running chapter is kept until the run clears it. */
     @Test fun studioRunSettings() = runBlocking {
         assertFalse(repo.current().studioOnlyWhileCharging)
@@ -137,6 +149,16 @@ class SettingsRepositoryTest {
         assertTrue(repo.automaticPacksDone())
     }
 
+    /** The first-start flags start unset and stay set: models queued once, notifications asked once. */
+    @Test fun theFirstStartFlagsStaySet() = runBlocking {
+        assertFalse(repo.automaticModelsDone())
+        assertFalse(repo.notificationsAsked())
+        repo.setAutomaticModelsDone()
+        repo.setNotificationsAsked()
+        assertTrue(repo.automaticModelsDone())
+        assertTrue(repo.notificationsAsked())
+    }
+
     /** What Gemini learned about a model is kept per model, never shared with another. */
     @Test fun requestProfilesAreKeptPerModel() = runBlocking {
         repo.setRequestProfile(EngineId.GEMINI, "gemini-flash-latest", "JSON_ONLY")
@@ -148,5 +170,44 @@ class SettingsRepositoryTest {
         repo.toggleFontFavourite("cat:a"); repo.toggleFontFavourite("user:b"); repo.toggleFontFavourite("cat:c")
         repo.toggleFontFavourite("user:b")
         assertEquals(listOf("cat:a", "cat:c"), repo.fontFavourites.first())
+    }
+
+    /** From then To picked in quick succession is one change: the pair passed through (KO>EN) is not remembered. */
+    @Test fun oneSidedPicksInQuickSuccessionRecordOnePair() = runBlocking {
+        var t = 1_000_000L
+        repo.now = { t }
+        repo.setLanguages(Lang.JA, Lang.EN)
+        repo.setSource(Lang.KO)
+        t += 5_000
+        repo.setTarget(Lang.FR)
+        assertEquals(Lang.KO, repo.current().defaultSourceLang)
+        assertEquals(Lang.FR, repo.current().defaultTargetLang)
+        assertEquals(listOf(Lang.KO to Lang.FR, Lang.JA to Lang.EN), repo.recentPairs.first())
+        t += 120_000
+        repo.setSource(Lang.ZH)
+        assertEquals(listOf(Lang.ZH to Lang.FR, Lang.KO to Lang.FR, Lang.JA to Lang.EN), repo.recentPairs.first(), "a pick much later is a new pair")
+    }
+
+    @Test fun settingBothLanguagesRemembersThePairNewestFirst() = runBlocking {
+        repo.setLanguages(Lang.JA, Lang.EN)
+        repo.setLanguages(Lang.KO, Lang.EN)
+        repo.setLanguages(Lang.JA, Lang.EN)
+        assertEquals(Lang.JA, repo.current().defaultSourceLang)
+        assertEquals(Lang.EN, repo.current().defaultTargetLang)
+        assertEquals(listOf(Lang.JA to Lang.EN, Lang.KO to Lang.EN), repo.recentPairs.first())
+    }
+
+    @Test fun recentPairsKeepFourAndSkipASameLanguagePairAndBrokenEntries() = runBlocking {
+        for (src in listOf(Lang.JA, Lang.KO, Lang.ZH, Lang.ES, Lang.FR)) repo.setLanguages(src, Lang.EN)
+        repo.setLanguages(Lang.EN, Lang.EN)
+        assertEquals(listOf(Lang.FR, Lang.ES, Lang.ZH, Lang.KO), repo.recentPairs.first().map { it.first })
+        raw("recentPairs", "JA>EN XX>EN KO EN>DE")
+        assertEquals(listOf(Lang.JA to Lang.EN, Lang.EN to Lang.DE), repo.recentPairs.first())
+    }
+
+    @Test fun thePageTranslateTargetIsObservable() = runBlocking {
+        assertEquals("en", repo.pageTranslateTargetFlow.first())
+        repo.setPageTranslateTarget("de")
+        assertEquals("de", repo.pageTranslateTargetFlow.first())
     }
 }

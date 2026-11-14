@@ -244,7 +244,7 @@ Key points:
 | `QuotaExceeded` | "… quota exhausted" | Switch to ML Kit |
 | `Network`, `Unavailable`, `Overloaded` | "… is unavailable right now" | Switch to ML Kit (unless it is the one failing) |
 | Watchdog timeout | "… took too long" | Scroll or Re-translate |
-| `ModelMissing` | The model is not downloaded | Settings › Models |
+| `ModelMissing` | The model is not downloaded | Settings › Models & downloads |
 
 Transient failures are retried on the same engine first (see [ARCHITECTURE.md](ARCHITECTURE.md#engines)).
 

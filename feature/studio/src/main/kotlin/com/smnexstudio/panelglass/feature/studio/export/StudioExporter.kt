@@ -134,14 +134,36 @@ class StudioExporter @Inject constructor(
     private val _run = MutableStateFlow<ExportRun?>(null)
     val run: StateFlow<ExportRun?> = _run.asStateFlow()
 
-    /** The manga's export folder; null is the default, Downloads. */
-    suspend fun folderFor(mangaId: Long): String? = repo.getManga(mangaId)?.exportTreeUri
+    companion object {
+        /**
+         * A manga's own choice of `Download/Panelglass`, kept in `Manga.exportTreeUri` like a picked folder, so it
+         * stays on Downloads when Settings › Studio names another default (null there means "follow the default").
+         * Not a URI: no tree is ever opened for it.
+         */
+        const val DOWNLOADS = "downloads"
+    }
+
+    /** Where [mangaId] exports: its own folder, else the default folder (Settings › Studio); null is Downloads. */
+    suspend fun folderFor(mangaId: Long): String? = when (val own = ownFolder(mangaId)) {
+        null -> defaultFolder()
+        DOWNLOADS -> null
+        else -> own
+    }
+
+    /** What this manga chose for itself: a picked folder, [DOWNLOADS], or null when it follows the default. */
+    suspend fun ownFolder(mangaId: Long): String? = repo.getManga(mangaId)?.exportTreeUri
+
+    /** The default folder for every manga without its own (Settings › Studio); null is Downloads. */
+    suspend fun defaultFolder(): String? = settings.current().studioExportFolder
 
     fun folderLabel(uri: String?): String? = targets.label(uri)
 
-    /** Exports [mangaId] to [uri] from now on (null: back to Downloads); false when a picked folder cannot be kept. */
+    /**
+     * Exports [mangaId] to [uri] from now on: a picked folder, [DOWNLOADS] (Downloads whatever the default), or null
+     * (back to the default folder). False when a picked folder cannot be kept.
+     */
     suspend fun choose(mangaId: Long, uri: String?): Boolean {
-        if (uri != null && !targets.adopt(uri)) return false
+        if (uri != null && uri != DOWNLOADS && !targets.adopt(uri)) return false
         repo.getManga(mangaId)?.let { repo.updateManga(it.copy(exportTreeUri = uri)) }
         return true
     }

@@ -4,6 +4,8 @@ import android.content.Context
 import com.smnexstudio.panelglass.feature.browser.MemoryDataStore
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -93,6 +95,18 @@ class BlockListRepositoryTest {
         assertFalse("nothing reachable: no refresh", r.refresh())
         assertEquals(before, File(dir, "ads.txt").readText())
         assertTrue(r.list.value.blocksHost("p3.cachedpop.example"))
+    }
+
+    /** Update tapped while the daily refresh runs: it joins that fetch and gets its answer, not a "failed". */
+    @Test fun anUpdateDuringARefreshSharesItsResult() = runBlocking<Unit> {
+        replies[adguard] = 200 to hosts("ads.example")
+        replies[hagezi] = 200 to adblock("pop.example")
+        val r = repo()
+        val daily = async(Dispatchers.IO) { r.refresh() }
+        val update = async(Dispatchers.IO) { r.updateNow() }
+        assertTrue(daily.await())
+        assertTrue("the second caller is not told it failed", update.await())
+        assertTrue("one fetch per list, not two", asked.count { it == adguard } <= 2)
     }
 
     /** One source failing keeps its own last copy in the merge while the other refreshes. */

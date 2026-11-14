@@ -22,8 +22,10 @@ class StartupTasksTest {
         override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = state.updateAndGet { transform(it) }
     })
     private var fetches = 0
+    private var modelFetches = 0
 
-    private fun tasks(qwen: Boolean, online: Boolean = true) = StartupTasks(settings, { qwen }, { fetches++; online })
+    private fun tasks(qwen: Boolean, online: Boolean = true, queued: Boolean = true) =
+        StartupTasks(settings, { qwen }, { fetches++; online }, { modelFetches++; queued })
 
     @Test fun someoneWhoNeverChoseAndHasQwenStaysOnQwen() = runBlocking {
         tasks(qwen = true).run()
@@ -42,13 +44,44 @@ class StartupTasksTest {
         assertFalse(settings.hasEngineChoice())
     }
 
+    /** Before the first-open setup is answered nothing is downloaded: the user sees the list and its size first. */
+    @Test fun nothingIsFetchedBeforeTheSetupIsAnswered() = runBlocking {
+        tasks(qwen = false).run()
+        assertEquals(0, fetches)
+        assertEquals(0, modelFetches)
+        settings.setFirstDownloadsChosen()
+        tasks(qwen = false).run()
+        assertEquals(1, fetches)
+        assertEquals(1, modelFetches)
+    }
+
     /** Offline at first start: nothing is marked done, so the next start fetches again. */
     @Test fun thePacksAreFetchedUntilTheyAreAllThereOnce() = runBlocking {
+        settings.setFirstDownloadsChosen()
         tasks(qwen = false, online = false).run()
         assertFalse(settings.automaticPacksDone())
         tasks(qwen = false, online = true).run()
         assertTrue(settings.automaticPacksDone())
         tasks(qwen = false, online = true).run()
         assertEquals(2, fetches, "a pack the user deleted later is not fetched again")
+    }
+
+    /** manga-ocr and LaMa: queued at first start; when they could not be queued the next start tries again, then never. */
+    @Test fun theModelsAreQueuedUntilQueuedOnce() = runBlocking {
+        settings.setFirstDownloadsChosen()
+        tasks(qwen = false, queued = false).run()
+        assertFalse(settings.automaticModelsDone())
+        tasks(qwen = false, queued = true).run()
+        assertTrue(settings.automaticModelsDone())
+        tasks(qwen = false, queued = true).run()
+        assertEquals(2, modelFetches, "a model the user deleted later is not fetched again")
+    }
+
+    /** The pack fetch waits for its downloads; the models are queued before it, never after. */
+    @Test fun theModelsAreQueuedBeforeThePacksAreAwaited() = runBlocking {
+        settings.setFirstDownloadsChosen()
+        val order = mutableListOf<String>()
+        StartupTasks(settings, { false }, { order += "packs"; true }, { order += "models"; true }).run()
+        assertEquals(listOf("models", "packs"), order)
     }
 }

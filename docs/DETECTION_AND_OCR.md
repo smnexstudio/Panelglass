@@ -114,7 +114,8 @@ trimmed to the unpadded box, so the padding never becomes part of an erase recta
 
 `MangaOcrRecognizer` runs [manga-ocr](https://github.com/kha-white/manga-ocr) through the
 [l0wgear/manga-ocr-2025-onnx](https://huggingface.co/l0wgear/manga-ocr-2025-onnx) export: a ViT-Small encoder and a
-BERT-style decoder (~140 MB, fp32), verified by SHA-256 on download.
+BERT-style decoder (~140 MB, fp32), verified by SHA-256 on download. It is queued once at first start (with LaMa);
+a user who deletes it in Settings › Models & downloads is not sent it again.
 
 - Trained on Manga109 bubble crops, so the **whole crop** is fed: grayscale → RGB, resized to 224×224, normalised to
   `(x/255 − 0.5)/0.5`. No line splitting, no deskewing.

@@ -8,7 +8,15 @@ import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import com.smnexstudio.panelglass.core.ocr.MangaOcrStore
+import com.smnexstudio.panelglass.core.ocr.LamaStore
+import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
+import com.smnexstudio.panelglass.core.data.download.DownloadNetwork
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,6 +91,9 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var readerWarmup: ReaderWarmup
     @Inject lateinit var updates: AppUpdates
     @Inject lateinit var studioTranslator: StudioTranslator
+    @Inject lateinit var mangaOcrStore: MangaOcrStore
+    @Inject lateinit var lamaStore: LamaStore
+    @Inject lateinit var packStore: LanguagePackStore
     private var startUrl by mutableStateOf<String?>(null)
     /** The chapter whose Studio run notification was tapped. */
     private var startChapter by mutableStateOf<Long?>(null)
@@ -96,6 +107,60 @@ class MainActivity : ComponentActivity() {
         AppLocale.reapplyDefault(this)
     }
 
+    /** The answer changes nothing here: without it, download and Studio notifications are only hidden. */
+    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        // Marked once the user answered: a dialog closed unseen (the app killed or restarted) is asked again.
+        askingNotifications = false
+        lifecycleScope.launch { settingsRepo.setNotificationsAsked() }
+        offerFirstDownloads()
+    }
+
+    /** The first-open setup's list while it is shown ([FirstDownloadsDialog]); null when it is not. */
+    private var firstDownloads by mutableStateOf<List<FirstDownload>?>(null)
+
+    /**
+     * After the notification question: until the setup was answered once, lists what is missing with its size and
+     * asks which network to use. Nothing missing (an upgrade that has it all) answers it at once.
+     */
+    private fun offerFirstDownloads() = lifecycleScope.launch {
+        if (settingsRepo.firstDownloadsChosen()) return@launch
+        val items = FirstDownloads.missing(this@MainActivity, mangaOcrStore, lamaStore, packStore)
+        if (items.isEmpty()) settingsRepo.setFirstDownloadsChosen() else firstDownloads = items
+    }
+
+    /** Download pressed: the network choice becomes the setting, and the first-start downloads begin. */
+    private fun startFirstDownloads(wifiOnly: Boolean) = lifecycleScope.launch {
+        firstDownloads = null
+        settingsRepo.setDownloadWifiOnly(wifiOnly)
+        DownloadNetwork.wifiOnly = wifiOnly
+        settingsRepo.setFirstDownloadsChosen()
+        (application as PanelglassApp).startupDownloads()
+    }
+
+    /** The dialog is up: kept across a recreation so the recreated activity does not ask a second time. */
+    private var askingNotifications = false
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(ASKING_NOTIFICATIONS, askingNotifications)
+    }
+
+    /**
+     * Android 13+: notifications are asked for at the first open after install. The models queued at first start
+     * (manga-ocr, LaMa) and the language packs show their progress through Android's download notifications, which
+     * need it, and so does a Studio run. Asked once: a "no" is respected until the user turns them on in Android.
+     */
+    private suspend fun askNotificationsOnce() {
+        // While the dialog is up (a recreation), its answer comes to the callback, which offers the setup next.
+        if (askingNotifications) return
+        val needed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+            !settingsRepo.notificationsAsked()
+        if (!needed) { offerFirstDownloads(); return }
+        askingNotifications = true
+        askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -106,6 +171,11 @@ class MainActivity : ComponentActivity() {
         // A Studio run the system stopped (the app killed while it worked) carries on from its first unfinished page.
         // Not gated on savedInstanceState: after a kill, Android restores this activity with its saved state.
         lifecycleScope.launch { studioTranslator.resumeInterrupted() }
+        // A scripted debug launch (adb extras) drives the screen itself: a system dialog would take its taps.
+        // Not only on a fresh start: the first start sets the per-app language (AppLocale.init), which recreates this
+        // activity at once and cancelled the first instance's ask before it was made.
+        askingNotifications = savedInstanceState?.getBoolean(ASKING_NOTIFICATIONS) == true
+        if (startEngine == null && startExtras?.any != true) lifecycleScope.launch { askNotificationsOnce() }
         setContent {
             val settings by settingsRepo.settings.collectAsState(initial = Settings())
             PanelglassTheme(theme = settings.appTheme) {
@@ -113,6 +183,9 @@ class MainActivity : ComponentActivity() {
                 // A newer release from GitHub, over whatever screen is open (AppUpdates; once a day, never in debug).
                 val update by updates.state.collectAsState()
                 UpdateHost(update, updates)
+                firstDownloads?.let { items ->
+                    FirstDownloadsDialog(items, onDownload = ::startFirstDownloads, onLater = { firstDownloads = null })
+                }
             }
         }
         // The reader's graph, bridge script and a spare WebView (with Chromium's first start) are prepared once the
@@ -148,6 +221,9 @@ class MainActivity : ComponentActivity() {
         if (intent != null && (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) read(intent) else null
 }
 
+/** Instance-state key: the notification dialog is up ([MainActivity.askNotificationsOnce]). */
+private const val ASKING_NOTIFICATIONS = "askingNotifications"
+
 private object Routes {
     const val SITES = "sites"
     const val HISTORY = "history"
@@ -182,6 +258,9 @@ private object Routes {
 
 /** Scripted-run extras on the launch intent: `src`/`tgt` (`Lang` names) and `start` (auto-Start). Session only. */
 data class LaunchExtras(val src: String?, val tgt: String?, val start: Boolean) {
+    /** Whether the launch carried any of them (a scripted adb run), not just an empty set. */
+    val any: Boolean get() = src != null || tgt != null || start
+
     companion object {
         fun of(intent: Intent?) = LaunchExtras(
             intent?.getStringExtra("src"), intent?.getStringExtra("tgt"), intent?.getBooleanExtra("start", false) == true,

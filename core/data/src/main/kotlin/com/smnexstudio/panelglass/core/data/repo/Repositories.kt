@@ -46,6 +46,8 @@ class SfxCacheRepository @Inject constructor(private val db: PanelglassDb) {
 @Singleton
 class GlossaryRepository @Inject constructor(private val db: PanelglassDb) {
     fun observe(seriesKey: String): Flow<List<GlossaryEntry>> = db.glossary().observe(seriesKey)
+    /** Every series' glossary counted together, as it changes. */
+    fun observeSummary(): Flow<com.smnexstudio.panelglass.core.data.db.GlossarySummary> = db.glossary().observeSummary()
     // Read capped too: a term saved before GlossaryEntry.MAX_CHARS existed reaches the engines no longer than that.
     suspend fun forSeries(seriesKey: String): Map<String, String> =
         entries(seriesKey).associate { it.source to it.target }

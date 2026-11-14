@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.GlossaryEntry
+import com.smnexstudio.panelglass.core.model.Lang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -127,5 +129,51 @@ class SettingsViewModelTest {
         assertEquals("EN(invented line)", s.output)
         assertTrue(s.via!!.endsWith(" ms"))
         assertTrue("Google Translate is on-device", attempted.isEmpty())
+    }
+
+    @Test fun swapTradesTheLanguagesAndRemembersThePair() = runBlocking<Unit> {
+        val vm = vm()
+        vm.setLanguages(Lang.JA, Lang.EN).join()
+        vm.swapLanguages().join()
+        assertEquals(Lang.EN, settings.current().defaultSourceLang)
+        assertEquals(Lang.JA, settings.current().defaultTargetLang)
+        assertEquals(listOf(Lang.EN to Lang.JA, Lang.JA to Lang.EN), settings.recentPairs.first())
+    }
+
+    @Test fun aTargetTheReaderCannotReadIsNotSwappedIn() = runBlocking<Unit> {
+        val vm = vm()
+        vm.setLanguages(Lang.JA, Lang.HI).join()
+        assertFalse(vm.canSwap(settings.current()))
+        vm.swapLanguages().join()
+        assertEquals(Lang.JA, settings.current().defaultSourceLang)
+        assertEquals(Lang.HI, settings.current().defaultTargetLang)
+    }
+
+    @Test fun updatingTheBlockListsSaysWhetherItWorked() = runBlocking<Unit> {
+        val vm = vm()
+        vm.updateBlockLists()
+        withTimeout(5_000) { vm.blockListUpdate.first { it == BlockListUpdate.DONE } }
+        rig.blockListsUpdate = false
+        vm.updateBlockLists()
+        withTimeout(5_000) { vm.blockListUpdate.first { it == BlockListUpdate.FAILED } }
+        assertEquals(2, rig.blockListUpdates)
+    }
+
+    @Test fun theGlossaryIsCountedAcrossSeries() = runBlocking<Unit> {
+        val vm = vm()
+        rig.glossary.upsert(GlossaryEntry(seriesKey = "a.example/one", source = "Aki", target = "Aki"))
+        rig.glossary.upsert(GlossaryEntry(seriesKey = "a.example/one", source = "Mori", target = "Forest"))
+        rig.glossary.upsert(GlossaryEntry(seriesKey = "b.example/two", source = "Sora", target = "Sky"))
+        val summary = withTimeout(5_000) { vm.glossarySummary.first { it.terms == 3 } }
+        assertEquals(2, summary.series)
+    }
+
+    @Test fun storageIsMeasuredFromThePhone() = runBlocking<Unit> {
+        val vm = vm()
+        vm.loadStorage().join()
+        val st = withTimeout(5_000) { vm.storage.first { it != null } }!!
+        assertEquals(0L, st.cache)
+        assertEquals(st.models + st.packs + st.studio + st.cache, st.total)
+        assertEquals(st.packCount * StorageSummary.PACK_BYTES, st.packs)
     }
 }

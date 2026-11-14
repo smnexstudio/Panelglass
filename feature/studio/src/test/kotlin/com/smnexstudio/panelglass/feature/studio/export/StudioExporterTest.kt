@@ -223,6 +223,40 @@ class StudioExporterTest {
         assertNull(e.folderFor(m))
     }
 
+    /** Settings › Studio's default folder takes every manga without its own; a manga's own folder still wins. */
+    @Test fun theDefaultFolderTakesEveryMangaWithoutItsOwn() = runBlocking {
+        val (m, ch) = manga(1)
+        val other = repo.getChapter(repo.import(ImportTarget.NewManga(Manga(title = "Other"), Chapter(mangaId = 0)), pages(1, "c")))!!.mangaId
+        val own = "content://tree/own"
+        targets.dirs[own] = File(root, "own").apply { mkdirs() }
+        settings.setStudioExportFolder(PICKED)
+        val e = exporter()
+        assertEquals(PICKED, e.defaultFolder())
+        assertEquals(PICKED, e.folderFor(m))
+        assertNull("following the default is not a folder of its own", e.ownFolder(m))
+        e.export(m, listOf(ch), e.folderFor(m), ExportFormat.IMAGES)
+        assertTrue(File(picked, "Stardust/Ch 012 - Bread/001.png").isFile)
+        assertTrue(e.choose(other, own))
+        assertEquals("a manga's own folder wins", own, e.folderFor(other))
+        assertTrue(e.choose(other, null))
+        assertEquals("dropping it goes back to the default, not Downloads", PICKED, e.folderFor(other))
+    }
+
+    /** A manga can keep Downloads for itself when the default is another folder (the way out when that one is gone). */
+    @Test fun aMangaCanChooseDownloadsOverTheDefault() = runBlocking {
+        val (m, ch) = manga(1)
+        settings.setStudioExportFolder(PICKED)
+        val e = exporter()
+        assertEquals(PICKED, e.folderFor(m))
+        assertTrue(e.choose(m, StudioExporter.DOWNLOADS))
+        assertNull("Downloads for this manga, whatever the default", e.folderFor(m))
+        assertEquals(StudioExporter.DOWNLOADS, e.ownFolder(m))
+        e.export(m, listOf(ch), e.folderFor(m), ExportFormat.IMAGES)
+        assertTrue(File(downloads, "Stardust/Ch 012 - Bread/001.png").isFile)
+        assertTrue(e.choose(m, null))
+        assertEquals("following the default again", PICKED, e.folderFor(m))
+    }
+
     @Test fun aFolderWithoutPermissionFailsBeforeWriting() = runBlocking {
         val (m, ch) = manga(1)
         targets.dirs.remove(PICKED)

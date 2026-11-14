@@ -26,6 +26,30 @@ android {
     }
 }
 
+/**
+ * PRIVACY.md and LICENSES.md live at the repository root (GitHub shows them there) and are copied into this module's
+ * assets under `legal/`, so Settings › About shows the text this build shipped with, offline.
+ */
+abstract class CopyLegalDocs : DefaultTask() {
+    @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val docs: ConfigurableFileCollection
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction fun copy() {
+        val legal = outputDir.get().asFile.resolve("legal")
+        legal.deleteRecursively()
+        legal.mkdirs()
+        docs.files.forEach { it.copyTo(legal.resolve(it.name), overwrite = true) }
+    }
+}
+
+val copyLegalDocs = tasks.register<CopyLegalDocs>("copyLegalDocs") {
+    docs.from(rootProject.file("PRIVACY.md"), rootProject.file("LICENSES.md"))
+}
+
+androidComponents {
+    onVariants { variant -> variant.sources.assets?.addGeneratedSourceDirectory(copyLegalDocs, CopyLegalDocs::outputDir) }
+}
+
 dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

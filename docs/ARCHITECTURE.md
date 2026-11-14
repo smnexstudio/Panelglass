@@ -301,7 +301,7 @@ with Claude's and Papago's, were removed on 2026-11-13, and a saved choice of on
   vendor's OpenCL library, which from Android 12 an app can load only if the manifest declares it
   (`<uses-native-library>` for `libOpenCL.so`, `libOpenCL-car.so`, `libOpenCL-pixel.so`, `libvndksupport.so`, all
   optional). Without them the GPU backend fails with "OpenCL not supported" and the models run on the CPU.
-- **Qwen's backend** (`Settings.qwenBackend`, Settings › Models › *Qwen runs on*): Automatic (default) takes the CPU
+- **Qwen's backend** (`Settings.qwenBackend`, Settings › Models & downloads › *Qwen runs on*): Automatic (default) takes the CPU
   on phones under 6 GB of RAM (`DeviceMemory.qwenOnCpu`), the GPU otherwise; GPU or CPU can be forced. On the CPU
   Qwen is about 3× slower, but its weights stay a memory-mapped file the system can reclaim (~0.6 GB pinned instead
   of ~2.8 GB; see [MEMORY_USAGE.md](MEMORY_USAGE.md)). The choice is read at each load, and a model loaded on the

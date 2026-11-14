@@ -46,6 +46,31 @@ class SystemDownloadsQueueTest {
         assertFalse(part.exists())
     }
 
+    /**
+     * The system writes `name-1.part` when `name.part` is taken; copies left by downloads nobody follows any more are
+     * cleared when the model is queued again, and nothing else in the folder is touched.
+     */
+    @Test fun strayNumberedPartsAreClearedWhenADownloadStarts() {
+        val d = SystemDownloads(context)
+        val dir = File(d.root(), "models").apply { mkdirs() }
+        val strays = listOf("model.bin-1.part", "model.bin-2.part").map { File(dir, it).apply { writeText("an earlier copy") } }
+        val other = File(dir, "other.bin-1.part").apply { writeText("another model's download") }
+        d.start("model", url, "models/model.bin", "Invented model")
+        strays.forEach { assertFalse(it.name, it.exists()) }
+        assertTrue(other.exists())
+    }
+
+    /** Waiting downloads at one address (ML Kit's packs) are removed; the app's own models are left alone. */
+    @Test fun waitingDownloadsAtAnAddressAreDropped() {
+        val d = SystemDownloads(context)
+        d.start("model", url, "models/model.bin", "Invented model")
+        dm.enqueue(DownloadManager.Request(android.net.Uri.parse("https://packs.example.org/edgedl/translate/offline/aa_bb.zip")))
+        assertEquals(2, queued())
+        assertEquals(1, d.dropWaiting("/edgedl/translate/"))
+        assertEquals(1, queued())
+        assertTrue("the model's own download is kept", d.isActive("model"))
+    }
+
     @Test fun cancelRemovesTheSystemDownloadAndForgetsIt() {
         val d = SystemDownloads(context)
         d.start("model", url, "models/model.bin", "Invented model")

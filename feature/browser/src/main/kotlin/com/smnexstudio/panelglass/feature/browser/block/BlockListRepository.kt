@@ -1,9 +1,12 @@
 package com.smnexstudio.panelglass.feature.browser.block
 
+import com.smnexstudio.panelglass.core.data.block.BlockListUpdater
 import android.content.Context
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,11 +14,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,7 +32,7 @@ class BlockListRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val okHttp: OkHttpClient,
     private val settings: SettingsRepository,
-) {
+) : BlockListUpdater {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mutex = Mutex()
     private val dir = File(context.filesDir, "blocklist")
@@ -92,13 +93,21 @@ class BlockListRepository @Inject constructor(
         _updatedAt.value = newest
     }
 
-    private val refreshing = AtomicBoolean(false)
+    /** The fetch under way, shared by everyone who asks while it runs. */
+    private var inFlight: Deferred<Boolean>? = null
+    private val inFlightLock = Any()
 
-    suspend fun refresh(): Boolean = withContext(Dispatchers.IO) {
-        // ensureLoaded is called from the warm-up and from every reader; one fetch at a time is enough.
-        if (!refreshing.compareAndSet(false, true)) return@withContext false
-        try { refreshSources() } finally { refreshing.set(false) }
-    }
+    /** Settings › Sites › Block lists › Update: the same fetch as the daily one, now. */
+    override suspend fun updateNow(): Boolean = refresh()
+
+    /**
+     * Fetches every source; true when at least one fresh list replaced its cache. ensureLoaded is called from the
+     * warm-up and from every reader, so one fetch runs at a time: a caller arriving while one runs (the Update button
+     * during the daily refresh) waits for it and gets its answer, rather than a "failed" for a fetch that is working.
+     */
+    suspend fun refresh(): Boolean = synchronized(inFlightLock) {
+        inFlight?.takeIf { it.isActive } ?: scope.async { refreshSources() }.also { inFlight = it }
+    }.await()
 
     private suspend fun refreshSources(): Boolean {
         var changed = false

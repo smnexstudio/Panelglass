@@ -1,6 +1,11 @@
 package com.smnexstudio.panelglass.feature.settings
 
 import androidx.lifecycle.ViewModel
+import com.smnexstudio.panelglass.core.model.TranslationNotes
+import com.smnexstudio.panelglass.core.data.block.BlockListUpdater
+import com.smnexstudio.panelglass.core.data.db.GlossarySummary
+import com.smnexstudio.panelglass.core.data.repo.GlossaryRepository
+import com.smnexstudio.panelglass.core.data.cache.PatchCache
 import androidx.lifecycle.viewModelScope
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
@@ -34,7 +39,14 @@ import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.TranslateRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import android.net.Uri
+import android.content.Intent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.smnexstudio.panelglass.core.data.export.ExportFolders
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -76,6 +88,32 @@ data class TryState(
     val failure: EngineFailure? = null,
 )
 
+/**
+ * Where Panelglass's space goes (Settings › Storage, Models). Read from the phone, except [packs] (an estimate); the
+ * summary itself is null until the Studio and the cache are first measured.
+ */
+data class StorageSummary(
+    /** Downloaded models: the on-device translators, manga-ocr and LaMa. */
+    val models: Long = 0,
+    /** ML Kit language packs: ML Kit keeps their files, so this is ~30 MB per pack, not a measurement. */
+    val packs: Long = 0,
+    val packCount: Int = 0,
+    val studio: Long = 0,
+    val cache: Long = 0,
+    /** Free space on the phone's storage; null when it cannot be read. */
+    val free: Long? = null,
+) {
+    val total: Long get() = models + packs + studio + cache
+
+    companion object {
+        /** What one ML Kit language pack takes, roughly (the ML Kit documentation's figure). */
+        const val PACK_BYTES = 30L * 1024 * 1024
+    }
+}
+
+/** Settings › Reader › Block lists › Update. */
+enum class BlockListUpdate { IDLE, RUNNING, DONE, FAILED }
+
 /** The model dropdown's content for the key sheet: the key's own model list, fetched on demand. */
 data class ModelChoices(
     val loading: Boolean = false,
@@ -96,6 +134,9 @@ class SettingsViewModel @Inject constructor(
     private val lamaStore: LamaStore,
     private val studio: StudioRepository,
     private val updates: AppUpdates,
+    private val patchCache: PatchCache,
+    private val glossary: GlossaryRepository,
+    private val blockLists: BlockListUpdater,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
     val keys: StateFlow<Set<EngineId>> = registry.observeKeys().stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
@@ -139,6 +180,40 @@ class SettingsViewModel @Inject constructor(
     /** Takes effect at Qwen's next call: a model already loaded on the other backend is reloaded then. */
     fun setQwenBackend(v: QwenBackend) = viewModelScope.launch { repo.setQwenBackend(v) }
     fun setStudioOnlyWhileCharging(v: Boolean) = viewModelScope.launch { repo.setStudioOnlyWhileCharging(v) }
+    /** Models and language packs over Wi-Fi only; the app keeps the download code in step (`PanelglassApp`). */
+    fun setDownloadWifiOnly(v: Boolean) = viewModelScope.launch { repo.setDownloadWifiOnly(v) }
+
+    /**
+     * The Studio's default export folder as the row shows it: the picked folder's own name, or null for
+     * `Download/Panelglass`. A folder whose name cannot be read (permission gone) shows the last part of its path.
+     */
+    val exportFolderName: StateFlow<String?> = settings.map { it.studioExportFolder }.distinctUntilChanged()
+        .map { uri -> uri?.let { withContext(Dispatchers.IO) { ExportFolders.name(context, it) } } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Set when the folder just picked could not be kept (the provider refused a lasting permission). */
+    val exportFolderRefused = MutableStateFlow(false)
+
+    /**
+     * Exports go to [tree] (a folder the system picker returned) from now on, for every manga without its own folder;
+     * null goes back to Downloads. The folder's permission is kept across restarts first; one that cannot be kept is
+     * refused and the setting is left as it was. A permission given up is not released: a manga may use that folder.
+     */
+    fun setExportFolder(tree: Uri?) = viewModelScope.launch {
+        if (tree != null) {
+            val kept = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }.isSuccess
+            }
+            exportFolderRefused.value = !kept
+            if (!kept) return@launch
+        } else exportFolderRefused.value = false
+        repo.setStudioExportFolder(tree?.toString())
+    }
+
     fun setSfxMode(v: SfxMode) = viewModelScope.launch { repo.setSfxMode(v) }
 
     /** Settings › About: the installed version, and a check for a newer release (shown by the app-wide dialog). */
@@ -159,16 +234,93 @@ class SettingsViewModel @Inject constructor(
 
     /** What each Studio manga takes on the phone; null until measured (it walks the page files). */
     val studioStorage = MutableStateFlow<List<MangaStorage>?>(null)
-    fun loadStudioStorage() = viewModelScope.launch { studioStorage.value = studio.storage() }
     /** Deletes the manga with its chapters, pages and their files; exported files are not touched. */
     fun deleteStudioManga(m: Manga) = viewModelScope.launch {
         studio.deleteManga(m)
-        studioStorage.value = studio.storage()
+        storageJob?.join() // a measurement started before the delete would show the manga again
+        loadStorage()
     }
 
     // ---- translation --------------------------------------------------------------------------
-    fun setSrc(l: Lang) = viewModelScope.launch { repo.setDefaultSourceLang(l) }
-    fun setTgt(l: Lang) = viewModelScope.launch { repo.setDefaultTargetLang(l) }
+    /** One side, read and written in one edit (two quick picks never undo each other); see [SettingsRepository.setSource]. */
+    fun setSrc(l: Lang) = viewModelScope.launch { repo.setSource(l) }
+    fun setTgt(l: Lang) = viewModelScope.launch { repo.setTarget(l) }
+    fun setLanguages(src: Lang, tgt: Lang) = viewModelScope.launch { repo.setLanguages(src, tgt) }
+
+    /** The pairs set lately, newest first; Settings › Languages offers them as chips. */
+    val recentPairs: StateFlow<List<Pair<Lang, Lang>>> = repo.recentPairs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Whether From and To can trade places: the target must be a language the reader can read (a source choice). */
+    fun canSwap(s: Settings): Boolean = s.defaultTargetLang in Lang.sourceChoices && s.defaultSourceLang in Lang.targetChoices
+
+    fun swapLanguages() = viewModelScope.launch {
+        val s = repo.current()
+        if (canSwap(s)) repo.setLanguages(s.defaultTargetLang, s.defaultSourceLang)
+    }
+
+    /** Settings' notes back to the shipped default (register, honorifics, pronouns, short lines). */
+    fun resetTranslationNotes() = viewModelScope.launch { repo.setTranslationNotes(TranslationNotes.DEFAULT) }
+
+    /** Series with a glossary and their terms, counted together. */
+    val glossarySummary: StateFlow<GlossarySummary> =
+        glossary.observeSummary().stateIn(viewModelScope, SharingStarted.Eagerly, GlossarySummary(0, 0))
+
+    /** The reader's "Translate page" target, an ML Kit tag. */
+    val pageTarget: StateFlow<String> = repo.pageTranslateTargetFlow.stateIn(viewModelScope, SharingStarted.Eagerly, "en")
+    fun setPageTarget(tag: String) = viewModelScope.launch { repo.setPageTranslateTarget(tag) }
+
+    private val _blockListUpdate = MutableStateFlow(BlockListUpdate.IDLE)
+    val blockListUpdate: StateFlow<BlockListUpdate> = _blockListUpdate
+    fun updateBlockLists() {
+        if (_blockListUpdate.value == BlockListUpdate.RUNNING) return
+        viewModelScope.launch {
+            _blockListUpdate.value = BlockListUpdate.RUNNING
+            _blockListUpdate.value = if (blockLists.updateNow()) BlockListUpdate.DONE else BlockListUpdate.FAILED
+        }
+    }
+
+    // ---- storage --------------------------------------------------------------------------------
+    /** The Studio's pages and the page cache, as last measured ([loadStorage]); null until then. */
+    private val measured = MutableStateFlow<Pair<Long, Long>?>(null)
+    private var storageJob: Job? = null
+
+    /**
+     * What Panelglass takes. Models and packs follow their stores as they change (a download finishing or a model
+     * deleted on the Models page shows at once); the Studio and the cache are as [loadStorage] last measured them.
+     */
+    val storage: StateFlow<StorageSummary?> = combine(
+        measured,
+        combine((modelStates.values + mangaOcrState + lamaState).toList()) { states -> states.sumOf { (it as? ModelState.Ready)?.sizeBytes ?: 0L } },
+        packState,
+    ) { m, models, packs ->
+        m ?: return@combine null
+        val packCount = packs.downloaded.count { it != LanguagePackStore.BUILT_IN }
+        StorageSummary(
+            models = models,
+            packs = packCount * StorageSummary.PACK_BYTES,
+            packCount = packCount,
+            studio = m.first,
+            cache = m.second,
+            free = runCatching { android.os.StatFs(context.filesDir.path).availableBytes }.getOrNull(),
+        )
+    }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * Measures the Studio's pages (it walks every page file) and the page cache. One measurement at a time: a page
+     * opened while one runs shares it, so two never race to the screen.
+     */
+    fun loadStorage(): Job = storageJob?.takeIf { it.isActive } ?: viewModelScope.launch {
+        val studioList = studio.storage()
+        studioStorage.value = studioList
+        measured.value = studioList.sumOf { it.bytes } to patchCache.sizeBytes()
+    }.also { storageJob = it }
+
+    /** Drops every cached translated page; the reader makes them again as pages are read. */
+    fun clearPageCache() = viewModelScope.launch {
+        patchCache.clear()
+        storageJob?.join()
+        loadStorage()
+    }
 
     /** Explicit provider choice. A keyed engine without a key is not selected; the key sheet is requested instead. */
     fun selectEngine(id: EngineId) = viewModelScope.launch {
@@ -214,8 +366,8 @@ class SettingsViewModel @Inject constructor(
      * saved key. Only Gemini offers a listing today; for other engines the field stays free text.
      */
     fun loadModels(engine: EngineId, typedKey: String?) {
-        if (engine != EngineId.GEMINI) { _modelChoices.value = ModelChoices(); return }
         modelsJob?.cancel()
+        if (engine != EngineId.GEMINI) { _modelChoices.value = ModelChoices(); return }
         modelsJob = viewModelScope.launch {
             _modelChoices.update { it.copy(loading = true, error = null) }
             _modelChoices.value = try {

@@ -99,6 +99,12 @@ class MangaOcrStore @Inject constructor(
         follow()
     }
 
+    /**
+     * Whether every part is on the phone (checked) or queued with the system. False while parts found on disk are
+     * still being hashed ([check]): [download] does nothing then, and the first-start queue must try again later.
+     */
+    fun queuedOrReady(): Boolean = PARTS.all { have(it) || downloads.isActive(key(it.name)) }
+
     /** Follows every queued file and sums their progress; the files download in parallel. */
     private fun follow() {
         _state.value = ModelState.Downloading(0, EXPECTED_BYTES)

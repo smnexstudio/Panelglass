@@ -1,5 +1,10 @@
 package com.smnexstudio.panelglass.feature.settings
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.smnexstudio.panelglass.core.ui.WidthClass
+import com.smnexstudio.panelglass.core.ui.widthClass
 import com.smnexstudio.panelglass.core.model.FontRole
 import com.smnexstudio.panelglass.core.ui.fonts.FontChoices
 import com.smnexstudio.panelglass.core.ui.fonts.FontBrowserSheet
@@ -8,6 +13,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import com.smnexstudio.panelglass.core.ui.AppLocale
 import com.smnexstudio.panelglass.core.ui.languageName
 import java.util.Locale
@@ -111,271 +117,112 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.offset
 
+/** Every sheet and dialog Settings opens, shared by the hub and its pages so each one is drawn once. */
+internal class SettingsSheets {
+    var keyFor by mutableStateOf<EngineId?>(null)
+    var src by mutableStateOf(false)
+    var tgt by mutableStateOf(false)
+    var appLang by mutableStateOf(false)
+    var packs by mutableStateOf(false)
+    var font by mutableStateOf(false)
+    var pageTarget by mutableStateOf(false)
+    var deleting by mutableStateOf<MangaStorage?>(null)
+}
+
 /**
- * @param openKeyFor an `EngineId` name whose key dialog opens on arrival (the reader hands off here).
+ * Settings: a hub (search, then one row per page) and the page it opens. On a phone the page replaces the hub and
+ * Back returns to it; on a wide window the page sits beside the hub.
+ *
+ * @param openKeyFor an `EngineId` name whose key dialog opens on arrival (the reader hands off here); the Engine page
+ *   opens with it.
  * @param onManageFonts the Studio's My fonts screen, where the user adds their own (the font picker's Add).
  */
 @Composable
 fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, vm: SettingsViewModel = hiltViewModel()) {
+    val needsKey by vm.needsKey.collectAsStateWithLifecycle()
+    val sheets = remember { SettingsSheets() }
+    var page by rememberSaveable { mutableStateOf(if (openKeyFor != null) SettingsPage.ENGINE else SettingsPage.HUB) }
+    val wide = widthClass() == WidthClass.EXPANDED
+
+    // Picking a keyed engine without a key routes here: open the dialog, and the selection completes on save.
+    LaunchedEffect(needsKey) { needsKey?.let { sheets.keyFor = it } }
+    LaunchedEffect(openKeyFor) {
+        openKeyFor?.let { name -> runCatching { EngineId.valueOf(name) }.getOrNull()?.let { page = SettingsPage.ENGINE; vm.selectEngine(it) } }
+    }
+    LaunchedEffect(Unit) { vm.loadStorage() }
+    BackHandler(enabled = page != SettingsPage.HUB && (!wide || page.parent != SettingsPage.HUB)) { page = page.parent }
+    // A search in progress: Back clears it first, and stays in Settings (registered last, so it is asked first).
+    var query by rememberSaveable { mutableStateOf("") }
+    val focus = LocalFocusManager.current
+    BackHandler(enabled = query.isNotEmpty() && (wide || page == SettingsPage.HUB)) { query = ""; focus.clearFocus() }
+
+    Box(Modifier.fillMaxSize().themeBackground(LocalAppTheme.current)) {
+        if (wide) {
+            val shown = if (page == SettingsPage.HUB) SettingsPage.ENGINE else page
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.width(380.dp).fillMaxHeight()) { SettingsHub(vm, selected = shown.top, query = query, onQuery = { query = it }, onOpen = { page = it }) }
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    // Beside the hub only a page opened from another page (About's documents) has a Back arrow.
+                    val back = if (shown.parent != SettingsPage.HUB) ({ page = shown.parent }) else null
+                    SettingsPageContent(shown, vm, sheets, onBack = back, onOpen = { page = it }, onManageFonts = onManageFonts)
+                }
+            }
+        } else if (page == SettingsPage.HUB) {
+            SettingsHub(vm, selected = null, query = query, onQuery = { query = it }, onOpen = { page = it })
+        } else {
+            SettingsPageContent(page, vm, sheets, onBack = { page = page.parent }, onOpen = { page = it }, onManageFonts = onManageFonts)
+        }
+    }
+    SettingsSheetsHost(vm, sheets, onManageFonts)
+}
+
+/** The sheets and dialogs [SettingsSheets] asks for. */
+@Composable
+private fun SettingsSheetsHost(vm: SettingsViewModel, sheets: SettingsSheets, onManageFonts: () -> Unit) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val keys by vm.keys.collectAsStateWithLifecycle()
-    val mangaOcr by vm.mangaOcrState.collectAsStateWithLifecycle()
-    val lama by vm.lamaState.collectAsStateWithLifecycle()
     val packs by vm.packState.collectAsStateWithLifecycle()
-    val tryState by vm.tryState.collectAsStateWithLifecycle()
-    val needsKey by vm.needsKey.collectAsStateWithLifecycle()
-
-    var keyDialogFor by remember { mutableStateOf<EngineId?>(null) }
-    var enginePicker by remember { mutableStateOf(false) }
-    var fontPicker by remember { mutableStateOf(false) }
+    val pageTarget by vm.pageTarget.collectAsStateWithLifecycle()
     val favourites by vm.fontFavourites.collectAsStateWithLifecycle()
-    var srcPicker by remember { mutableStateOf(false) }
-    var tgtPicker by remember { mutableStateOf(false) }
-    var appLangPicker by remember { mutableStateOf(false) }
-    var backendPicker by remember { mutableStateOf(false) }
-    var packsSheet by remember { mutableStateOf(false) }
-    var notesDialog by remember { mutableStateOf(false) }
-    var sfxPicker by remember { mutableStateOf(false) }
-    val sfxNames = mapOf(
-        SfxMode.SKIP to stringResource(UiR.string.studio_sfx_keep), SfxMode.REPLACE to stringResource(UiR.string.studio_sfx_replace),
-    )
-    val studioStorage by vm.studioStorage.collectAsStateWithLifecycle()
-    var deletingManga by remember { mutableStateOf<MangaStorage?>(null) }
-    LaunchedEffect(Unit) { vm.loadStudioStorage() }
-    val gpu = stringResource(UiR.string.qwen_backend_gpu); val cpu = stringResource(UiR.string.qwen_backend_cpu)
-    // Automatic names what it picks on this phone ("Automatic · GPU").
-    val backendNames = mapOf(
-        QwenBackend.AUTO to stringResource(UiR.string.qwen_backend_auto, if (vm.qwenAutoOnCpu) cpu else gpu),
-        QwenBackend.GPU to gpu, QwenBackend.CPU to cpu,
-    )
-    val backendNotes = mapOf(
-        QwenBackend.AUTO to stringResource(UiR.string.qwen_backend_auto_note, DeviceMemory.AUTO_GPU_MIN_GB),
-        QwenBackend.GPU to stringResource(UiR.string.qwen_backend_gpu_note),
-        QwenBackend.CPU to stringResource(UiR.string.qwen_backend_cpu_note),
-    )
     val context = LocalContext.current
     val appLang = remember { AppLocale.current(context) }
 
-    // Picking a keyed engine without a key routes here: open the dialog, and the selection completes on save.
-    LaunchedEffect(needsKey) { needsKey?.let { keyDialogFor = it } }
-    LaunchedEffect(openKeyFor) { openKeyFor?.let { name -> runCatching { EngineId.valueOf(name) }.getOrNull()?.let { vm.selectEngine(it) } } }
-
-    Column(Modifier.fillMaxSize().themeBackground(LocalAppTheme.current).verticalScroll(rememberScrollState()).padding(bottom = 28.dp)) {
-        Text(stringResource(UiR.string.settings_title), style = MaterialTheme.typography.headlineSmall, color = Tokens.Ink, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 0.dp))
-
-        // ---- translation: one grouped card ------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.section_translation))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ValueRow(stringResource(UiR.string.lang_source), s.defaultSourceLang.uiName(), onClick = { srcPicker = true }) {
-                Icon(Icons.Outlined.Translate, contentDescription = null, tint = Tokens.InkSoft, modifier = Modifier.size(20.dp))
-            }
-            CardDivider()
-            ValueRow(stringResource(UiR.string.lang_target), s.defaultTargetLang.uiName(), onClick = { tgtPicker = true }) {
-                Icon(Icons.Outlined.Language, contentDescription = null, tint = Tokens.InkSoft, modifier = Modifier.size(20.dp))
-            }
-            CardDivider()
-            ValueRow(stringResource(UiR.string.settings_translation_model), s.engineId.uiName(), onClick = { enginePicker = true }) { SparkleIcon() }
-            CardDivider()
-            // How the reader treats sound effects: kept, glossed, drawn over, or erased and replaced.
-            ValueRow(stringResource(UiR.string.studio_role_sfx), sfxNames.getValue(s.sfxMode), onClick = { sfxPicker = true })
-            CardDivider()
-            // What the AI engines are told on every series; one series' names and pronouns are set in the reader.
-            ActionRow(
-                stringResource(UiR.string.settings_notes),
-                s.translationNotes.lineSequence().firstOrNull { it.isNotBlank() } ?: stringResource(UiR.string.settings_notes_empty),
-                stringResource(UiR.string.action_edit), onAction = { notesDialog = true },
-            )
-        }
-
-        // ---- try -------------------------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.settings_try))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            TryBox(
-                tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { keyDialogFor = it },
-                onUseOnDevice = { vm.selectEngine(EngineId.QWEN15_LOCAL) }, onDownloadPacks = { vm.downloadPacksAndTry(it) },
-            )
-        }
-
-        // ---- app language ----------------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.settings_app_language))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ValueRow(stringResource(UiR.string.app_language), nativeName(appLang), onClick = { appLangPicker = true }) {
-                Icon(Icons.Outlined.Language, contentDescription = null, tint = Tokens.InkSoft, modifier = Modifier.size(20.dp))
-            }
-        }
-
-        // ---- theme grid ------------------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.settings_theme))
-        ThemeGrid(
-            selectedTheme = s.appTheme,
-            onSelect = { vm.setTheme(it) },
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
-        // ---- fonts -----------------------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.settings_fonts))
-        // The Studio's fonts and font picker: every bundled font, the user's own and the phone's, previewed in the
-        // default target language. Auto follows the language a page is translated into.
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                FontField(s.readerFontId, s.defaultTargetLang, FontRole.DIALOGUE) { fontPicker = true }
-                Text(
-                    stringResource(UiR.string.settings_font_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-        }
-        if (fontPicker) FontBrowserSheet(
-            s.readerFontId, s.defaultTargetLang, FontRole.DIALOGUE,
-            FontChoices(
-                favourites = favourites, userFontsKey = null, onFavourite = vm::toggleFontFavourite,
-                onManage = { fontPicker = false; onManageFonts() },
-            ),
-            onFont = vm::setReaderFont, onDismiss = { fontPicker = false },
-        )
-
-        // ---- models ----------------------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.settings_models))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            vm.localModels.forEachIndexed { i, m ->
-                if (i > 0) CardDivider()
-                val state by vm.modelStates.getValue(m).collectAsState()
-                ModelRow(
-                    title = m.label,
-                    name = "LiteRT-LM",
-                    sizeMb = (m.bytes / 1_048_576).toInt(), state = state,
-                    missingNote = if (m.minRamGb > 0) stringResource(UiR.string.model_needs_ram, m.minRamGb) else null,
-                    onDownload = { vm.downloadModel(m) },
-                    onCancel = { vm.cancelDownload(m) }, onDelete = { vm.deleteModel(m) },
-                )
-                if (m == LocalModel.QWEN15) {
-                    CardDivider()
-                    // Same shape as the model rows around it (ActionRow), plus the chevron of a row that opens choices.
-                    Row(
-                        Modifier.fillMaxWidth().clickable { backendPicker = true }.padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(UiR.string.qwen_backend), style = MaterialTheme.typography.bodyLarge, color = Tokens.Ink)
-                            Text(backendNotes.getValue(s.qwenBackend), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(top = 2.dp))
-                        }
-                        Text(
-                            backendNames.getValue(s.qwenBackend), fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 14.sp,
-                            color = Tokens.SkyDeep, maxLines = 1, modifier = Modifier.padding(start = 10.dp),
-                        )
-                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Tokens.InkFaint, modifier = Modifier.padding(start = 2.dp).size(20.dp))
-                    }
-                }
-            }
-            CardDivider()
-            // The Studio only: a chapter on an on-device model can run for hours, so it may wait for the charger.
-            ToggleCardRow(
-                stringResource(UiR.string.studio_only_charging), s.studioOnlyWhileCharging,
-                secondary = stringResource(UiR.string.studio_only_charging_note),
-            ) { vm.setStudioOnlyWhileCharging(it) }
-        }
-        Spacer(Modifier.height(12.dp))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ModelRow(
-                stringResource(UiR.string.model_manga_ocr), "manga-ocr", 140, mangaOcr,
-                readyNote = stringResource(UiR.string.model_manga_ready), missingNote = stringResource(UiR.string.model_manga_missing),
-                onDownload = { vm.downloadMangaOcr() }, onCancel = { vm.cancelMangaOcr() }, onDelete = { vm.deleteMangaOcr() },
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            // LaMa needs 4 GB of RAM: on a smaller phone the row says so instead of offering the download.
-            if (vm.lamaFits) ModelRow(
-                stringResource(UiR.string.model_lama), "LaMa", 208, lama,
-                readyNote = stringResource(UiR.string.model_lama_ready), missingNote = stringResource(UiR.string.model_lama_missing),
-                onDownload = { vm.downloadLama() }, onCancel = { vm.cancelLama() }, onDelete = { vm.deleteLama() },
-            ) else ActionRow(stringResource(UiR.string.model_lama), stringResource(UiR.string.model_lama_needs_ram, 4), null)
-        }
-        Spacer(Modifier.height(12.dp))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            PacksRow(packs, onManage = { packsSheet = true })
-        }
-        Text(
-            stringResource(UiR.string.settings_keys_note),
-            style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft, modifier = Modifier.padding(16.dp, 10.dp),
-        )
-
-        // ---- browsing / storage ----------------------------------------------------------------
-        SectionLabel(stringResource(UiR.string.section_browsing))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ToggleCardRow(stringResource(UiR.string.block_ads), s.adBlockDefault, secondary = blockListAge(s.blockListUpdatedAt)) { vm.setAdBlock(it) }
-        }
-        SectionLabel(stringResource(UiR.string.settings_storage))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ActionRow(stringResource(UiR.string.settings_history), stringResource(UiR.string.settings_history_clear), stringResource(UiR.string.action_clear), Tokens.Error, onAction = { vm.clearHistory() })
-        }
-        StudioStorage(studioStorage, onDelete = { deletingManga = it })
-
-        // ---- about: version and updates (GitHub Releases; the app-wide dialog shows what the check found) -----------
-        SectionLabel(stringResource(UiR.string.settings_about))
-        TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            ActionRow(
-                stringResource(UiR.string.update_check), stringResource(UiR.string.update_version, vm.appVersion),
-                stringResource(UiR.string.update_check_action), onAction = { vm.checkForUpdates() },
-            )
-            CardDivider()
-            // Off: the app never contacts GitHub by itself; the check above still works.
-            ToggleCardRow(stringResource(UiR.string.update_auto), s.autoUpdateCheck, secondary = stringResource(UiR.string.update_auto_note)) {
-                vm.setAutoUpdateCheck(it)
-            }
-        }
-    }
-
-    if (sfxPicker) ChoiceSheet(
-        stringResource(UiR.string.studio_role_sfx), SfxMode.entries, s.sfxMode,
-        render = { sfxNames.getValue(it) }, onPick = { vm.setSfxMode(it) }, onDismiss = { sfxPicker = false },
+    if (sheets.font) FontBrowserSheet(
+        s.readerFontId, s.defaultTargetLang, FontRole.DIALOGUE,
+        FontChoices(
+            favourites = favourites, userFontsKey = null, onFavourite = vm::toggleFontFavourite,
+            onManage = { sheets.font = false; onManageFonts() },
+        ),
+        onFont = vm::setReaderFont, onDismiss = { sheets.font = false },
     )
-    if (notesDialog) TranslationNotesDialog(s.translationNotes, onDismiss = { notesDialog = false }) { vm.setTranslationNotes(it); notesDialog = false }
-
-    deletingManga?.let { m ->
-        DeleteMangaDialog(m, onDismiss = { deletingManga = null }) { vm.deleteStudioManga(m.manga); deletingManga = null }
+    sheets.deleting?.let { m ->
+        DeleteMangaDialog(m, onDismiss = { sheets.deleting = null }) { vm.deleteStudioManga(m.manga); sheets.deleting = null }
     }
-
-    if (packsSheet) PacksSheet(packs, onDownload = { vm.downloadPack(it) }, onDelete = { vm.deletePack(it) }, onDismiss = { packsSheet = false })
-    if (backendPicker) ChoiceSheet(
-        stringResource(UiR.string.qwen_backend), QwenBackend.entries, s.qwenBackend,
-        render = { backendNames.getValue(it) },
-        onPick = { vm.setQwenBackend(it) }, onDismiss = { backendPicker = false },
-        subtitle = { backendNotes.getValue(it) },
+    if (sheets.packs) PacksSheet(packs, onDownload = { vm.downloadPack(it) }, onDelete = { vm.deletePack(it) }, onDismiss = { sheets.packs = false })
+    if (sheets.src) ChoiceSheet(stringResource(UiR.string.lang_source), Lang.sourceChoices, s.defaultSourceLang, { it.uiName() }, onPick = { vm.setSrc(it) }, onDismiss = { sheets.src = false })
+    if (sheets.tgt) ChoiceSheet(stringResource(UiR.string.lang_target), Lang.targetChoices, s.defaultTargetLang, { it.uiName() }, onPick = { vm.setTgt(it) }, onDismiss = { sheets.tgt = false })
+    if (sheets.pageTarget) ChoiceSheet(
+        stringResource(UiR.string.set_page_translate_into), LanguagePackStore.ALL_TAGS, pageTarget, { packName(it) },
+        onPick = { vm.setPageTarget(it) }, onDismiss = { sheets.pageTarget = false },
     )
-    if (srcPicker) ChoiceSheet(stringResource(UiR.string.lang_source), Lang.sourceChoices, s.defaultSourceLang, { it.uiName() }, onPick = { vm.setSrc(it) }, onDismiss = { srcPicker = false })
-    if (tgtPicker) ChoiceSheet(stringResource(UiR.string.lang_target), Lang.targetChoices, s.defaultTargetLang, { it.uiName() }, onPick = { vm.setTgt(it) }, onDismiss = { tgtPicker = false })
     // Each language in its own name (as the system's picker does), the UI language's name for it underneath.
-    if (appLangPicker) ChoiceSheet(
+    if (sheets.appLang) ChoiceSheet(
         stringResource(UiR.string.app_language), AppLocale.tags, appLang, { nativeName(it) },
-        onPick = { tag -> if (tag != appLang) context.findActivity()?.let { AppLocale.set(it, tag) } },
-        onDismiss = { appLangPicker = false },
+        onPick = { tag -> setAppLanguage(context, tag, appLang) },
+        onDismiss = { sheets.appLang = false },
         subtitle = { tag -> languageName(tag).takeIf { it != nativeName(tag) } },
     )
-    val readyEngines = vm.localModels.filter { vm.modelStates.getValue(it).collectAsState().value is ModelState.Ready }
-        .map { it.engineId }.toSet()
-    if (enginePicker) EnginePickerSheet(
-        selected = s.engineId,
-        keyed = { e -> KeyedEngineState(hasKey = e in keys, model = s.modelFor(e)) },
-        onSelect = { vm.selectEngine(it) },
-        // Check disc on a keyed engine without a key: selectEngine records the pending choice, opens the dialog, and
-        // saving the key completes the selection.
-        onNeedsKey = { e -> enginePicker = false; vm.selectEngine(e) },
-        // Name tap: the key + model dialog over the sheet; the selection is untouched.
-        onConfigure = { e -> keyDialogFor = e },
-        onDismiss = { enginePicker = false },
-        hidden = vm.hiddenEngines,
-        ready = readyEngines,
-    )
-    keyDialogFor?.let { engine ->
-        val choices by vm.modelChoices.collectAsStateWithLifecycle()
+    sheets.keyFor?.let { engine ->
+        // Only Gemini has a model listing; every other engine's sheet gets none, never a list loaded for Gemini.
+        val listed by vm.modelChoices.collectAsStateWithLifecycle()
+        val choices = if (engine == EngineId.GEMINI) listed else ModelChoices()
         ApiKeyDialog(
             engine = engine,
             hasKey = engine in keys,
             currentModel = s.modelFor(engine),
             onSave = { key, model, baseUrl -> vm.saveEngineConfig(engine, key, model, baseUrl) },
             onRemove = if (engine in keys) ({ vm.removeKey(engine) }) else null,
-            onDismiss = { keyDialogFor = null; vm.clearNeedsKey() },
+            onDismiss = { sheets.keyFor = null; vm.clearNeedsKey() },
             modelChoices = choices.models,
             modelsLoading = choices.loading,
             modelsError = choices.error,
@@ -385,23 +232,28 @@ fun SettingsScreen(openKeyFor: String? = null, onManageFonts: () -> Unit = {}, v
     }
 }
 
-private fun nativeName(tag: String) = languageName(tag, Locale.forLanguageTag(tag))
+/** Switches the app's language; the activity recreates itself in it. */
+internal fun setAppLanguage(context: Context, tag: String, current: String) {
+    if (tag != current) context.findActivity()?.let { AppLocale.set(it, tag) }
+}
 
-private tailrec fun Context.findActivity(): Activity? = when (this) {
+internal fun nativeName(tag: String) = languageName(tag, Locale.forLanguageTag(tag))
+
+internal tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
 }
 
 @Composable
-private fun blockListAge(updatedAt: Long): String {
+internal fun blockListAge(updatedAt: Long): String {
     if (updatedAt <= 0) return stringResource(UiR.string.blocklist_none)
     val h = ((System.currentTimeMillis() - updatedAt) / 3_600_000).toInt()
     return if (h < 1) stringResource(UiR.string.blocklist_now) else pluralStringResource(UiR.plurals.blocklist_hours, h, h)
 }
 
 @Composable
-private fun mb(bytes: Long): String = stringResource(UiR.string.size_mb, Math.round(bytes / 1048576.0).toInt())
+internal fun mb(bytes: Long): String = stringResource(UiR.string.size_mb, Math.round(bytes / 1048576.0).toInt())
 
 /** Joins a subtitle with an optional note, " · " between them. */
 private fun withNote(text: String, note: String?) = if (note == null) text else "$text · $note"
@@ -411,7 +263,7 @@ private fun withNote(text: String, note: String?) = if (note == null) text else 
  * constants; this shows them in the UI's language. Anything unrecognised (an HTTP code) is shown as it is.
  */
 @Composable
-private fun downloadText(text: String): String = when (text) {
+internal fun downloadText(text: String): String = when (text) {
     SystemDownloads.CHECKING -> stringResource(UiR.string.download_checking)
     SystemDownloads.CORRUPT -> stringResource(UiR.string.download_corrupt)
     "waiting for network" -> stringResource(UiR.string.download_waiting_network)
@@ -431,7 +283,7 @@ private fun downloadText(text: String): String = when (text) {
 
 /** Download / cancel / delete row for a downloadable model, with a progress bar while fetching. */
 @Composable
-private fun ModelRow(
+internal fun ModelRow(
     title: String, name: String, sizeMb: Int, state: ModelState,
     readyNote: String? = null, missingNote: String? = null,
     onDownload: () -> Unit, onCancel: () -> Unit, onDelete: () -> Unit,
@@ -459,7 +311,7 @@ private fun ModelRow(
 
 /** Google Translate (ML Kit) language packs: how many are on the phone; [onManage] opens the per-language list. */
 @Composable
-private fun PacksRow(p: PackState, onManage: () -> Unit) {
+internal fun PacksRow(p: PackState, onManage: () -> Unit) {
     val all = LanguagePackStore.ALL_TAGS
     val subtitle = p.current?.let { stringResource(UiR.string.packs_downloading_one, packName(it)) }
         ?: stringResource(UiR.string.packs_count, all.count { p.has(it) }, all.size)
@@ -475,7 +327,7 @@ private fun PacksRow(p: PackState, onManage: () -> Unit) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (String) -> Unit, onDismiss: () -> Unit) {
+internal fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (String) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tokens.Card) {
         LazyColumn(Modifier.padding(horizontal = 16.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
@@ -513,7 +365,7 @@ private fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (St
 // ---- try box ---------------------------------------------------------------------------------
 
 @Composable
-private fun TryBox(
+internal fun TryBox(
     t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit,
     onDownloadPacks: (List<String>) -> Unit,
 ) {
@@ -557,7 +409,7 @@ private fun TryBox(
 private enum class Action { ADD_KEY, USE_ON_DEVICE, DOWNLOAD_PACK, NONE }
 
 /** A Google Translate pack's language, named in the UI's language. */
-private fun packName(tag: String): String =
+internal fun packName(tag: String): String =
     Lang.entries.firstOrNull { GoogleTranslateEngine.tag(it) == tag }?.uiName() ?: LanguagePackStore.displayName(tag)
 
 @Composable
@@ -580,7 +432,7 @@ private fun failureText(f: EngineFailure): Pair<String, Action> {
 }
 
 @Composable
-private fun ThemeGrid(
+internal fun ThemeGrid(
     selectedTheme: AppTheme,
     onSelect: (AppTheme) -> Unit,
     modifier: Modifier = Modifier,
@@ -1023,7 +875,7 @@ private fun MiniThemeScreen(theme: AppTheme) {
  * Only the Studio is listed here; models have their own rows under Models.
  */
 @Composable
-private fun StudioStorage(list: List<MangaStorage>?, onDelete: (MangaStorage) -> Unit) {
+internal fun StudioStorage(list: List<MangaStorage>?, onDelete: (MangaStorage) -> Unit) {
     val context = LocalContext.current
     SectionLabel(stringResource(UiR.string.settings_studio_storage))
     TokenCard(Modifier.padding(horizontal = 16.dp)) {
@@ -1054,7 +906,7 @@ private fun StudioStorage(list: List<MangaStorage>?, onDelete: (MangaStorage) ->
 
 /** Says exactly what a delete removes, and what it keeps, before anything is deleted. */
 @Composable
-private fun DeleteMangaDialog(m: MangaStorage, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+internal fun DeleteMangaDialog(m: MangaStorage, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     val context = LocalContext.current
     StickerDialog(onDismiss) {
         Text(stringResource(UiR.string.settings_studio_delete_title, m.manga.title), fontFamily = Jakarta, fontWeight = FontWeight.W800, fontSize = 20.sp, color = Tokens.Ink)
@@ -1073,37 +925,6 @@ private fun DeleteMangaDialog(m: MangaStorage, onDismiss: () -> Unit, onConfirm:
             TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onDismiss)
             Spacer(Modifier.width(8.dp))
             PrimaryPill(stringResource(UiR.string.action_delete).uppercase(), letterSpaced = true, onClick = onConfirm)
-        }
-    }
-}
-
-/** Settings' notes for the AI engines, on every series: tone, honorifics, how to treat pronouns. */
-@Composable
-private fun TranslationNotesDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var draft by remember(initial) { mutableStateOf(initial) }
-    StickerDialog(onDismiss) {
-        Text(stringResource(UiR.string.settings_notes), fontFamily = Jakarta, fontWeight = FontWeight.W800, fontSize = 20.sp, color = Tokens.Ink)
-        Spacer(Modifier.height(14.dp))
-        OutlinedTextField(
-            value = draft, onValueChange = { draft = it.take(TranslationNotes.MAX_CHARS) },
-            placeholder = { Text(stringResource(UiR.string.settings_notes_hint)) },
-            minLines = 3, maxLines = 8,
-            supportingText = { Text("${draft.length} / ${TranslationNotes.MAX_CHARS}") },
-            shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Tokens.Ink, unfocusedBorderColor = Tokens.Border, focusedTextColor = Tokens.Ink, unfocusedTextColor = Tokens.Ink,
-                cursorColor = Tokens.Ink, focusedPlaceholderColor = Tokens.InkFaint, unfocusedPlaceholderColor = Tokens.InkFaint,
-            ),
-        )
-        Text(
-            stringResource(UiR.string.settings_notes_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-            TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft, onDismiss)
-            Spacer(Modifier.width(8.dp))
-            PrimaryPill(stringResource(UiR.string.action_save).uppercase(), letterSpaced = true, onClick = { onSave(draft) })
         }
     }
 }
