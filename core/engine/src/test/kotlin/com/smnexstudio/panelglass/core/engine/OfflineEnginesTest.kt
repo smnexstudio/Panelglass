@@ -4,10 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
 import com.smnexstudio.panelglass.core.engine.http.HttpEngineSupport
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.ChatPrompt
 import com.smnexstudio.panelglass.core.engine.local.LlmRunner
@@ -18,7 +15,6 @@ import com.smnexstudio.panelglass.core.engine.mt.DeepLEngine
 import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.PackGate
 import com.smnexstudio.panelglass.core.engine.mt.PairTranslator
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
@@ -63,8 +59,8 @@ class OfflineEnginesTest {
         packGate = PackGate.OPEN
     }
     private val registry = EngineRegistry(
-        locals, GeminiEngine(offline, keys, settings), ClaudeEngine(offline, keys, settings), OpenAiEngine(offline, keys, settings),
-        DeepLEngine(offline, keys), PapagoEngine(offline, keys), DeepSeekEngine(offline, keys),
+        locals, GeminiEngine(offline, keys, settings), com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(offline, keys, settings),
+        DeepLEngine(offline, keys),
         google, OpenRouterEngine(offline, keys, settings), keys, settings,
     )
     private val req = TranslateRequest(listOf(RegionItem(0, "img", RegionKind.ENCLOSED, "kou")), Lang.JA, Lang.EN)

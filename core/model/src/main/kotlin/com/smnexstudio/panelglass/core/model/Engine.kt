@@ -21,11 +21,12 @@ enum class EngineId(
     val offered: Boolean = true,
 ) {
     GEMINI("Gemini", KeyRequirement.USER_KEY, "gemini-flash-latest"),
-    CLAUDE("Claude", KeyRequirement.USER_KEY, "claude-haiku-4-5", offered = false),
-    OPENAI("OpenAI", KeyRequirement.USER_KEY, "gpt-4.1-mini", offered = false),
+    /**
+     * A user-supplied OpenAI-compatible server: the user names the base address and the model in Settings. Text only:
+     * the on-device OCR feeds it, no image is ever sent.
+     */
+    CUSTOM("Custom AI", KeyRequirement.USER_KEY, ""),
     DEEPL("DeepL", KeyRequirement.USER_KEY, offered = false),
-    PAPAGO("Papago", KeyRequirement.USER_KEY, offered = false),
-    DEEPSEEK("DeepSeek", KeyRequirement.USER_KEY, offered = false),
     /**
      * Google's ML Kit on-device translation: free, no key, language packs downloaded on first use. Named with
      * "(ML Kit)" so it is never taken for the Google Translate app or its cloud service.

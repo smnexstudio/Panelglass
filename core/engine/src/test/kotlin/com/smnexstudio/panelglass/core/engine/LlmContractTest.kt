@@ -32,18 +32,18 @@ class LlmContractTest {
     @Test
     fun parseToleratesProseAndFences() {
         val raw = "Sure! ```json\n[{\"i\":0,\"text\":\"Hi\"},{\"i\":1,\"text\":\"BAM\"},{\"i\":2,\"text\":\"Ty\"}]\n```"
-        assertEquals(3, LlmContract.parse(EngineId.CLAUDE, raw, items).size)
+        assertEquals(3, LlmContract.parse(EngineId.CUSTOM, raw, items).size)
     }
 
     @Test
     fun lengthMismatchIsMalformed() {
-        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.OPENAI, """[{"i":0,"text":"Hi"}]""", items) }
+        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.CUSTOM, """[{"i":0,"text":"Hi"}]""", items) }
         assertTrue(e.failure is EngineFailure.Malformed)
     }
 
     @Test
     fun garbageIsMalformed() {
-        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.OPENAI, "not json at all", items) }
+        val e = assertThrows(EngineException::class.java) { LlmContract.parse(EngineId.CUSTOM, "not json at all", items) }
         assertTrue(e.failure is EngineFailure.Malformed)
     }
 
@@ -54,6 +54,31 @@ class LlmContractTest {
         assertTrue(p.contains("ルフィ => Luffy"))
         assertTrue(p.contains("i=1"))
         assertTrue(p.contains("SLAM"))
+    }
+
+    @Test
+    fun thePromptShowsWhatASingleItemReplyLooksLike() {
+        val plain = LlmContract.systemPrompt(TranslateRequest(items, Lang.JA, Lang.EN))
+        assertTrue(plain.contains("Example with one item"), plain)
+        assertTrue(plain.contains("A single item is still an array"), plain)
+        assertTrue(plain.contains("the first character of your reply must be ["), plain)
+        // The same example is in the variant that reads the crops.
+        val withCrops = LlmContract.systemPrompt(
+            TranslateRequest(items, Lang.JA, Lang.EN, readImages = mapOf(0 to ByteArray(1))),
+        )
+        assertTrue(withCrops.contains("Example with one item"), withCrops)
+        assertTrue(withCrops.contains("the first character of your reply must be ["), withCrops)
+    }
+
+    @Test
+    fun theRetryMessageCarriesTheInputWithIt() {
+        val payload = LlmContract.userPayload(items, emptySet())
+        val msg = LlmContract.retryUserMessage(payload)
+        assertTrue(msg.startsWith(payload), msg)
+        assertTrue(msg.contains("Your previous reply could not be used"), msg)
+        assertTrue(msg.contains("The first character of your reply must be ["), msg)
+        // The variant that reads the crops asks for the source as well.
+        assertTrue(LlmContract.retryUserMessage(payload, withSource = true).contains("{i, source, text}"))
     }
 
     @Test
@@ -125,8 +150,8 @@ class LlmContractTest {
         val rl = HttpEngineSupport.mapStatus(EngineId.GEMINI, 429, "slow down", "5")
         assertTrue(rl is EngineFailure.RateLimited && rl.retryAfterMs == 5_000L)
         assertTrue(HttpEngineSupport.mapStatus(EngineId.DEEPL, 456, "", null) is EngineFailure.QuotaExceeded)
-        assertTrue(HttpEngineSupport.mapStatus(EngineId.CLAUDE, 529, "", null) is EngineFailure.Overloaded)
-        assertTrue(HttpEngineSupport.mapStatus(EngineId.OPENAI, 501, "", null) is EngineFailure.Unavailable)
+        assertTrue(HttpEngineSupport.mapStatus(EngineId.CUSTOM, 529, "", null) is EngineFailure.Overloaded)
+        assertTrue(HttpEngineSupport.mapStatus(EngineId.CUSTOM, 501, "", null) is EngineFailure.Unavailable)
     }
 
     @Test

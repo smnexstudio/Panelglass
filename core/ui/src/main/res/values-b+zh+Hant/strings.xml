@@ -109,6 +109,9 @@
     <string name="key_hint">API 金鑰</string>
     <string name="key_hint_saved">API 金鑰（已儲存 · 留空則保留）</string>
     <string name="key_model">模型</string>
+    <string name="key_base_url">伺服器位址</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">你的伺服器位址。僅限 HTTPS。完整的 …/chat/completions 位址也可以。</string>
     <string name="key_models_loading">正在載入模型…</string>
     <plurals name="key_models_count">
         <item quantity="other">此金鑰可用 %d 個模型</item>
@@ -664,4 +667,8 @@
     <string name="update_install_permission">如果 Android 要求，請允許 Panelglass 安裝應用程式，然後再次輕觸「安裝」。</string>
     <string name="update_failed_check">無法檢查更新。請檢查網路連線後再試一次。</string>
     <string name="update_failed_download">無法下載更新。</string>
+    <string name="key_small_model_warning">這看起來是一個非常小的模型（約 1B）。這麼小的模型通常無法遵循翻譯格式；7B 或更大的模型效果好得多。</string>
+    <string name="key_host_changed">此位址指向 %1$s，但你儲存的金鑰是為 %2$s 輸入的。要將該金鑰傳送到 %1$s 嗎？</string>
+    <string name="key_host_new_key">輸入新金鑰</string>
+    <string name="key_host_keep">保留金鑰</string>
 </resources>

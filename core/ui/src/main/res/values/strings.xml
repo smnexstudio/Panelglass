@@ -131,6 +131,13 @@
     <string name="key_hint">API key</string>
     <string name="key_hint_saved">API key (saved · leave empty to keep)</string>
     <string name="key_model">Model</string>
+    <string name="key_base_url">Server address</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_small_model_warning">This looks like a very small model (about 1B). Models this small usually cannot follow the translation format; 7B or larger works much better.</string>
+    <string name="key_host_changed">This address points to %1$s, but your saved key was entered for %2$s. Send that key to %1$s?</string>
+    <string name="key_host_new_key">Enter new key</string>
+    <string name="key_host_keep">Keep key</string>
     <string name="key_models_loading">Loading models…</string>
     <plurals name="key_models_count">
         <item quantity="one">%d model for this key</item>

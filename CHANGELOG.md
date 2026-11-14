@@ -7,6 +7,25 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Added
+
+- **Custom AI**, a translation engine for your own OpenAI-compatible server. Name its address and the model in
+  Settings and paste your key: the app sends a plain text Chat Completions request to `<your address>/chat/completions`
+  and reads the text on the device, so no image ever leaves the phone. The address must be HTTPS; a pasted
+  `…/chat/completions` address is accepted and no `/v1` is added for you. Replies from home servers are read
+  tolerantly (a bare object, a fenced or wrapped array, text parts), a malformed reply is retried in one self-contained
+  request that asks only for the bubbles the reply missed or garbled (the good ones are kept, so a bad reply never
+  costs the whole page twice), and the key sheet warns when the model name gives away a model of about a billion parameters or less
+  (saving is still allowed).
+
+### Security
+
+- Model downloads refuse cleartext addresses, and the update client refuses cleartext requests and redirects.
+- Translation engines no longer follow redirects (a redirect would re-send the page text, and for Gemini the key, to
+  another host), refuse plain HTTP on every hop, and stop reading a reply past 4 MB.
+- Changing the Custom AI address to another server while keeping the saved key now asks first: keep the key for the
+  new server, or enter a new one.
+
 ## [0.5.0] - 2026-11-08
 
 ### Changed

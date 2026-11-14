@@ -115,6 +115,9 @@
     <string name="key_hint">Ключ API</string>
     <string name="key_hint_saved">Ключ API (сохранён · оставьте пустым, чтобы не менять)</string>
     <string name="key_model">Модель</string>
+    <string name="key_base_url">Адрес сервера</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">Адрес вашего сервера. Только HTTPS. Полный адрес …/chat/completions тоже подойдёт.</string>
     <string name="key_models_loading">Загрузка моделей…</string>
     <plurals name="key_models_count">
         <item quantity="one">Для этого ключа доступна %d модель</item>
@@ -709,4 +712,8 @@
     <string name="update_install_permission">Если Android попросит, разрешите Panelglass устанавливать приложения и снова нажмите «Установить».</string>
     <string name="update_failed_check">Не удалось проверить обновления. Проверьте подключение и повторите попытку.</string>
     <string name="update_failed_download">Не удалось загрузить обновление.</string>
+    <string name="key_small_model_warning">Похоже, это очень маленькая модель (около 1B). Такие маленькие модели обычно не соблюдают формат перевода; модель на 7B и больше работает гораздо лучше.</string>
+    <string name="key_host_changed">Этот адрес указывает на %1$s, но сохранённый ключ был введён для %2$s. Отправить этот ключ на %1$s?</string>
+    <string name="key_host_new_key">Ввести новый ключ</string>
+    <string name="key_host_keep">Оставить ключ</string>
 </resources>

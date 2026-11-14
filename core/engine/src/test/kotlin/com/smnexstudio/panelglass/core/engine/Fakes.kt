@@ -29,5 +29,6 @@ object PlainCrypto : BlobCrypto {
 
 fun testKeyStore(ds: DataStore<Preferences> = MemoryDataStore()) = SecureKeyStore(ds, PlainCrypto)
 fun testSettings(ds: DataStore<Preferences> = MemoryDataStore()) = SettingsRepository(ds)
-fun testSupport() = HttpEngineSupport(OkHttpClient(), Json { ignoreUnknownKeys = true; isLenient = true })
+/** The engines' HTTP layer pointed at a plain-HTTP MockWebServer: every guard but HTTPS-only. */
+fun testSupport() = HttpEngineSupport(OkHttpClient(), Json { ignoreUnknownKeys = true; isLenient = true }, httpsOnly = false)
 

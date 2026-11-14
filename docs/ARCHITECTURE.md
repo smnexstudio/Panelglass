@@ -167,7 +167,7 @@ Every module also depends on `:core:model`; those edges are left out for readabi
 |---|---|---|
 | `:core:model` | Pure Kotlin, no Android. The shared vocabulary. | `Lang`, `EngineId`, `EngineFailure`, `TextLine`, `TextRegion`, `RegionKind`, `TranslateConfig`, `Settings`, `Site`, `GlossaryEntry`, `Pronoun`, `SeriesNotes`, `TranslationNotes` |
 | `:core:data` | Persistence, secrets, downloads, updates. | `PanelglassDb` (Room), `SettingsRepository` (DataStore), `SecureKeyStore`, `PatchCache`, `SystemDownloads`, `GlossaryRepository`, `AppUpdates` |
-| `:core:engine` | Everything that turns source text into target text. | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `GoogleTranslateEngine`, `LocalLlmEngine` / `LocalPrompt`, `SfxDictionary` |
+| `:core:engine` | Everything that turns source text into target text. | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `CustomOpenAiEngine`, `GoogleTranslateEngine`, `LocalLlmEngine` / `LocalPrompt`, `SfxDictionary` |
 | `:core:ocr` | Finding and reading text in a bitmap. | `ComicTextDetector`, `MissedTextDetector` (+ `DbPostProcess`), `MangaOcrRecognizer`, `MlKitCropRecognizer` (+ `HighContrast`), `RegionBuilder`, `RegionClassifier`, `RegionClusterer` |
 | `:core:render` | Erasing source text and drawing the translation; the Studio's page layers. | `TextEraser`, `RegionRenderer`, `Placement`, `PatchEncoder`, `PageCleaner`, `StudioRenderer`, `SfxRenderer`, `StudioFonts` |
 | `:core:pipeline` | Orchestration: stages, limits, watchdogs, cache. | `TranslationPipeline`, `RegionOfInterest`, `PageSource`, `PipelineDump`, `TileDetection` |
@@ -255,17 +255,45 @@ flowchart LR
 | Engine | `EngineId` | Where it runs | Reads the crop itself |
 |---|---|---|---|
 | Gemini (and Gemma via the Gemini API) | `GEMINI` | Google API, user key | Yes: one call reads and translates |
+| Custom AI (any OpenAI-compatible server) | `CUSTOM` | The user's own server, user key | No |
 | Google Translate | `GOOGLE` | On device (ML Kit translation) | No |
 | Qwen 2.5 1.5B | `QWEN15_LOCAL` | On device (LiteRT-LM) | No |
 | Gemma 4 E2B | `GEMMA4_LOCAL` | On device (LiteRT-LM), 8 GB RAM devices | No |
 
-Claude, OpenAI, OpenRouter, DeepSeek, DeepL and Papago exist in code as `@PlannedEngine` placeholders: hidden from
-the picker and refused by the registry.
+OpenRouter and DeepL exist in code as `@PlannedEngine` placeholders: hidden from the picker and refused by the
+registry. OpenAI, DeepSeek and other OpenAI-compatible providers are reached through Custom AI; their placeholders,
+with Claude's and Papago's, were removed on 2026-11-13, and a saved choice of one reads back as the default engine.
+
+- **Custom AI's address.** The user names the server's base address and the model in Settings; the key goes to the
+  key store, the address to the settings store (it is not a secret). `CustomEndpoint` reduces the address to its
+  base — a pasted `…/chat/completions` is stripped — and requires HTTPS; the engine then calls
+  `<base>/chat/completions`. No version segment is ever appended. The request is text only: the on-device OCR reads
+  the page, so no crop or montage is sent. A malformed reply is retried once, self-contained (no assistant turn: a
+  home server may rewrite the history), and only for what is missing: `LlmContract.salvage` keeps every requested
+  item the reply got right, and the retry carries just the rest, with a reply cap for that many items. The key is
+  meant for one server: when the sheet is saved with an address
+  on another host and no new key typed (`keyHostChange`), it asks whether to keep the key or enter a new one.
+- **Engine HTTP guards.** `HttpEngineSupport` derives the engines' client from the shared one: redirects are not
+  followed (a 3xx is `Unavailable` naming the redirect: a 307/308 would re-send the page text, and OkHttp keeps
+  Gemini's `x-goog-api-key` across hosts), `HttpsOnly` runs as a network interceptor, and `ReplyCap` stops a reply
+  (or an error page) past 4 MB as `Malformed`.
 
 - **Retries.** Only transient failures are retried, on the same engine and model (`EngineRetry`): rate limits up to
   3 times, overload (HTTP 500/502/503/504/529) up to 2 times, back-off capped at 4 s.
 - **Cloud contract.** LLM engines exchange a JSON array of `{i, text}` items (`LlmContract`); Gemini's reading mode
   returns `{i, source, text}`.
+- **Reading a reply that a local server wrote.** A hosted provider answers with the contract. A server at home may
+  answer with a bare object, with the array inside a code fence, wrapped in a `translations` key, or with the text
+  under `english` or `translation`. `LlmContract.parse` therefore tries the reply as a whole, then as the outermost
+  array, then as the outermost object, and the first that yields a usable list of items wins. An item is usable when
+  it is an object with an `i`; a wrong type anywhere makes the whole candidate unusable rather than throwing, so a
+  reply can never crash the app. What the reply must still carry is unchanged: every requested id exactly once, no
+  ids invented, no reordering.
+- **The retry of a malformed reply.** By default the engine repeats its request with the bad reply and a repair
+  message, which relies on the provider keeping the conversation. A server at home may rewrite that history — the
+  original input dropped, the order reversed — so the Custom AI engine sets `selfContainedRetry` and sends one
+  fresh request that carries the input and the correction together (`LlmContract.retryUserMessage`). The hosted
+  providers keep the old three-turn retry.
 - **On-device contract.** The LiteRT-LM models share one KV cache between prompt and reply (4096 tokens), so they get
   compact numbered lines (`3: translation`) in chunks of at most 12 items, and the reply is streamed and cut as soon
   as every requested line is complete. Only one on-device model is loaded at a time (`LocalEngines`).
@@ -284,7 +312,7 @@ the picker and refused by the registry.
 | What | Where | Notes |
 |---|---|---|
 | Sites, history (last 15), SFX translations, glossary (with pronouns), series notes, Studio library | Room `PanelglassDb`, version 5 | Every schema change bumps the version and adds a `Migration` (`MIGRATION_3_4`, `MIGRATION_4_5`) |
-| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality), "Studio runs only while charging" and the chapter a Studio run is working on | DataStore | Includes remembered Gemini request options per model |
+| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality), "Studio runs only while charging" and the chapter a Studio run is working on | DataStore | Includes remembered Gemini request options per model, and the Custom AI server address |
 | API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
 | Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine, `PIPELINE_VERSION`, font, and a digest of the glossary and notes |
 | Detector models | `assets/` | Bundled: comic detector 11 MB, PP-OCRv6 tiny 1.8 MB |

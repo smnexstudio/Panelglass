@@ -128,9 +128,8 @@ private fun EngineRow(engine: EngineId, selected: Boolean, subtitle: String, onB
 /** A single letter (or two) for the tile. */
 val EngineId.shortName: String
     get() = when (this) {
-        EngineId.GOOGLE -> "G"; EngineId.GEMINI -> "Ge"; EngineId.CLAUDE -> "C"
-        EngineId.OPENAI -> "O"; EngineId.OPENROUTER -> "R"; EngineId.DEEPL -> "D"; EngineId.PAPAGO -> "P"; EngineId.DEEPSEEK -> "S"
-        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"
+        EngineId.GOOGLE -> "G"; EngineId.GEMINI -> "Ge"; EngineId.OPENROUTER -> "R"; EngineId.DEEPL -> "D"
+        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"; EngineId.CUSTOM -> "AI"
     }
 
 /** Provider-tinted tile backgrounds. */
@@ -141,10 +140,7 @@ val EngineId.tileTint: Color
         EngineId.GEMMA4_LOCAL -> Color(0xFFE6F4EA)
         EngineId.GOOGLE -> Color(0xFFE2ECFA)
         EngineId.GEMINI -> Color(0xFFDDE8FF)
-        EngineId.CLAUDE -> Color(0xFFF6E3D3)
-        EngineId.OPENAI -> Color(0xFFDDF3E1)
         EngineId.OPENROUTER -> Color(0xFFECE3FA)
         EngineId.DEEPL -> Color(0xFFD5EEF7)
-        EngineId.PAPAGO -> Color(0xFFDFF5DC)
-        EngineId.DEEPSEEK -> Color(0xFFE4E9FF)
+        EngineId.CUSTOM -> Color(0xFFE8E4F8)
     }

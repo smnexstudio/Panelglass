@@ -142,6 +142,7 @@ translation, restyled in the Studio.</sub>
   |---|---|---|---|
   | **Gemini** | Google's API | Your own API key | Best quality and speed. Reads each balloon itself, so no on-device OCR is needed. Any Gemini or Gemma model your key can use. |
   | **Google Translate (ML Kit)** | On device (Google's ML Kit) | Nothing (~30 MB language packs) | Free and offline |
+  | **Custom AI** | Your own server | Your own API key | Any OpenAI-compatible text server: you name its address and the model. |
   | **Qwen 2.5 1.5B** | On device (LiteRT-LM; GPU, or CPU on phones under 6 GB) | One-time 1.6 GB download | Offline LLM translation |
   | **Gemma 4 E2B** | On device (LiteRT-LM, GPU when available) | One-time 2.6 GB download, 8 GB RAM | Offline LLM translation, higher quality |
 
@@ -286,6 +287,10 @@ Panelglass is not on Google Play. Each release is published on GitHub:
      ML Kit language packs**, where each one can also be deleted.
    - **Gemini**: tap its name, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
      (a *flash* or *flash-lite* model is fastest) and save.
+   - **Custom AI**: your own OpenAI-compatible server. Tap its name, paste the API key, name the model and give the
+     server's address. The address is the one your provider documents (`https://api.example.com/v1`); a full
+     `…/chat/completions` address works too. It must be HTTPS, and no `/v1` is added for you — the path you type is
+     the path that is called. The request is text only: the text is read on the device and no image is sent.
    - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: download the model under **Models**. The engine picker then shows it as
      *downloaded*. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
      memory); **Settings → Models → Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).
@@ -320,7 +325,8 @@ signed with a different key from the published releases, so uninstall one before
 - **Translate page** runs on the device (ML Kit language identification and translation); page text is never sent
   anywhere.
 - **With Gemini**, crops of the text on your screen are sent to Google to be read and translated. With Google
-  Translate, Qwen or Gemma 4, translation happens on the device.
+  Translate, Qwen or Gemma 4, translation happens on the device. **Custom AI** sends the text (read on the device)
+  to the server you named, never an image.
 - **https only**: the app sends nothing in clear text. An `http://` address or link is opened as `https://`, and a
   site that only serves plain http will not load.
 - **Links from other apps** open in the reader but are never translated automatically, even with
@@ -361,7 +367,7 @@ Start at the **[documentation map](docs/README.md)**, which sends you to the rig
 app/                  MainActivity, navigation, application class, update dialog
 core/model/           Pure Kotlin types: languages, engines, failures, regions, settings, glossary, notes
 core/data/            Room, DataStore settings, encrypted key store, patch cache, verified downloads, updates
-core/engine/          Engine registry and retry policy; Gemini, ML Kit translation, on-device LLMs, SFX dictionary
+core/engine/          Engine registry and retry policy; Gemini, Custom AI, ML Kit translation, on-device LLMs, SFX dictionary
 core/ocr/             Comic detector and PP-OCRv6 second pass (ONNX), manga-ocr and ML Kit recognizers, regions
 core/render/          Text erasing and fitting, WEBP patches; the Studio's cleaning, lettering and fonts
 core/pipeline/        TranslationPipeline: detect → read → translate → render, with per-stage watchdogs
@@ -392,16 +398,13 @@ Contributions are welcome. Pick an item, open an issue to say you are on it, and
 
 ### Engines
 
-- [ ] **Claude** (`llm/ClaudeEngine`): verify the Messages API on a device; add a model dropdown.
-- [ ] **OpenAI** (`llm/OpenAiEngine`): verify on a device; model dropdown from `/v1/models`.
 - [ ] **OpenRouter** (`llm/OpenRouterEngine`): verify on a device; model dropdown from `/api/v1/models`.
-- [ ] **DeepSeek** (`llm/DeepSeekEngine`): verify on a device (text only).
 - [ ] **DeepL** (`mt/DeepLEngine`): verify the free and pro hosts, and glossary context.
-- [ ] **Papago** (`mt/PapagoEngine`): verify the NCP endpoint and key pair.
 
 These exist as `@PlannedEngine` placeholders: request formats are unit-tested, but none has run against the real
 service. To offer one, finish its checks, set `offered = true` on its `EngineId`, remove `@PlannedEngine`, and add a
-model list if the provider hosts several (see `GeminiEngine.listModels`).
+model list if the provider hosts several (see `GeminiEngine.listModels`). OpenAI, DeepSeek and other
+OpenAI-compatible providers need no engine of their own: **Custom AI** reaches them at their own address.
 
 ### Quality and performance
 

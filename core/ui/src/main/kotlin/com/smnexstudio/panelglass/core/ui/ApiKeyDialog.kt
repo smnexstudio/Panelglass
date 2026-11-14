@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.ModelSizeHint
 
 /**
  * White card with a 2.5 dp Ink border and 24 dp radius, sitting on an 8 dp-offset Yellow "sticker" shadow.
@@ -63,14 +66,20 @@ fun StickerDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
 /**
  * "<Provider> Key": the key (masked), and for providers that take one, the model id (a deliberate addition to
  * the mock — OpenRouter is unusable without it). Save hands back `null` for the key when the saved one is kept.
+ *
+ * The "Custom AI" engine also needs its server's address, so its sheet carries a third field and the save callback
+ * gains a base-URL argument; every other engine passes `null` for it.
  */
+/** A model smaller than this is warned about: it is unlikely to follow the translation format. */
+private const val SMALL_MODEL_BILLIONS = 2.0
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiKeyDialog(
     engine: EngineId,
     hasKey: Boolean,
     currentModel: String,
-    onSave: (key: String?, model: String?) -> Unit,
+    onSave: (key: String?, model: String?, baseUrl: String?) -> Unit,
     onRemove: (() -> Unit)?,
     onDismiss: () -> Unit,
     /** (id, display name) pairs for the model dropdown; empty leaves the field as plain text. */
@@ -79,12 +88,19 @@ fun ApiKeyDialog(
     modelsError: String? = null,
     /** Asks for the provider's model list, with the key typed so far (null = the saved key). Null: no listing. */
     onLoadModels: ((typedKey: String?) -> Unit)? = null,
+    /** The server's address, for the "Custom AI" engine; null for every other engine. */
+    currentBaseUrl: String = "",
 ) {
     var key by remember(engine) { mutableStateOf("") }
     var model by remember(engine) { mutableStateOf(currentModel) }
+    var baseUrl by remember(engine) { mutableStateOf(currentBaseUrl) }
     var menuOpen by remember(engine) { mutableStateOf(false) }
+    // (saved host, new host) while the sheet asks whether the saved key may go to the new server.
+    var hostPrompt by remember(engine) { mutableStateOf<Pair<String, String>?>(null) }
+    val keyFocus = remember { FocusRequester() }
     LaunchedEffect(engine) { if (hasKey) onLoadModels?.invoke(null) }
-    val canSave = (key.isNotBlank() || hasKey) && (!engine.hasModel || model.isNotBlank())
+    val wantsBaseUrl = engine == EngineId.CUSTOM
+    val canSave = apiKeyCanSave(engine, hasKey, key, model, baseUrl)
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Tokens.Ink, unfocusedBorderColor = Tokens.Border,
         focusedTextColor = Tokens.Ink, unfocusedTextColor = Tokens.Ink, cursorColor = Tokens.Ink,
@@ -97,11 +113,11 @@ fun ApiKeyDialog(
         )
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
-            value = key, onValueChange = { key = it },
+            value = key, onValueChange = { key = it; hostPrompt = null },
             placeholder = { Text(stringResource(if (hasKey) R.string.key_hint_saved else R.string.key_hint)) },
             singleLine = true, visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
-            shape = RoundedCornerShape(14.dp), colors = fieldColors, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp), colors = fieldColors, modifier = Modifier.fillMaxWidth().focusRequester(keyFocus),
         )
         if (engine.hasModel) {
             Spacer(Modifier.height(10.dp))
@@ -138,6 +154,21 @@ fun ApiKeyDialog(
                     )
                 }
             }
+            // A very small model cannot follow the translation format. The user is told, but never stopped: some
+            // small models manage, and the choice is theirs.
+            if (engine == EngineId.CUSTOM) {
+                val size = remember(model) { ModelSizeHint.parameterBillions(model) }
+                if (size != null && size < SMALL_MODEL_BILLIONS) {
+                    // Ink on the yellow tint, as the host warning below: yellow text on the white card was unreadable.
+                    Text(
+                        stringResource(R.string.key_small_model_warning),
+                        fontFamily = Jakarta, fontWeight = FontWeight.W600, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.Ink,
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(10.dp))
+                            .background(Tokens.YellowTint).border(1.dp, Tokens.YellowDeep, RoundedCornerShape(10.dp))
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    )
+                }
+            }
             if (onLoadModels != null) {
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -154,19 +185,62 @@ fun ApiKeyDialog(
                 }
             }
         }
+        if (wantsBaseUrl) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = baseUrl, onValueChange = { baseUrl = it; hostPrompt = null },
+                placeholder = { Text(stringResource(R.string.key_base_url_hint)) },
+                label = { Text(stringResource(R.string.key_base_url)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
+                shape = RoundedCornerShape(14.dp), colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.key_base_url_note),
+                fontFamily = Jakarta, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.InkFaint,
+            )
+        }
         Spacer(Modifier.height(10.dp))
         Text(
             stringResource(R.string.key_note, engine.uiName()),
             fontFamily = Jakarta, fontWeight = FontWeight.W500, fontSize = 11.5.sp, lineHeight = 16.sp, color = Tokens.InkFaint,
         )
         Spacer(Modifier.height(18.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
-            if (hasKey && onRemove != null) { TextAction(stringResource(R.string.key_remove), Tokens.Error) { onRemove(); onDismiss() }; Spacer(Modifier.width(4.dp)) }
-            TextAction(stringResource(R.string.action_cancel), Tokens.InkSoft, onDismiss)
-            Spacer(Modifier.width(8.dp))
-            PrimaryPill(stringResource(R.string.action_save).uppercase(), enabled = canSave, letterSpaced = true, onClick = {
-                onSave(key.trim().ifEmpty { null }, if (engine.hasModel) model.trim() else null); onDismiss()
-            })
+        val save = {
+            onSave(key.trim().ifEmpty { null }, if (engine.hasModel) model.trim() else null, if (wantsBaseUrl) baseUrl.trim() else null); onDismiss()
+        }
+        val prompt = hostPrompt
+        if (prompt != null) {
+            // The saved key was entered for another server. The user may only be fixing a typo in the host, so the key is
+            // never dropped by itself: they choose to keep it for the new host or to type a new one.
+            val (savedHost, newHost) = prompt
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Tokens.YellowTint)
+                    .border(1.dp, Tokens.YellowDeep, RoundedCornerShape(14.dp)).padding(14.dp),
+            ) {
+                Text(
+                    stringResource(R.string.key_host_changed, newHost, savedHost),
+                    fontFamily = Jakarta, fontWeight = FontWeight.W600, fontSize = 13.sp, lineHeight = 18.sp, color = Tokens.Ink,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                    TextAction(stringResource(R.string.key_host_new_key), Tokens.SkyDeep) { hostPrompt = null; keyFocus.requestFocus() }
+                    Spacer(Modifier.width(8.dp))
+                    PrimaryPill(stringResource(R.string.key_host_keep).uppercase(), enabled = canSave, letterSpaced = true, onClick = save)
+                }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                if (hasKey && onRemove != null) { TextAction(stringResource(R.string.key_remove), Tokens.Error) { onRemove(); onDismiss() }; Spacer(Modifier.width(4.dp)) }
+                TextAction(stringResource(R.string.action_cancel), Tokens.InkSoft, onDismiss)
+                Spacer(Modifier.width(8.dp))
+                PrimaryPill(stringResource(R.string.action_save).uppercase(), enabled = canSave, letterSpaced = true, onClick = {
+                    val change = if (wantsBaseUrl) keyHostChange(engine, hasKey, key, currentBaseUrl, baseUrl) else null
+                    if (change != null) hostPrompt = change else save()
+                })
+            }
         }
     }
 }

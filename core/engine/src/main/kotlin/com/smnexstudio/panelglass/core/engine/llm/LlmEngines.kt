@@ -187,42 +187,10 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
     }
 }
 
-/** Claude Messages API over raw HTTP. Model id from Settings (Haiku 4.5 by default: the fast tier, thinking off). */
-@Singleton
-@PlannedEngine("Temporarily hidden: verify Messages API + model list on a device, add a model dropdown")
-class ClaudeEngine @Inject constructor(support: HttpEngineSupport, keys: SecureKeyStore, private val settings: SettingsRepository) : LlmEngine(support, keys) {
-    override val id = EngineId.CLAUDE
-    override val warmUrl = "https://api.anthropic.com/"
-
-    override suspend fun complete(apiKey: String, system: String, turns: List<Turn>, maxOutputTokens: Int): String {
-        val model = settings.current().modelFor(id)
-        if (model.isBlank()) throw EngineException(EngineFailure.Unavailable(id, "No model configured"))
-        val body = buildJsonObject {
-            put("model", s(model))
-            put("max_tokens", n(maxOutputTokens))
-            put("temperature", n(0.2))
-            put("system", s(system))
-            put("messages", buildJsonArray {
-                for (t in turns) add(obj(
-                    "role" to s(t.role),
-                    "content" to buildJsonArray {
-                        t.image?.let { add(obj("type" to s("image"), "source" to obj("type" to s("base64"), "media_type" to s("image/jpeg"), "data" to s(b64(it))))) }
-                        add(obj("type" to s("text"), "text" to s(t.text)))
-                    },
-                ))
-            })
-        }
-        val headers = mapOf("x-api-key" to apiKey, "anthropic-version" to "2023-06-01", "Content-Type" to "application/json")
-        val resp = support.post(id, "https://api.anthropic.com/v1/messages", headers, body)
-        val content = resp.jsonObject["content"]?.jsonArray ?: throw EngineException(EngineFailure.Malformed(id))
-        return content.firstOrNull { it.jsonObject["type"]?.jsonPrimitive?.content == "text" }
-            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw EngineException(EngineFailure.Malformed(id))
-    }
-}
-
 /**
- * Chat Completions shape shared by OpenAI, DeepSeek and OpenRouter; only the host, model, extra headers
- * and vision support differ. [endpoint] is a `var` so tests can point it at a MockWebServer.
+ * Chat Completions shape of a hosted OpenAI-compatible provider (OpenRouter); only the host, model, extra headers and
+ * vision support differ between them. [endpoint] is a `var` so tests can point it at a MockWebServer. The user's own
+ * server is [CustomOpenAiEngine].
  */
 abstract class OpenAiCompatibleEngine(
     support: HttpEngineSupport, keys: SecureKeyStore,
@@ -230,7 +198,7 @@ abstract class OpenAiCompatibleEngine(
 ) : LlmEngine(support, keys) {
     override val warmUrl: String get() = endpoint.substringBefore("/v1/") + "/"
 
-    /** Model id for this call; OpenAI and OpenRouter read it from settings, DeepSeek is fixed. */
+    /** Model id for this call, from settings. */
     protected abstract suspend fun model(): String
 
     /** Provider-specific headers beyond Authorization / Content-Type. */
@@ -263,23 +231,6 @@ abstract class OpenAiCompatibleEngine(
         val resp = support.post(id, endpoint, headers, body)
         return resp.str("choices", "0", "message", "content") ?: throw EngineException(EngineFailure.Malformed(id))
     }
-}
-
-@Singleton
-@PlannedEngine("Temporarily hidden: verify on a device, add a model dropdown from /v1/models")
-class OpenAiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureKeyStore, private val settings: SettingsRepository) :
-    OpenAiCompatibleEngine(support, keys, "https://api.openai.com/v1/chat/completions") {
-    override val id = EngineId.OPENAI
-    override suspend fun model() = settings.current().modelFor(id)
-}
-
-@Singleton
-@PlannedEngine("Temporarily hidden: verify on a device")
-class DeepSeekEngine @Inject constructor(support: HttpEngineSupport, keys: SecureKeyStore) :
-    OpenAiCompatibleEngine(support, keys, "https://api.deepseek.com/v1/chat/completions") {
-    override val id = EngineId.DEEPSEEK
-    override val acceptsImages: Boolean get() = false
-    override suspend fun model() = "deepseek-chat"
 }
 
 /**

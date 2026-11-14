@@ -1,7 +1,6 @@
 package com.smnexstudio.panelglass.core.engine
 
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -65,19 +64,6 @@ class ProviderEngineTest {
         val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
         assertTrue(e.failure is EngineFailure.Unavailable)
         assertEquals(0, server.requestCount)
-    }
-
-    @Test
-    fun openAiSendsTheUsersModelChoice() = runBlocking {
-        keys.set(EngineId.OPENAI, "sk-test")
-        settings.setModel(EngineId.OPENAI, "gpt-4.1")
-        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"[{\"i\":0,\"text\":\"Hello\"},{\"i\":1,\"text\":\"Thanks\"}]"}}]}"""))
-        val engine = OpenAiEngine(testSupport(), keys, settings).apply { endpoint = server.url("/v1/chat/completions").toString() }
-
-        engine.translate(req)
-
-        val body = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
-        assertEquals("gpt-4.1", body["model"]!!.jsonPrimitive.content)
     }
 
     @Test
@@ -184,9 +170,10 @@ class ProviderEngineTest {
 
     @Test
     fun unauthorizedMapsToMissingKey() = runBlocking {
-        keys.set(EngineId.OPENAI, "bad")
+        keys.set(EngineId.OPENROUTER, "bad")
+        settings.setModel(EngineId.OPENROUTER, "openai/gpt-4o-mini")
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"error":{"message":"Incorrect API key provided"}}"""))
-        val engine = OpenAiEngine(testSupport(), keys, settings).apply { endpoint = server.url("/x").toString() }
+        val engine = OpenRouterEngine(testSupport(), keys, settings).apply { endpoint = server.url("/x").toString() }
         val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
         assertTrue(e.failure is EngineFailure.MissingKey)
     }

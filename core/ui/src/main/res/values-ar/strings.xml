@@ -119,6 +119,9 @@
     <string name="key_hint">مفتاح API</string>
     <string name="key_hint_saved">مفتاح API (محفوظ · اتركه فارغًا للإبقاء عليه)</string>
     <string name="key_model">النموذج</string>
+    <string name="key_base_url">عنوان الخادم</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">عنوان خادمك. HTTPS فقط. يعمل أيضًا عنوان كامل ينتهي بـ …/chat/completions.</string>
     <string name="key_models_loading">جارٍ تحميل النماذج…</string>
     <plurals name="key_models_count">
         <item quantity="zero">لا توجد نماذج لهذا المفتاح</item>
@@ -739,4 +742,8 @@
     <string name="update_install_permission">إذا طلب Android ذلك، فاسمح لـ Panelglass بتثبيت التطبيقات، ثم انقر على تثبيت مرة أخرى.</string>
     <string name="update_failed_check">تعذّر التحقق من التحديثات. تحقّق من اتصالك وحاول مرة أخرى.</string>
     <string name="update_failed_download">تعذّر تنزيل التحديث.</string>
+    <string name="key_small_model_warning">يبدو أن هذا نموذج صغير جدًا (حوالي 1B). النماذج بهذا الحجم لا تستطيع عادةً اتباع تنسيق الترجمة؛ نموذج 7B أو أكبر يعمل أفضل بكثير.</string>
+    <string name="key_host_changed">هذا العنوان يشير إلى %1$s، لكن مفتاحك المحفوظ أُدخل لـ %2$s. هل تريد إرسال هذا المفتاح إلى %1$s؟</string>
+    <string name="key_host_new_key">إدخال مفتاح جديد</string>
+    <string name="key_host_keep">الإبقاء على المفتاح</string>
 </resources>

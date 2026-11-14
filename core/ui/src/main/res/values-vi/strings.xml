@@ -109,6 +109,9 @@
     <string name="key_hint">Khóa API</string>
     <string name="key_hint_saved">Khóa API (đã lưu · để trống để giữ nguyên)</string>
     <string name="key_model">Mô hình</string>
+    <string name="key_base_url">Địa chỉ máy chủ</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">Địa chỉ máy chủ của bạn. Chỉ HTTPS. Địa chỉ đầy đủ …/chat/completions cũng dùng được.</string>
     <string name="key_models_loading">Đang tải mô hình…</string>
     <plurals name="key_models_count">
         <item quantity="other">%d mô hình cho khóa này</item>
@@ -664,4 +667,8 @@
     <string name="update_install_permission">Nếu Android hỏi, hãy cho phép Panelglass cài ứng dụng rồi nhấn Cài đặt lần nữa.</string>
     <string name="update_failed_check">Không kiểm tra được bản cập nhật. Hãy kiểm tra kết nối rồi thử lại.</string>
     <string name="update_failed_download">Không tải được bản cập nhật.</string>
+    <string name="key_small_model_warning">Đây có vẻ là một mô hình rất nhỏ (khoảng 1B). Mô hình nhỏ như vậy thường không tuân theo định dạng bản dịch; mô hình 7B trở lên hoạt động tốt hơn nhiều.</string>
+    <string name="key_host_changed">Địa chỉ này trỏ đến %1$s, nhưng khóa đã lưu được nhập cho %2$s. Gửi khóa đó đến %1$s?</string>
+    <string name="key_host_new_key">Nhập khóa mới</string>
+    <string name="key_host_keep">Giữ khóa</string>
 </resources>

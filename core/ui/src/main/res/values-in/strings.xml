@@ -109,6 +109,9 @@
     <string name="key_hint">Kunci API</string>
     <string name="key_hint_saved">Kunci API (tersimpan · biarkan kosong untuk mempertahankan)</string>
     <string name="key_model">Model</string>
+    <string name="key_base_url">Alamat server</string>
+    <string name="key_base_url_hint">https://api.example.com/v1</string>
+    <string name="key_base_url_note">Alamat server Anda. Hanya HTTPS. Alamat lengkap …/chat/completions juga bisa.</string>
     <string name="key_models_loading">Memuat model…</string>
     <plurals name="key_models_count">
         <item quantity="other">%d model untuk kunci ini</item>
@@ -664,4 +667,8 @@
     <string name="update_install_permission">Jika Android meminta, izinkan Panelglass memasang aplikasi, lalu ketuk Pasang lagi.</string>
     <string name="update_failed_check">Tidak dapat memeriksa pembaruan. Periksa koneksi Anda dan coba lagi.</string>
     <string name="update_failed_download">Pembaruan tidak dapat diunduh.</string>
+    <string name="key_small_model_warning">Ini tampaknya model yang sangat kecil (sekitar 1B). Model sekecil ini biasanya tidak bisa mengikuti format terjemahan; 7B atau lebih besar jauh lebih baik.</string>
+    <string name="key_host_changed">Alamat ini mengarah ke %1$s, tetapi kunci tersimpan Anda dimasukkan untuk %2$s. Kirim kunci itu ke %1$s?</string>
+    <string name="key_host_new_key">Masukkan kunci baru</string>
+    <string name="key_host_keep">Simpan kunci</string>
 </resources>

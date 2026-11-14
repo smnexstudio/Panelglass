@@ -13,10 +13,7 @@ import com.smnexstudio.panelglass.core.data.studio.StudioFiles
 import com.smnexstudio.panelglass.core.data.update.AppUpdates
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.http.HttpEngineSupport
-import com.smnexstudio.panelglass.core.engine.llm.ClaudeEngine
-import com.smnexstudio.panelglass.core.engine.llm.DeepSeekEngine
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
-import com.smnexstudio.panelglass.core.engine.llm.OpenAiEngine
 import com.smnexstudio.panelglass.core.engine.llm.OpenRouterEngine
 import com.smnexstudio.panelglass.core.engine.local.LocalEngines
 import com.smnexstudio.panelglass.core.engine.local.ModelStores
@@ -25,7 +22,6 @@ import com.smnexstudio.panelglass.core.engine.mt.GoogleTranslateEngine
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.engine.mt.PackManager
 import com.smnexstudio.panelglass.core.engine.mt.PairTranslator
-import com.smnexstudio.panelglass.core.engine.mt.PapagoEngine
 import com.smnexstudio.panelglass.core.ocr.LamaStore
 import com.smnexstudio.panelglass.core.ocr.MangaOcrStore
 import kotlinx.serialization.json.Json
@@ -64,8 +60,8 @@ internal class SettingsRig(private val context: Context) {
             } }
         }
         registry = EngineRegistry(
-            LocalEngines(context, ModelStores(context, downloads)), gemini, ClaudeEngine(offline, keys, settings),
-            OpenAiEngine(offline, keys, settings), DeepLEngine(offline, keys), PapagoEngine(offline, keys), DeepSeekEngine(offline, keys),
+            LocalEngines(context, ModelStores(context, downloads)), gemini, com.smnexstudio.panelglass.core.engine.llm.CustomOpenAiEngine(offline, keys, settings),
+            DeepLEngine(offline, keys),
             google, OpenRouterEngine(offline, keys, settings), keys, settings,
         )
         val packs = LanguagePackStore().apply { manager = NoPacks }
