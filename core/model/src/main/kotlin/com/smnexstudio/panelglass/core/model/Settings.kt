@@ -39,6 +39,13 @@ data class Settings(
     val autoUpdateCheck: Boolean = true,
     /** A Studio run on an on-device model waits for the charger (Settings › Models); the reader is not affected. */
     val studioOnlyWhileCharging: Boolean = false,
+    /**
+     * Where a Studio manga with no folder of its own is exported (Settings › Studio): a persisted SAF tree URI, or
+     * null for `Download/Panelglass`.
+     */
+    val studioExportFolder: String? = null,
+    /** Models and language packs download over Wi-Fi only (Settings › Models & downloads); off allows mobile data too. */
+    val downloadWifiOnly: Boolean = true,
     /** Server address for Custom AI; not a secret. */
     val customBaseUrl: String = "",
 ) {

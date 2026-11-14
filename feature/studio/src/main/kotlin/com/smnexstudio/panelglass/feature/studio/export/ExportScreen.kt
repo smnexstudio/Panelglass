@@ -114,6 +114,9 @@ data class ExportChapter(val summary: ChapterSummary, val translated: Int, val p
 /** The pop-ups over the chapter list, in order: what the pages show, the format, then the folder. */
 enum class ExportStep { CHOOSE, CONTENT, FORMAT, CONFIRM }
 
+/** Where this manga exports: the default folder (Settings › Studio), Downloads for it alone, or a folder picked for it. */
+enum class ExportDestination { DEFAULT, DOWNLOADS, FOLDER }
+
 /**
  * The export flow (route `studio/export/{id}?chapter=`): tick the chapters, pick the format and page quality in a
  * pop-up, confirm the folder in another, then follow the export and see what it wrote. The export itself runs in the
@@ -147,9 +150,18 @@ class ExportViewModel @Inject constructor(
     val content = MutableStateFlow(ExportContent.TRANSLATED)
     val format = MutableStateFlow(ExportFormat.CBZ)
     val quality = MutableStateFlow(PageQuality.PNG)
-    /** The destination's name; [custom] when it is a folder the user picked (else Downloads). */
+    /** The destination's name; [destination] says how it was chosen. */
     val folder = MutableStateFlow("")
-    val custom = MutableStateFlow(false)
+    val destination = MutableStateFlow(ExportDestination.DEFAULT)
+    /** A folder picked for this manga (not the default, not Downloads). */
+    val custom: StateFlow<Boolean> = destination.map { it == ExportDestination.FOLDER }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** The default folder's name (Settings › Studio), offered as the alternative to this manga's own. */
+    val defaultFolder = MutableStateFlow("")
+    /** Downloads is the default too: no separate choice for it is offered. */
+    val defaultIsDownloads = MutableStateFlow(true)
+    /** `Download/Panelglass`, as the destination sheet names it. */
+    val downloadsFolder: String get() = labelOf(null)
     val plan = MutableStateFlow<ExportPlan?>(null)
     /** The picked folder could not be kept. */
     val refused = MutableStateFlow(false)
@@ -174,9 +186,19 @@ class ExportViewModel @Inject constructor(
 
     private suspend fun loadFolder() {
         uri = exporter.folderFor(mangaId)
-        custom.value = uri != null
-        folder.value = exporter.folderLabel(uri) ?: uri?.let { Uri.parse(it).lastPathSegment?.substringAfterLast(':') }.orEmpty()
+        destination.value = when (exporter.ownFolder(mangaId)) {
+            null -> ExportDestination.DEFAULT
+            StudioExporter.DOWNLOADS -> ExportDestination.DOWNLOADS
+            else -> ExportDestination.FOLDER
+        }
+        folder.value = labelOf(uri)
+        val default = exporter.defaultFolder()
+        defaultFolder.value = labelOf(default)
+        defaultIsDownloads.value = default == null
     }
+
+    private fun labelOf(uri: String?): String =
+        exporter.folderLabel(uri) ?: uri?.let { Uri.parse(it).lastPathSegment?.substringAfterLast(':') }.orEmpty()
 
     /** The one chapter the screen was opened for; else every chapter with something translated. */
     private fun defaultSelection(list: List<ExportChapter>): Set<Long> =
@@ -227,9 +249,17 @@ class ExportViewModel @Inject constructor(
     fun setFormat(f: ExportFormat) { format.value = f }
     fun setQuality(q: PageQuality) { quality.value = q }
 
-    /** Back to Downloads. */
-    fun useDownloads() = viewModelScope.launch {
-        exporter.choose(mangaId, null)
+    /** Back to the default folder (Settings › Studio; Downloads unless the user picked another). */
+    fun useDefault() = use(null)
+
+    /**
+     * `Download/Panelglass` for this manga, whatever the default: the way out when the default folder is gone (its
+     * permission taken back, its SD card removed). When Downloads is the default, this is the same as [useDefault].
+     */
+    fun useDownloads() = use(if (defaultIsDownloads.value) null else StudioExporter.DOWNLOADS)
+
+    private fun use(choice: String?) = viewModelScope.launch {
+        exporter.choose(mangaId, choice)
         refused.value = false
         loadFolder()
         replan()
@@ -500,7 +530,6 @@ private fun QualityTab(text: String, on: Boolean, modifier: Modifier, onClick: (
 private fun ConfirmStep(vm: ExportViewModel) {
     val plan by vm.plan.collectAsStateWithLifecycle()
     val folder by vm.folder.collectAsStateWithLifecycle()
-    val custom by vm.custom.collectAsStateWithLifecycle()
     val refused by vm.refused.collectAsStateWithLifecycle()
     val format by vm.format.collectAsStateWithLifecycle()
     val quality by vm.quality.collectAsStateWithLifecycle()
@@ -558,12 +587,29 @@ private fun ConfirmStep(vm: ExportViewModel) {
         }
     }
     if (choosingDestination) {
-        val downloads = stringResource(UiR.string.studio_export_downloads)
+        val defaultName by vm.defaultFolder.collectAsStateWithLifecycle()
+        val defaultIsDownloads by vm.defaultIsDownloads.collectAsStateWithLifecycle()
+        val destination by vm.destination.collectAsStateWithLifecycle()
+        val default = stringResource(UiR.string.studio_export_default_named, defaultName)
         val pick = stringResource(UiR.string.studio_export_choose_folder)
+        // Downloads gets its own line only when the default is another folder: the way back when that one is gone.
+        val choices = if (defaultIsDownloads) listOf(ExportDestination.DEFAULT, ExportDestination.FOLDER) else ExportDestination.entries
         ChoiceSheet(
-            stringResource(UiR.string.studio_export_change_folder), listOf(false, true), custom,
-            render = { if (it) pick else downloads },
-            onPick = { folderPicked -> if (folderPicked) runCatching { picker.launch(null) } else vm.useDownloads() },
+            stringResource(UiR.string.studio_export_change_folder), choices, destination,
+            render = {
+                when (it) {
+                    ExportDestination.DEFAULT -> default
+                    ExportDestination.DOWNLOADS -> vm.downloadsFolder
+                    ExportDestination.FOLDER -> pick
+                }
+            },
+            onPick = {
+                when (it) {
+                    ExportDestination.DEFAULT -> vm.useDefault()
+                    ExportDestination.DOWNLOADS -> vm.useDownloads()
+                    ExportDestination.FOLDER -> runCatching { picker.launch(null) }
+                }
+            },
             onDismiss = { choosingDestination = false },
         )
     }

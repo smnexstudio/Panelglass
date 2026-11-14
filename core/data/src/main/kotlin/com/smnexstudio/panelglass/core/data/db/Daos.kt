@@ -14,6 +14,9 @@ import com.smnexstudio.panelglass.core.model.SfxCacheEntry
 import com.smnexstudio.panelglass.core.model.Site
 import kotlinx.coroutines.flow.Flow
 
+/** [GlossaryDao.observeSummary]'s row: series with a glossary, and their terms together. */
+data class GlossarySummary(val series: Int, val terms: Int)
+
 @Dao
 interface SiteDao {
     @Query("SELECT * FROM sites ORDER BY pinned DESC, sortOrder ASC, name COLLATE NOCASE ASC")
@@ -60,6 +63,10 @@ interface GlossaryDao {
 
     @Query("SELECT * FROM glossary WHERE seriesKey = :seriesKey")
     suspend fun forSeries(seriesKey: String): List<GlossaryEntry>
+
+    /** How many series have a glossary, and how many terms they hold together (Settings › Languages). */
+    @Query("SELECT COUNT(DISTINCT seriesKey) AS series, COUNT(*) AS terms FROM glossary")
+    fun observeSummary(): Flow<GlossarySummary>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entry: GlossaryEntry)

@@ -105,7 +105,9 @@ adb shell am start -n com.smnexstudio.panelglass.debug/com.smnexstudio.panelglas
 - [ ] Rendering or detection changes bump `TranslationPipeline.PIPELINE_VERSION` (it keys the patch cache).
 - [ ] Schema changes bump `PanelglassDb.version` **and** add a `Migration` with a test (see `Migration4To5Test`).
 - [ ] New UI strings are in all 16 `values*` folders.
-- [ ] New bundled models or fonts are listed in [NOTICE](NOTICE) with their source, revision and licence.
+- [ ] New bundled models or fonts are listed in [NOTICE](NOTICE) with their source, revision and licence, and in
+  [LICENSES.md](LICENSES.md) (the readable list the app shows). A change in what leaves the phone updates
+  [PRIVACY.md](PRIVACY.md).
 - [ ] Changes to model loading, backends or release timing were re-measured on a phone
   ([docs/MEMORY_USAGE.md › Reproducing](docs/MEMORY_USAGE.md#reproducing)).
 - [ ] Docs in `docs/` still describe what the code does.

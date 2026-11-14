@@ -22,8 +22,8 @@ screen is translated step by step, see [FLOW.md](FLOW.md).
 2. **Engine suited to the series?** Gemini reads the bubbles itself and is the most accurate; the on-device models are
    private and offline; ML Kit is free but literal.
 3. **Names and pronouns in the glossary** (reader ⋮ › *Glossary & pronouns*), for the characters that matter.
-4. **A few translation notes** (Settings › *Translation notes*): tone, honorifics, how to treat missing subjects.
-5. **Sound effects mode** (Settings › *Sound effects*): *Replace* to erase the original effects.
+4. **A few translation notes** (Settings › Languages & notes › *Translation notes*): tone, honorifics, how to treat missing subjects.
+5. **Sound effects mode** (Settings › Languages & notes › *Sound effects*): *Replace* to erase the original effects.
 
 ## Pick the engine for the job
 
@@ -41,7 +41,7 @@ glossary terms.
 
 A wrong source language is the most damaging mistake: Korean read with the Japanese recognizer comes out as nonsense.
 
-- **Settings › Source language** is the default for every site.
+- **Settings › Languages & notes › From** is the default for every site.
 - **A saved site** (Sites › long-press › languages) can have its own pair; it always wins.
 - **The page's own language.** After a page loads, the reader identifies the language of its visible text (ML Kit
   language identification, with `<html lang>` as a hint). If the page is Japanese, Korean or Chinese and differs from
@@ -82,7 +82,7 @@ original leaves out and keeps what it states.
 
 ## Translation notes
 
-**Settings › Translation notes** apply to every series; series notes add to them. Short, factual lines work best,
+**Settings › Languages & notes › Translation notes** apply to every series; series notes add to them. Short, factual lines work best,
 especially for the on-device models (each note is capped at 500 characters).
 
 Settings starts with these notes (`TranslationNotes.DEFAULT`); edit them, or empty them to send none (emptied
@@ -109,7 +109,7 @@ page needs.
 
 ## Sound effects
 
-**Settings › Sound effects** decides what happens to them in the reader:
+**Settings › Languages & notes › Sound effects** decides what happens to them in the reader:
 
 | Mode | Result |
 |---|---|

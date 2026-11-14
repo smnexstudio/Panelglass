@@ -415,7 +415,8 @@ fun ToggleCardRow(label: String, checked: Boolean, secondary: String? = null, on
         Switch(
             checked = checked, onCheckedChange = null,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = if (theme == AppTheme.SOFT_BLOOM) Color.White else Tokens.Ink,
+                // A dark track (Paper & Ink's navy, Soft Bloom's lavender) needs a white knob: Ink vanished on it.
+                checkedThumbColor = if (theme == AppTheme.SOFT_BLOOM || theme == AppTheme.PAPER_INK) Color.White else Tokens.Ink,
                 checkedTrackColor = Tokens.Yellow,
                 uncheckedThumbColor = Tokens.Card,
                 uncheckedTrackColor = Tokens.Border,

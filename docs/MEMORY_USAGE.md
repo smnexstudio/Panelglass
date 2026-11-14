@@ -51,7 +51,7 @@ Measured 2026-09-27. Re-measure when LiteRT-LM, a model file or the trim policy 
   same (~500–600 MB), and the camera runs without killing Panelglass. Pressing Home mid-translation used to keep the
   model loaded for about a minute (3.2 GB on the GPU); it is now released 5 s after its last call (fixed
   2026-09-27, [below](#going-to-the-background-mid-translation)).
-- **Qwen picks its backend by RAM.** Settings › Models › *Qwen runs on* defaults to Automatic: the CPU on phones
+- **Qwen picks its backend by RAM.** Settings › Models & downloads › *Qwen runs on* defaults to Automatic: the CPU on phones
   under 6 GB, the GPU otherwise; GPU and CPU can be forced.
 
 ## Test device
@@ -177,7 +177,7 @@ all (detection and OCR dominate).
 ## Results: Qwen 2.5 1.5B on the CPU
 
 `QWEN15_LOCAL` with the GPU backend skipped. Measured with a debug switch that has since become the setting
-**Settings › Models › Qwen runs on › CPU** (`Settings.qwenBackend`; `LiteRtLmRunner` then tries only the CPU).
+**Settings › Models & downloads › Qwen runs on › CPU** (`Settings.qwenBackend`; `LiteRtLmRunner` then tries only the CPU).
 Automatic, the default, takes the CPU on phones under 6 GB (`DeviceMemory.qwenOnCpu`), so this phone used the GPU.
 The patch cache was cleared first, so every page was really generated. Model loaded on the CPU in 0.9 s (5.7 s the
 first time after install).
@@ -395,7 +395,7 @@ adb shell dumpsys meminfo <renderer-pid>
 
 Then press Start, turn pages, press Home, open the camera
 (`adb shell am start -a android.media.action.STILL_IMAGE_CAMERA`), and swipe the app away in Recents, taking a
-`dumpsys meminfo` at each step. For the CPU backend, pick Settings › Models › Qwen runs on › CPU first. Clear
+`dumpsys meminfo` at each step. For the CPU backend, pick Settings › Models & downloads › Qwen runs on › CPU first. Clear
 `cache/patches` (`adb shell run-as com.smnexstudio.panelglass.debug rm -rf cache/patches`) so pages are really generated.
 The first page load after a launch can stay black on Bilibili: ⋮ › Reload loads it. The phone's default 256 KiB log
 buffer loses pipeline lines within a minute; raise it for the run with `adb logcat -G 8M` and put it back afterwards

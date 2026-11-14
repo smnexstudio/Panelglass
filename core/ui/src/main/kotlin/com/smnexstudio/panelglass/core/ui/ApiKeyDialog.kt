@@ -1,6 +1,16 @@
 package com.smnexstudio.panelglass.core.ui
 
 import androidx.compose.foundation.background
+import com.smnexstudio.panelglass.core.model.CustomProvider
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,7 +103,10 @@ fun ApiKeyDialog(
 ) {
     var key by remember(engine) { mutableStateOf("") }
     var model by remember(engine) { mutableStateOf(currentModel) }
-    var baseUrl by remember(engine) { mutableStateOf(currentBaseUrl) }
+    // Custom AI: the provider is read from the saved address; a sheet with none saved starts on the default preset.
+    val startProvider = if (currentBaseUrl.isBlank()) CustomProvider.DEFAULT else CustomProvider.of(currentBaseUrl)
+    var provider by remember(engine) { mutableStateOf(startProvider) }
+    var baseUrl by remember(engine) { mutableStateOf(if (startProvider.isPreset) startProvider.baseUrl else currentBaseUrl) }
     var menuOpen by remember(engine) { mutableStateOf(false) }
     // (saved host, new host) while the sheet asks whether the saved key may go to the new server.
     var hostPrompt by remember(engine) { mutableStateOf<Pair<String, String>?>(null) }
@@ -112,6 +125,19 @@ fun ApiKeyDialog(
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))
+        if (wantsBaseUrl) {
+            ProviderRow(provider) { picked ->
+                provider = picked
+                hostPrompt = null
+                // A preset brings its address; Custom brings back the user's own saved one, or an empty field.
+                baseUrl = when {
+                    picked.isPreset -> picked.baseUrl
+                    !CustomProvider.of(currentBaseUrl).isPreset -> currentBaseUrl
+                    else -> ""
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+        }
         OutlinedTextField(
             value = key, onValueChange = { key = it; hostPrompt = null },
             placeholder = { Text(stringResource(if (hasKey) R.string.key_hint_saved else R.string.key_hint)) },
@@ -131,7 +157,9 @@ fun ApiKeyDialog(
                 OutlinedTextField(
                     // Typing is free text and never opens the list (it would cover SAVE); a tap on the field or its arrow does.
                     value = model, onValueChange = { model = it },
-                    placeholder = { Text(engine.defaultModel.orEmpty().ifEmpty { "provider/model-name" }) },
+                    placeholder = {
+                        Text(if (wantsBaseUrl) provider.modelHint else engine.defaultModel.orEmpty().ifEmpty { "provider/model-name" })
+                    },
                     label = { Text(stringResource(R.string.key_model)) },
                     singleLine = true,
                     trailingIcon = if (modelChoices.isNotEmpty()) ({ ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen) }) else null,
@@ -187,24 +215,34 @@ fun ApiKeyDialog(
         }
         if (wantsBaseUrl) {
             Spacer(Modifier.height(10.dp))
+            // A preset's address is shown, locked; only Custom takes a typed one.
             OutlinedTextField(
                 value = baseUrl, onValueChange = { baseUrl = it; hostPrompt = null },
+                enabled = !provider.isPreset,
                 placeholder = { Text(stringResource(R.string.key_base_url_hint)) },
                 label = { Text(stringResource(R.string.key_base_url)) },
+                leadingIcon = if (provider.isPreset) ({ Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
-                shape = RoundedCornerShape(14.dp), colors = fieldColors,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Tokens.Ink, unfocusedBorderColor = Tokens.Border, disabledBorderColor = Tokens.Border,
+                    focusedTextColor = Tokens.Ink, unfocusedTextColor = Tokens.Ink, disabledTextColor = Tokens.Ink, cursorColor = Tokens.Ink,
+                    focusedPlaceholderColor = Tokens.InkFaint, unfocusedPlaceholderColor = Tokens.InkFaint,
+                    disabledLabelColor = Tokens.InkSoft, disabledLeadingIconColor = Tokens.InkSoft, disabledContainerColor = Tokens.Bg,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(R.string.key_base_url_note),
+                if (provider.isPreset) stringResource(R.string.key_base_url_set_by, provider.displayName)
+                else stringResource(R.string.key_base_url_note),
                 fontFamily = Jakarta, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.InkFaint,
             )
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            stringResource(R.string.key_note, engine.uiName()),
+            stringResource(R.string.key_note, if (wantsBaseUrl && provider.isPreset) provider.displayName else engine.uiName()),
             fontFamily = Jakarta, fontWeight = FontWeight.W500, fontSize = 11.5.sp, lineHeight = 16.sp, color = Tokens.InkFaint,
         )
         Spacer(Modifier.height(18.dp))
@@ -240,6 +278,36 @@ fun ApiKeyDialog(
                     val change = if (wantsBaseUrl) keyHostChange(engine, hasKey, key, currentBaseUrl, baseUrl) else null
                     if (change != null) hostPrompt = change else save()
                 })
+            }
+        }
+    }
+}
+
+/**
+ * The Custom AI sheet's provider choice: the named presets, then Custom. The picked one is yellow with an Ink border,
+ * as the Save pill; each is a radio button for TalkBack.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProviderRow(selected: CustomProvider, onPick: (CustomProvider) -> Unit) {
+    Text(stringResource(R.string.key_provider), fontFamily = Jakarta, fontWeight = FontWeight.W600, fontSize = 12.sp, color = Tokens.InkSoft)
+    Spacer(Modifier.height(6.dp))
+    FlowRow(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (p in CustomProvider.presets + CustomProvider.CUSTOM) {
+            val on = p == selected
+            val shape = RoundedCornerShape(50)
+            Box(
+                Modifier.heightIn(min = 40.dp).clip(shape)
+                    .background(if (on) Tokens.Yellow else Tokens.Card)
+                    .border(if (on) 2.dp else 1.dp, if (on) Tokens.Ink else Tokens.Border, shape)
+                    .selectable(selected = on, role = Role.RadioButton, onClick = { onPick(p) })
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (p.isPreset) p.displayName else stringResource(R.string.key_provider_custom),
+                    fontFamily = Jakarta, fontWeight = if (on) FontWeight.W800 else FontWeight.W600, fontSize = 13.sp, color = Tokens.Ink,
+                )
             }
         }
     }

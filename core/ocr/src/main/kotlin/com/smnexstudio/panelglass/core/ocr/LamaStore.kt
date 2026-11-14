@@ -86,6 +86,12 @@ class LamaStore @Inject constructor(
         }
     }
 
+    /**
+     * Whether the model is on the phone (checked) or queued with the system. False while a file found on disk is still
+     * being hashed ([check]): [download] does nothing then, and the first-start queue must try again later.
+     */
+    fun queuedOrReady(): Boolean = isGood() || downloads.isActive(KEY)
+
     fun cancel() {
         job?.cancel(); job = null
         downloads.cancel(KEY)

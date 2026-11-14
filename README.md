@@ -76,10 +76,10 @@ Panelglass's machine translation, not the official English edition.</sub>
 <table>
   <tr>
     <td align="center"><img src="docs/Screenshots/library.png" width="180" alt="Panelglass manga reader site management and custom sites"></td>
-    <td align="center"><img src="docs/Screenshots/settings-default.png" width="180" alt="Panelglass reader settings in the Default theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-panel-pop.png" width="180" alt="Panelglass reader settings in the Panel Pop theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-soft-bloom.png" width="180" alt="Panelglass reader settings in the Soft Bloom theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-paper-ink.png" width="180" alt="Panelglass reader settings in the Paper and Ink theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-default.png" width="180" alt="Panelglass Settings hub in the Default theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-panel-pop.png" width="180" alt="Panelglass Settings hub in the Panel Pop theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-soft-bloom.png" width="180" alt="Panelglass Settings hub in the Soft Bloom theme"></td>
+    <td align="center"><img src="docs/Screenshots/settings-paper-ink.png" width="180" alt="Panelglass Settings hub in the Paper and Ink theme"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your sites</sub></td>
@@ -150,12 +150,12 @@ translation, restyled in the Studio.</sub>
   (PP-OCRv6) catches what it misses, above all brush-lettered sound effects; vertical Japanese is read by the optional
   manga-ocr model or by ML Kit with a rotated second pass.
 - **Names, pronouns and notes.** Give a series' characters their spelling and a pronoun (*he*, *she*, *they*) in
-  ⋮ › *Glossary & pronouns*, and tell the AI engines about tone and honorifics in Settings › *Translation notes*.
+  ⋮ › *Glossary & pronouns*, and tell the AI engines about tone and honorifics in Settings › Languages & notes › *Translation notes*.
   Japanese and Korean leave subjects out; this is how the translation gets them right
   ([more](docs/TRANSLATION_QUALITY.md)).
 - **Reads the page's language.** A Korean, Japanese or Chinese page switches the reader to that source language by
   itself, unless you set one for the site.
-- **Sound effects your way.** Keep or replace them (Settings › *Sound effects*); with Replace, even
+- **Sound effects your way.** Keep or replace them (Settings › Languages & notes › *Sound effects*); with Replace, even
   effects nothing can read are erased.
 - **Scrolling and paged readers.** Translations stay on their page image when the site shifts its layout, a page
   turn that does not scroll (tap or swipe readers) is noticed and translated, pages still downloading are picked up
@@ -174,7 +174,7 @@ translation, restyled in the Studio.</sub>
 - **Four themes and 21 lettering fonts** (a comic font for every target language, or your own), and a
   *Try a translation* box to check an engine before reading.
 - **The app speaks your language.** The interface is in English by default and can be switched to any of the 15
-  languages below (Arabic right to left) in Settings › App language.
+  languages below (Arabic right to left) in Settings › Appearance & language.
 - **Updates itself.** A newer release is offered once a day (Update or Later), downloaded,
   checked against its published SHA-256 and handed to Android's installer.
 
@@ -221,13 +221,13 @@ Also in the Studio:
 - **Translation in the background:** a chapter keeps translating when you leave the app or turn the screen off,
   with its progress in a notification (Pause, Resume, Cancel). It waits while the phone is too hot, in Battery Saver
   or low on battery, while Gemini has no network, and while the reader uses the on-device model; **Settings ›
-  Models › Studio runs only while charging** makes on-device chapters wait for the charger.
+  Studio › Studio runs only while charging** makes on-device chapters wait for the charger.
 - **Fonts:** 21 bundled fonts with a dialogue and a sound-effect default for every target language, plus your own
-  `.ttf` / `.otf` / `.ttc`. The reader letters with the same fonts (Settings › Fonts).
+  `.ttf` / `.otf` / `.ttc`. The reader letters with the same fonts (Settings › Sites › Font).
 - **Sound effects:** keep or replace each one, start from a preset, then move, turn, stretch or
   bend it.
-- **Better cleanup:** LaMa, an optional 208 MB model, rebuilds the artwork under text (phones with 4 GB of RAM or
-  more).
+- **Better cleanup:** LaMa, a 208 MB model downloaded at first start, rebuilds the artwork under text (phones with 4 GB
+  of RAM or more).
 - **Phones, tablets and Chromebooks:** on a wide window the editor shows its tools, the page, the bubble editor and
   the chapter's pages side by side, with keyboard shortcuts.
 
@@ -271,33 +271,38 @@ Panelglass is not on Google Play. Each release is published on GitHub:
 3. Open the APK on your phone and allow your browser or file manager to install unknown apps when Android asks.
 4. To update, install the newer APK over the old one; your sites, settings and downloaded models are kept.
    From 0.3.0 the app does this itself: once a day it asks GitHub for the latest release and offers it
-   (**Update** or **Later**); **Settings › About › Check for updates** checks on demand, and
+   (**Update** or **Later**); **Settings › About & updates › Check for updates** checks on demand, and
    **Check automatically** turns the daily check off. The
    APK is downloaded by Android, checked against the release's `.sha256`, and handed to Android's installer (allow
    Panelglass to install apps the first time).
 
 ### Set up
 
-1. Open **Settings → Translation** and choose the source and target languages.
-2. Choose an engine under **Translation model**. **Google Translate (ML Kit)** is selected on a new install:
+Settings opens on a list of pages (search finds any setting by name): **Engine & keys**, **Languages, notes & sound
+effects**, **Models & downloads**, **Reader**, **Studio**, **Storage**, **Appearance & language** and **About & updates**.
+
+1. Open **Settings › Languages & notes** and choose **From** and **To** (the swap button trades them; recent pairs
+   are one tap away).
+2. Choose an engine under **Settings › Engine & keys**. **Google Translate (ML Kit)** is selected on a new install:
    - **Google Translate (ML Kit)**: free and on the device, with Google's ML Kit translation (not the Google
      Translate app or its cloud service). The Japanese, Korean and Chinese language packs (~30 MB each)
      download by themselves when the app first starts; English is built in. Any other language is downloaded only
-     when you ask: tap **Download** when the reader says a pack is missing, or pick languages under **Models →
-     ML Kit language packs**, where each one can also be deleted.
-   - **Gemini**: tap its name, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
+     when you ask: tap **Download** when the reader says a pack is missing, or pick languages under **Models &
+     downloads › ML Kit language packs**, where each one can also be deleted.
+   - **Gemini**: tap **Set key**, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
      (a *flash* or *flash-lite* model is fastest) and save.
-   - **Custom AI**: your own OpenAI-compatible server. Tap its name, paste the API key, name the model and give the
-     server's address. The address is the one your provider documents (`https://api.example.com/v1`); a full
+   - **Custom AI**: an OpenAI-compatible server. Pick **DeepSeek**, **Grok**, **GPT**, **Claude** or **OpenRouter**
+     and the address is filled in; or pick **Custom**, for any other server, and give its address. Tap **Set key**,
+     paste the API key and name the model. The address is the one your provider documents (`https://api.example.com/v1`); a full
      `…/chat/completions` address works too. It must be HTTPS, and no `/v1` is added for you — the path you type is
      the path that is called. The request is text only: the text is read on the device and no image is sent.
-   - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: download the model under **Models**. The engine picker then shows it as
-     *downloaded*. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
-     memory); **Settings → Models → Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).
+   - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: tap **Download** on its row (or under **Models & downloads**); the
+     row then says it is downloaded. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
+     memory); **Settings › Models & downloads › Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).
 3. For Japanese with an offline engine, also download **Japanese manga OCR** (140 MB).
 4. Choose what happens to **Sound effects** (Keep or Replace) and, for Gemini or an on-device model,
    add a few **Translation notes** ([suggested notes](docs/TRANSLATION_QUALITY.md#translation-notes)).
-5. Check the setup with **Try a translation**, then add a site under **Sites**, open a chapter and press **Start**.
+5. Check the setup with **Try a translation** (on the Engine & keys page), then add a site under **Sites**, open a chapter and press **Start**.
    **Stop** ends translation; **⋮ → Re-translate** reads the current screen again from scratch; **⋮ → Glossary &
    pronouns** sets the series' character names and pronouns.
 6. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
@@ -320,6 +325,10 @@ signed with a different key from the published releases, so uninstall one before
 
 ## Privacy
 
+The full policy is [PRIVACY.md](PRIVACY.md), also in the app under **Settings › About & updates › Privacy**; the
+licences of everything the app ships with are in [LICENSES.md](LICENSES.md) (and **Settings › About & updates ›
+Licences**). In short:
+
 - **API keys** are encrypted with the Android Keystore (AES-GCM) and never logged. Requests go straight from your
   device to the provider.
 - **Translate page** runs on the device (ML Kit language identification and translation); page text is never sent
@@ -338,7 +347,7 @@ signed with a different key from the published releases, so uninstall one before
 - **Other network use**: the block lists ([AdGuard DNS filter](https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt),
   [HaGeZi pop-up ads](https://github.com/hagezi/dns-blocklists), [StevenBlack hosts](https://github.com/StevenBlack/hosts)
   as a fallback), the model downloads you start (Hugging Face; Google for ML Kit language packs), and once a day a
-  request to GitHub for the latest release (nothing about you is sent; turn it off in **Settings › About › Check
+  request to GitHub for the latest release (nothing about you is sent; turn it off in **Settings › About & updates › Check
   automatically**; debug builds never check by themselves). Every model file and update is verified against a
   SHA-256, and an installed update's APK is deleted at the next start.
 - **Translation notes and glossaries** stay on the device; they are sent only to the engine you chose, with the text

@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import com.smnexstudio.panelglass.core.data.export.ExportFolders
 import com.smnexstudio.panelglass.feature.studio.StorageSpace
 import dagger.Binds
 import dagger.Module
@@ -80,13 +81,7 @@ class SystemExportTargets @Inject constructor(@ApplicationContext private val co
 
     override fun label(uri: String?): String? {
         if (uri == null) return DOWNLOADS_DIR
-        return runCatching {
-            val tree = Uri.parse(uri)
-            val doc = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
-            resolver.query(doc, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)?.use { c ->
-                if (c.moveToFirst()) c.getString(0) else null
-            }
-        }.getOrNull()
+        return ExportFolders.label(context, uri)
     }
 
     @Suppress("DEPRECATION") // StatFs of shared storage; nothing is read or written through this path
@@ -234,8 +229,8 @@ class SystemExportTargets @Inject constructor(@ApplicationContext private val co
     }
 
     companion object {
-        /** The default destination, a folder of Downloads (shown to the user as it is). */
-        val DOWNLOADS_DIR: String = Environment.DIRECTORY_DOWNLOADS + "/Panelglass"
+        /** The default destination, a folder of Downloads ([ExportFolders.DOWNLOADS_DIR]). */
+        val DOWNLOADS_DIR: String = ExportFolders.DOWNLOADS_DIR
         private const val EXTERNAL_STORAGE = "com.android.externalstorage.documents"
     }
 }

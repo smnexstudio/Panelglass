@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.engine.mt
 
 import com.google.mlkit.common.model.DownloadConditions
+import com.smnexstudio.panelglass.core.data.download.DownloadNetwork
 import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.TranslateRemoteModel
@@ -92,7 +93,7 @@ class LanguagePackStore @Inject constructor() : PackGate {
     }
 
     /**
-     * Fetches the [AUTOMATIC] packs still missing, over any network. The caller runs it at first start and remembers
+     * Fetches the [AUTOMATIC] packs still missing, over the networks the user allowed. The caller runs it at first start and remembers
      * that it succeeded, so a pack the user deletes later is not brought back.
      */
     suspend fun ensureAutomatic(): Boolean = downloadNow(AUTOMATIC)
@@ -109,6 +110,23 @@ class LanguagePackStore @Inject constructor() : PackGate {
         synchronized(jobs) { jobs.forEach { it.cancel() }; jobs.clear() }
         _state.update { it.copy(pending = emptySet(), current = null) }
     }
+
+    /**
+     * Asks ML Kit again for the packs still waiting, under the networks allowed now ([DownloadNetwork]): a pack asked
+     * for Wi-Fi only keeps waiting for Wi-Fi after the user allows mobile data. The original request goes on; this
+     * one runs beside it, and whichever finishes first brings the pack.
+     */
+    fun retryPending() {
+        val waiting = _state.value.pending + listOfNotNull(_state.value.current)
+        if (waiting.isEmpty()) return
+        track(scope.launch {
+            for (tag in waiting) runCatching { manager.download(tag) }
+            onDisk()
+        })
+    }
+
+    /** What ML Kit has on the phone now, read from it (not the last known [state]). */
+    suspend fun downloadedNow(): Set<String> = onDisk()
 
     override suspend fun missing(tags: Collection<String>): Set<String> {
         val need = tags.filter { it != BUILT_IN && it !in AUTOMATIC }.toSet()
@@ -169,6 +187,10 @@ private class MlKitPackManager : PackManager {
     override suspend fun downloaded(): Set<String> =
         rm.getDownloadedModels(TranslateRemoteModel::class.java).await().map { it.language }.toSet()
 
-    override suspend fun download(tag: String) { rm.download(model(tag), DownloadConditions.Builder().build()).await() }
+    /** Wi-Fi only unless the user allowed mobile data ([DownloadNetwork]); ML Kit then waits for Wi-Fi. */
+    override suspend fun download(tag: String) {
+        val conditions = DownloadConditions.Builder().apply { if (DownloadNetwork.wifiOnly) requireWifi() }.build()
+        rm.download(model(tag), conditions).await()
+    }
     override suspend fun delete(tag: String) { rm.deleteDownloadedModel(model(tag)).await() }
 }

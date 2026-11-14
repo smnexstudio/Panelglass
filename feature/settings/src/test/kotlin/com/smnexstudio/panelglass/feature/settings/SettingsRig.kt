@@ -2,7 +2,10 @@ package com.smnexstudio.panelglass.feature.settings
 
 import android.content.Context
 import androidx.room.Room
+import com.smnexstudio.panelglass.core.data.block.BlockListUpdater
+import com.smnexstudio.panelglass.core.data.cache.PatchCache
 import com.smnexstudio.panelglass.core.data.db.PanelglassDb
+import com.smnexstudio.panelglass.core.data.repo.GlossaryRepository
 import com.smnexstudio.panelglass.core.data.download.SystemDownloads
 import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
@@ -41,6 +44,12 @@ internal class SettingsRig(private val context: Context) {
     val history = HistoryRepository(db)
     val studio = StudioRepository(db, StudioFiles(File(root, "studio")))
     val attempted = mutableListOf<String>()
+    val glossary = GlossaryRepository(db)
+    val patchCache = PatchCache(File(root, "patches"))
+    /** Settings › Reader › Block lists › Update: answers [blockListsUpdate] and counts the calls. */
+    var blockListsUpdate = true
+    var blockListUpdates = 0
+        private set
     lateinit var registry: EngineRegistry
         private set
     private val models = TestViewModels()
@@ -68,6 +77,9 @@ internal class SettingsRig(private val context: Context) {
         return models.keep(SettingsViewModel(
             settings, history, registry, gemini, context, ModelStores(context, downloads), packs,
             MangaOcrStore(context, downloads), LamaStore(context, downloads), studio, AppUpdates(context, downloads, settings),
+            patchCache, glossary, object : BlockListUpdater {
+                override suspend fun updateNow(): Boolean { blockListUpdates++; return blockListsUpdate }
+            },
         ))
     }
 
