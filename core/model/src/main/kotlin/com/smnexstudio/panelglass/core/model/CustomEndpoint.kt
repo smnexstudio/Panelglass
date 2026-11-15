@@ -17,11 +17,12 @@ object CustomEndpoint {
 
     private const val SCHEME_HTTPS = "https"
     private const val SCHEME_HTTP = "http"
+    private val LOCAL_SUFFIXES = listOf(".localhost", ".local", ".lan", ".home.arpa", ".internal")
 
     /**
      * The canonical base address of [raw], or null when it is not a usable server address.
      *
-     * HTTPS only unless [allowHttp] is set (tests point the engine at a local MockWebServer). Credentials in the
+     * HTTPS or local/LAN HTTP; [allowHttp] bypasses the host check in tests. Credentials in the
      * address are refused: the key belongs in the key field, not in the URL.
      */
     fun normalize(raw: String, allowHttp: Boolean = false): String? {
@@ -32,7 +33,7 @@ object CustomEndpoint {
 
         val uri = runCatching { URI(trimmed) }.getOrNull() ?: return null
         val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return null
-        if (scheme != SCHEME_HTTPS && !(allowHttp && scheme == SCHEME_HTTP)) return null
+        if (scheme != SCHEME_HTTPS && !(scheme == SCHEME_HTTP && (allowHttp || isLocalHost(uri.host.orEmpty())))) return null
         // A query string or a fragment is not part of a base address.
         if (uri.rawQuery != null || uri.rawFragment != null) return null
         // Credentials in the URL: the key has its own field.
@@ -58,6 +59,27 @@ object CustomEndpoint {
         val base = normalize(raw, allowHttp) ?: return null
         val uri = URI(base)
         return uri.host.lowercase(Locale.ROOT) + authoritySuffix(uri)
+    }
+
+    /**
+     * True for a host that is not on the public internet: localhost, a loopback/private/link-local/CGNAT IPv4 address
+     * (10/8, 127/8, 172.16/12, 192.168/16, 169.254/16, 100.64/10), a local IPv6 address (::1, fc00::/7, fe80::/10),
+     * a `.local`/`.lan`/`.home.arpa`/`.internal` name, or a single-label name such as `mypc`.
+     */
+    fun isLocalHost(host: String): Boolean {
+        val h = host.trim().removePrefix("[").removeSuffix("]").lowercase(Locale.ROOT).trimEnd('.')
+        if (h.isEmpty()) return false
+        if (':' in h) return h == "::1" || h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")
+        val parts = h.split('.')
+        if (parts.all { it.isNotEmpty() && it.all(Char::isDigit) }) {
+            if (parts.size != 4 || parts.any { it.length > 3 || it.toInt() > 255 }) return false
+            val a = parts[0].toInt()
+            val b = parts[1].toInt()
+            return a == 10 || a == 127 || (a == 172 && b in 16..31) || (a == 192 && b == 168) ||
+                (a == 169 && b == 254) || (a == 100 && b in 64..127)
+        }
+        if (h == "localhost" || LOCAL_SUFFIXES.any { h.endsWith(it) }) return true
+        return '.' !in h
     }
 
     /** The port, when the address names one. */

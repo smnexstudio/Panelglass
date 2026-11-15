@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class CustomEndpointTest {
+    @Test fun lanHttpWorksWithoutTestOverride() {
+        assertEquals("http://192.168.1.5:1234/v1", CustomEndpoint.normalize("http://192.168.1.5:1234/v1"))
+        assertEquals("http://localhost:8080/v1", CustomEndpoint.normalize("http://localhost:8080/v1/chat/completions"))
+    }
     @Test fun aPlainBaseIsKept() = assertEquals("https://api.openai.com/v1", CustomEndpoint.normalize("https://api.openai.com/v1"))
 
     @Test fun surroundingWhitespaceIsTrimmed() = assertEquals("https://api.openai.com/v1", CustomEndpoint.normalize("  https://api.openai.com/v1/  "))
@@ -40,7 +44,7 @@ class CustomEndpointTest {
 
     @Test fun credentialsInTheAddressAreNull() = assertNull(CustomEndpoint.normalize("https://user:pass@x.com/v1"))
 
-    @Test fun plainHttpIsRefusedInProduction() = assertNull(CustomEndpoint.normalize("http://192.168.1.5:1234/v1"))
+    @Test fun publicHttpIsRefusedInProduction() = assertNull(CustomEndpoint.normalize("http://8.8.8.8:1234/v1"))
 
     @Test fun plainHttpIsAllowedForTests() =
         assertEquals("http://192.168.1.5:1234/v1", CustomEndpoint.normalize("http://192.168.1.5:1234/v1", allowHttp = true))

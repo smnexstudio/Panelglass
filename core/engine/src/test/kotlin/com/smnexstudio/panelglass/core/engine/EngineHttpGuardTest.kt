@@ -61,11 +61,18 @@ class EngineHttpGuardTest {
         assertEquals(0, elsewhere.requestCount)
     }
 
-    @Test fun plainHttpIsRefusedBeforeAnythingIsSent() {
+    @Test fun plainHttpForOtherEnginesIsRefusedBeforeAnythingIsSent() {
         server.enqueue(MockResponse().setBody("{}"))
-        val f = failureOf { support(httpsOnly = true).post(EngineId.CUSTOM, server.url("/v1/chat/completions").toString(), emptyMap(), body) }
+        val f = failureOf { support(httpsOnly = true).post(EngineId.GEMINI, server.url("/v1/chat/completions").toString(), emptyMap(), body) }
         assertTrue(f is EngineFailure.Network)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test fun customLocalHttpWorksWithProductionGuards() = runBlocking {
+        server.enqueue(MockResponse().setBody("{}"))
+        val reply = support(httpsOnly = true).post(EngineId.CUSTOM, server.url("/v1/chat/completions").toString(), emptyMap(), body)
+        assertEquals("{}", reply.toString())
+        assertEquals(1, server.requestCount)
     }
 
     @Test fun aReplyDeclaredLargerThanTheCapIsMalformed() {

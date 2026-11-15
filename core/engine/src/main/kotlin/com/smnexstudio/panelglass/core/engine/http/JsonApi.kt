@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.engine.http
 
 import android.util.Log
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.data.di.HttpsOnly
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -70,9 +71,23 @@ class HttpEngineSupport(
         .build()
         .create(JsonApi::class.java)
 
+    // Separate client: local HTTP is never enabled on the normal provider/update client.
+    private val localHttpClient: OkHttpClient = okHttp.newBuilder().apply {
+        networkInterceptors().removeAll { it is HttpsOnly }
+        addNetworkInterceptor { chain ->
+            val url = chain.request().url
+            if (!url.isHttps && !CustomEndpoint.isLocalHost(url.host)) throw IOException("Local HTTP host required")
+            chain.proceed(chain.request())
+        }
+    }.build()
+    private val localApi: JsonApi = Retrofit.Builder().baseUrl("https://localhost/")
+        .client(localHttpClient).addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build().create(JsonApi::class.java)
+
     suspend fun post(engine: EngineId, url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
         val resp = try {
-            api.post(url, headers, body)
+            val target = if (engine == EngineId.CUSTOM && url.startsWith("http://") && CustomEndpoint.normalize(url) != null) localApi else api
+            target.post(url, headers, body)
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")

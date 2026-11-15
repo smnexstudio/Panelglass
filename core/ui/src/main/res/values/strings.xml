@@ -133,7 +133,7 @@
     <string name="key_model">Model</string>
     <string name="key_base_url">Server address</string>
     <string name="key_base_url_hint">https://api.example.com/v1</string>
-    <string name="key_base_url_note">The address of your server. HTTPS only. A full …/chat/completions address works too.</string>
+    <string name="key_base_url_note">The address of your server. HTTPS, or HTTP for trusted local/LAN servers. HTTP sends text and API keys unencrypted. A full …/chat/completions address works too.</string>
     <string name="key_provider">Provider</string>
     <string name="key_provider_custom">Custom</string>
     <string name="key_base_url_set_by">Set by %1$s. Choose Custom to type another address.</string>
