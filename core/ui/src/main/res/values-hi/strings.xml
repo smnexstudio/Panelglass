@@ -209,15 +209,15 @@
     <string name="settings_app_language">ऐप की भाषा</string>
     <string name="app_language">भाषा</string>
     <string name="reader_translate_page">पेज का अनुवाद करें</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">पूरा पेज अनुवाद करें</string>
+    <string name="reader_scan_progress">पेज स्कैन हो रहा है… %2$d में से %1$d</string>
+    <string name="reader_scan_cancel">स्कैन रद्द करें</string>
+    <string name="reader_scan_gaps">पेज के जो हिस्से अनुवाद नहीं हुए: %1$d</string>
+    <string name="reader_scan_no_scroll">यह पेज पूरा एक साथ स्क्रॉल नहीं होता, इसलिए केवल दिखने वाला हिस्सा अनुवाद हुआ</string>
+    <string name="reader_scan_paused">स्कैन रुका: चलते समय ऐप खुला रखें</string>
+    <string name="reader_scan_confirm_title">पूरा पेज अनुवाद करें?</string>
+    <string name="reader_scan_confirm_body">लगभग %1$d स्क्रीन एक के बाद एक %2$s से अनुवाद होंगी। इससे आपके प्रोवाइडर का काफ़ी कोटा खर्च हो सकता है, या डिवाइस पर समय लग सकता है।</string>
+    <string name="reader_scan_start">अनुवाद करें</string>
     <string name="pt_detect">भाषा पहचानें</string>
     <string name="pt_detected">%1$s (पहचानी गई)</string>
     <string name="pt_detecting">भाषा पहचानी जा रही है…</string>
@@ -731,6 +731,25 @@
     <string name="set_measuring">माप रहे हैं…</string>
     <string name="set_page_appearance">रूप और भाषा</string>
     <string name="set_page_about">जानकारी और अपडेट</string>
+    <string name="set_page_backup">बैकअप और रीस्टोर</string>
+    <string name="set_page_backup_sub">साइटें, शब्दावलियाँ और नोट्स</string>
+    <string name="backup_create">फ़ाइल में बैकअप लें</string>
+    <string name="backup_create_note">आपकी साइटें, हर सीरीज़ की शब्दावली और नोट्स, और आपके अनुवाद नोट्स</string>
+    <string name="backup_restore">फ़ाइल से रीस्टोर करें</string>
+    <string name="backup_restore_note">बैकअप की सामग्री आपके डेटा में जोड़ता है; कुछ भी हटाया नहीं जाता</string>
+    <string name="backup_working">काम चल रहा है…</string>
+    <string name="backup_saved">बैकअप सहेजा गया।</string>
+    <string name="backup_restored">रीस्टोर हो गया।</string>
+    <string name="backup_counts">साइटें: %1$d · शब्द: %2$d · सीरीज़: %3$d</string>
+    <string name="backup_failed_write">बैकअप सहेजा नहीं जा सका।</string>
+    <string name="backup_failed_read">यह फ़ाइल Panelglass बैकअप नहीं है, या खराब है।</string>
+    <string name="backup_failed_newer">यह बैकअप Panelglass के नए संस्करण से बना है। ऐप अपडेट करें, फिर रीस्टोर करें।</string>
+    <string name="backup_confirm_title">यह बैकअप रीस्टोर करें?</string>
+    <string name="backup_made_on">%1$s को बना।</string>
+    <string name="backup_confirm_body">इसकी साइटें, शब्दावलियाँ और नोट्स आपके डेटा में जोड़े जाएँगे, और जो पहले से हैं वे अपडेट होंगे। आपके अनुवाद नोट्स बैकअप वाले नोट्स से बदल दिए जाएँगे।</string>
+    <string name="backup_failed_restore">बैकअप रीस्टोर नहीं हो सका। फिर से कोशिश करें।</string>
+    <string name="backup_confirm_action">रीस्टोर करें</string>
+    <string name="backup_note">बैकअप एक फ़ाइल है जिसे आप कहीं भी रख सकते हैं। इसमें कभी API कुंजियाँ, अन्य सेटिंग्स, डाउनलोड किए मॉडल या स्टूडियो फ़ाइलें नहीं होतीं।</string>
     <string name="set_engines_device">इस फ़ोन पर · मुफ़्त</string>
     <string name="set_engines_cloud">क्लाउड · आपकी अपनी कुंजी</string>
     <string name="set_engine_gemini_sub">बबल ख़ुद पढ़ता है</string>

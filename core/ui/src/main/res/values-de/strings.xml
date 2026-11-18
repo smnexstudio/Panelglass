@@ -209,15 +209,15 @@
     <string name="settings_app_language">App-Sprache</string>
     <string name="app_language">Sprache</string>
     <string name="reader_translate_page">Seite übersetzen</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">Ganze Seite übersetzen</string>
+    <string name="reader_scan_progress">Seite wird gescannt… %1$d von %2$d</string>
+    <string name="reader_scan_cancel">Scan abbrechen</string>
+    <string name="reader_scan_gaps">Nicht übersetzte Teile der Seite: %1$d</string>
+    <string name="reader_scan_no_scroll">Diese Seite scrollt nicht als Ganzes, daher wurde nur der sichtbare Teil übersetzt</string>
+    <string name="reader_scan_paused">Scan gestoppt: Lass die App geöffnet, solange er läuft</string>
+    <string name="reader_scan_confirm_title">Ganze Seite übersetzen?</string>
+    <string name="reader_scan_confirm_body">Etwa %1$d Bildschirme werden nacheinander mit %2$s übersetzt. Das kann viel Kontingent deines Anbieters verbrauchen oder auf dem Gerät eine Weile dauern.</string>
+    <string name="reader_scan_start">Übersetzen</string>
     <string name="pt_detect">Sprache erkennen</string>
     <string name="pt_detected">%1$s (erkannt)</string>
     <string name="pt_detecting">Sprache wird erkannt…</string>
@@ -731,6 +731,25 @@
     <string name="set_measuring">Wird gemessen …</string>
     <string name="set_page_appearance">Darstellung &amp; Sprache</string>
     <string name="set_page_about">Über &amp; Updates</string>
+    <string name="set_page_backup">Sicherung &amp; Wiederherstellung</string>
+    <string name="set_page_backup_sub">Websites, Glossare und Notizen</string>
+    <string name="backup_create">In eine Datei sichern</string>
+    <string name="backup_create_note">Deine Websites, das Glossar und die Notizen jeder Serie und deine Übersetzungsnotizen</string>
+    <string name="backup_restore">Aus einer Datei wiederherstellen</string>
+    <string name="backup_restore_note">Fügt den Inhalt der Sicherung zu deinem hinzu; nichts wird gelöscht</string>
+    <string name="backup_working">Wird bearbeitet…</string>
+    <string name="backup_saved">Sicherung gespeichert.</string>
+    <string name="backup_restored">Sicherung wiederhergestellt.</string>
+    <string name="backup_counts">Websites: %1$d · Begriffe: %2$d · Serien: %3$d</string>
+    <string name="backup_failed_write">Die Sicherung konnte nicht gespeichert werden.</string>
+    <string name="backup_failed_read">Diese Datei ist keine Panelglass-Sicherung oder sie ist beschädigt.</string>
+    <string name="backup_failed_newer">Diese Sicherung stammt von einer neueren Panelglass-Version. Aktualisiere die App und stelle sie dann wieder her.</string>
+    <string name="backup_confirm_title">Diese Sicherung wiederherstellen?</string>
+    <string name="backup_made_on">Erstellt am %1$s.</string>
+    <string name="backup_confirm_body">Ihre Websites, Glossare und Notizen werden zu deinen hinzugefügt, vorhandene werden aktualisiert. Deine Übersetzungsnotizen werden durch die der Sicherung ersetzt.</string>
+    <string name="backup_failed_restore">Die Sicherung konnte nicht wiederhergestellt werden. Versuch es noch einmal.</string>
+    <string name="backup_confirm_action">Wiederherstellen</string>
+    <string name="backup_note">Eine Sicherung ist eine Datei, die du aufbewahrst, wo du willst. Sie enthält nie API-Schlüssel, andere Einstellungen, heruntergeladene Modelle oder Studio-Dateien.</string>
     <string name="set_engines_device">Auf diesem Telefon · kostenlos</string>
     <string name="set_engines_cloud">Cloud · dein eigener Schlüssel</string>
     <string name="set_engine_gemini_sub">Liest die Sprechblasen selbst</string>

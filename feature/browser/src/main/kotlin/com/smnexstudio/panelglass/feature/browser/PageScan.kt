@@ -1,5 +1,7 @@
 package com.smnexstudio.panelglass.feature.browser
 
+import com.smnexstudio.panelglass.core.model.EngineFailure
+
 /**
  * The plan of a whole-page scan: where to stop, and what to keep.
  *
@@ -70,4 +72,24 @@ object PageScanPlan {
 
     /** The page's URL without its #fragment, for "did the page change" checks. */
     fun pageKey(url: String): String = url.substringBefore('#')
+
+    /** How far the page may miss a scroll target before it is taken for a page that does not scroll as a window. */
+    const val SCROLL_EPSILON = 2
+
+    /** Whether the page went where it was scrolled to: a page that scrolls inside an element stays put. */
+    fun moved(target: Int, at: Int): Boolean = kotlin.math.abs(at - target) <= SCROLL_EPSILON
+
+    /** The stop after [y]: one step further, never past the bottom of the page ([maxScrollY]). */
+    fun nextStop(y: Int, maxScrollY: Int, viewportHeight: Int): Int = minOf(y + stepPx(viewportHeight), maxScrollY)
+
+    /** At the bottom ([y]), whether a lazy page grew enough to be scrolled further. */
+    fun grew(y: Int, newMaxScrollY: Int): Boolean = newMaxScrollY > y + 1
+
+    /** Failures that end the scan at once: every further stop would fail the same way, and the bar offers the fix. */
+    fun endsScan(f: EngineFailure?): Boolean =
+        f is EngineFailure.MissingKey || f is EngineFailure.QuotaExceeded || f is EngineFailure.PackMissing
+
+    /** Failures worth another try at the same stop; any other failure leaves a gap. */
+    fun isTransient(f: EngineFailure?): Boolean =
+        f is EngineFailure.Overloaded || f is EngineFailure.Network || f is EngineFailure.Unavailable
 }

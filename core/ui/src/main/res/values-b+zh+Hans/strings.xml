@@ -204,15 +204,15 @@
     <string name="settings_app_language">应用语言</string>
     <string name="app_language">语言</string>
     <string name="reader_translate_page">翻译网页</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">翻译整页</string>
+    <string name="reader_scan_progress">正在扫描页面… %1$d / %2$d</string>
+    <string name="reader_scan_cancel">取消扫描</string>
+    <string name="reader_scan_gaps">未能翻译的部分：%1$d</string>
+    <string name="reader_scan_no_scroll">此页面无法整体滚动，因此只翻译了可见部分</string>
+    <string name="reader_scan_paused">扫描已停止：运行时请保持应用打开</string>
+    <string name="reader_scan_confirm_title">翻译整个页面？</string>
+    <string name="reader_scan_confirm_body">将使用 %2$s 依次翻译约 %1$d 屏内容。这可能消耗大量服务商额度，或在设备上需要较长时间。</string>
+    <string name="reader_scan_start">翻译</string>
     <string name="pt_detect">检测语言</string>
     <string name="pt_detected">%1$s（已检测）</string>
     <string name="pt_detecting">正在检测语言…</string>
@@ -715,6 +715,25 @@
     <string name="set_measuring">正在计算…</string>
     <string name="set_page_appearance">外观与语言</string>
     <string name="set_page_about">关于与更新</string>
+    <string name="set_page_backup">备份与恢复</string>
+    <string name="set_page_backup_sub">网站、术语表和备注</string>
+    <string name="backup_create">备份到文件</string>
+    <string name="backup_create_note">你的网站、每部作品的术语表和备注，以及翻译备注</string>
+    <string name="backup_restore">从文件恢复</string>
+    <string name="backup_restore_note">将备份内容添加到现有数据中，不会删除任何内容</string>
+    <string name="backup_working">正在处理…</string>
+    <string name="backup_saved">备份已保存。</string>
+    <string name="backup_restored">已恢复。</string>
+    <string name="backup_counts">网站：%1$d · 术语：%2$d · 作品：%3$d</string>
+    <string name="backup_failed_write">无法保存备份。</string>
+    <string name="backup_failed_read">此文件不是 Panelglass 备份，或已损坏。</string>
+    <string name="backup_failed_newer">此备份由更新版本的 Panelglass 创建。请先更新应用，再进行恢复。</string>
+    <string name="backup_confirm_title">恢复此备份？</string>
+    <string name="backup_made_on">创建于 %1$s。</string>
+    <string name="backup_confirm_body">其中的网站、术语表和备注将添加到你的数据中，已有的会被更新。你的翻译备注将被备份中的内容替换。</string>
+    <string name="backup_failed_restore">无法恢复备份。请重试。</string>
+    <string name="backup_confirm_action">恢复</string>
+    <string name="backup_note">备份是保存在你所选位置的文件。它不包含 API 密钥、其他设置、已下载的模型或工作室文件。</string>
     <string name="set_engines_device">在本机 · 免费</string>
     <string name="set_engines_cloud">云端 · 使用你自己的密钥</string>
     <string name="set_engine_gemini_sub">自行读取对话框</string>

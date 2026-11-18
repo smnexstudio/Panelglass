@@ -89,8 +89,13 @@ docs/Screenshots/**/Screenshot_*
 # licensed ones (Pepper&Carrot, CC BY 4.0) alike — keep test chapters out of the repository either way.
 docs/TestAssests/
 
-# JVM crash logs
+# JVM crash files, in any folder (a test JVM writes them where it ran, e.g. feature/studio/). The .log files are
+# also covered by *.log above; on Windows a crash adds a minidump (.mdmp, often hundreds of MB) beside the log.
 hs_err_pid*.log
+hs_err_pid*.mdmp
+replay_pid*.log
+*.mdmp
+*.dmp
 
 # Personal notes that stay on this machine
 *.local.md

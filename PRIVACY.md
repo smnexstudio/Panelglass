@@ -18,7 +18,13 @@ a fork may differ: read that fork's own policy.
 - **API keys.** They are encrypted with the Android Keystore (AES-GCM), never written to logs, and never backed up.
 - **Logs.** They hold timings and the type of a failure only: no keys, page addresses or page text.
 
-Uninstalling the app removes everything it stored. Nothing is backed up.
+Uninstalling the app removes everything it stored. Nothing is backed up automatically.
+
+**Settings › Backup & restore** writes a backup only when you ask, as a file saved where you choose (through
+Android's own file picker; the app gets no storage permission). It holds your sites, each series' glossary and
+notes, and your translation notes, in readable text: keep it where you would keep those. It never holds API keys,
+other settings, downloaded models or Studio files, and nothing is sent anywhere. Restoring reads a file you pick and
+adds its contents to yours.
 
 ## What leaves your phone, by engine
 

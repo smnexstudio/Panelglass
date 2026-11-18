@@ -204,15 +204,15 @@
     <string name="settings_app_language">應用程式語言</string>
     <string name="app_language">語言</string>
     <string name="reader_translate_page">翻譯網頁</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">翻譯整頁</string>
+    <string name="reader_scan_progress">正在掃描頁面… %1$d / %2$d</string>
+    <string name="reader_scan_cancel">取消掃描</string>
+    <string name="reader_scan_gaps">未能翻譯的部分：%1$d</string>
+    <string name="reader_scan_no_scroll">此頁面無法整體捲動，因此只翻譯了可見部分</string>
+    <string name="reader_scan_paused">掃描已停止：執行時請保持應用程式開啟</string>
+    <string name="reader_scan_confirm_title">翻譯整個頁面？</string>
+    <string name="reader_scan_confirm_body">將使用 %2$s 依序翻譯約 %1$d 個畫面。這可能消耗大量服務商額度，或在裝置上需要較長時間。</string>
+    <string name="reader_scan_start">翻譯</string>
     <string name="pt_detect">偵測語言</string>
     <string name="pt_detected">%1$s（已偵測）</string>
     <string name="pt_detecting">正在偵測語言…</string>
@@ -715,6 +715,25 @@
     <string name="set_measuring">正在計算…</string>
     <string name="set_page_appearance">外觀與語言</string>
     <string name="set_page_about">關於與更新</string>
+    <string name="set_page_backup">備份與還原</string>
+    <string name="set_page_backup_sub">網站、詞彙表和備註</string>
+    <string name="backup_create">備份到檔案</string>
+    <string name="backup_create_note">你的網站、每部作品的詞彙表和備註，以及翻譯備註</string>
+    <string name="backup_restore">從檔案還原</string>
+    <string name="backup_restore_note">將備份內容加入現有資料，不會刪除任何內容</string>
+    <string name="backup_working">處理中…</string>
+    <string name="backup_saved">已儲存備份。</string>
+    <string name="backup_restored">已還原。</string>
+    <string name="backup_counts">網站：%1$d · 詞彙：%2$d · 作品：%3$d</string>
+    <string name="backup_failed_write">無法儲存備份。</string>
+    <string name="backup_failed_read">此檔案不是 Panelglass 備份，或已損毀。</string>
+    <string name="backup_failed_newer">此備份由較新版本的 Panelglass 建立。請先更新應用程式，再進行還原。</string>
+    <string name="backup_confirm_title">還原此備份？</string>
+    <string name="backup_made_on">建立於 %1$s。</string>
+    <string name="backup_confirm_body">其中的網站、詞彙表和備註會加入你的資料，已有的會被更新。你的翻譯備註會被備份中的內容取代。</string>
+    <string name="backup_failed_restore">無法還原備份。請再試一次。</string>
+    <string name="backup_confirm_action">還原</string>
+    <string name="backup_note">備份是存放在你所選位置的檔案。它不含 API 金鑰、其他設定、已下載的模型或工作室檔案。</string>
     <string name="set_engines_device">在本機 · 免費</string>
     <string name="set_engines_cloud">雲端 · 使用你自己的金鑰</string>
     <string name="set_engine_gemini_sub">自行讀取對話框</string>

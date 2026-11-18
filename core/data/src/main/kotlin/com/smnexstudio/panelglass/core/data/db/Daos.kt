@@ -64,6 +64,10 @@ interface GlossaryDao {
     @Query("SELECT * FROM glossary WHERE seriesKey = :seriesKey")
     suspend fun forSeries(seriesKey: String): List<GlossaryEntry>
 
+    /** Every series' terms (Settings › Backup & restore). */
+    @Query("SELECT * FROM glossary ORDER BY seriesKey, source")
+    suspend fun all(): List<GlossaryEntry>
+
     /** How many series have a glossary, and how many terms they hold together (Settings › Languages). */
     @Query("SELECT COUNT(DISTINCT seriesKey) AS series, COUNT(*) AS terms FROM glossary")
     fun observeSummary(): Flow<GlossarySummary>
@@ -82,6 +86,10 @@ interface SeriesNotesDao {
 
     @Query("SELECT notes FROM series_notes WHERE seriesKey = :seriesKey")
     suspend fun get(seriesKey: String): String?
+
+    /** Every series' notes (Settings › Backup & restore). */
+    @Query("SELECT * FROM series_notes ORDER BY seriesKey")
+    suspend fun all(): List<SeriesNotes>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(notes: SeriesNotes)

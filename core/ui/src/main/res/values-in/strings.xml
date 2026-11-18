@@ -204,15 +204,15 @@
     <string name="settings_app_language">Bahasa aplikasi</string>
     <string name="app_language">Bahasa</string>
     <string name="reader_translate_page">Terjemahkan halaman</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">Terjemahkan seluruh halaman</string>
+    <string name="reader_scan_progress">Memindai halaman… %1$d dari %2$d</string>
+    <string name="reader_scan_cancel">Batalkan pemindaian</string>
+    <string name="reader_scan_gaps">Bagian halaman yang tidak diterjemahkan: %1$d</string>
+    <string name="reader_scan_no_scroll">Halaman ini tidak bergulir secara utuh, jadi hanya bagian yang terlihat yang diterjemahkan</string>
+    <string name="reader_scan_paused">Pemindaian berhenti: biarkan aplikasi tetap terbuka selama berjalan</string>
+    <string name="reader_scan_confirm_title">Terjemahkan seluruh halaman?</string>
+    <string name="reader_scan_confirm_body">Sekitar %1$d layar akan diterjemahkan satu per satu dengan %2$s. Ini bisa memakai banyak kuota penyedia Anda, atau memakan waktu di perangkat.</string>
+    <string name="reader_scan_start">Terjemahkan</string>
     <string name="pt_detect">Deteksi bahasa</string>
     <string name="pt_detected">%1$s (terdeteksi)</string>
     <string name="pt_detecting">Mendeteksi bahasa…</string>
@@ -715,6 +715,25 @@
     <string name="set_measuring">Mengukur…</string>
     <string name="set_page_appearance">Tampilan &amp; bahasa</string>
     <string name="set_page_about">Tentang &amp; pembaruan</string>
+    <string name="set_page_backup">Cadangkan &amp; pulihkan</string>
+    <string name="set_page_backup_sub">Situs, glosarium, dan catatan</string>
+    <string name="backup_create">Cadangkan ke file</string>
+    <string name="backup_create_note">Situs Anda, glosarium dan catatan tiap seri, serta catatan terjemahan Anda</string>
+    <string name="backup_restore">Pulihkan dari file</string>
+    <string name="backup_restore_note">Menambahkan isi cadangan ke data Anda; tidak ada yang dihapus</string>
+    <string name="backup_working">Memproses…</string>
+    <string name="backup_saved">Cadangan disimpan.</string>
+    <string name="backup_restored">Cadangan dipulihkan.</string>
+    <string name="backup_counts">Situs: %1$d · Istilah: %2$d · Seri: %3$d</string>
+    <string name="backup_failed_write">Cadangan tidak dapat disimpan.</string>
+    <string name="backup_failed_read">File ini bukan cadangan Panelglass, atau rusak.</string>
+    <string name="backup_failed_newer">Cadangan ini dibuat oleh versi Panelglass yang lebih baru. Perbarui aplikasi, lalu pulihkan.</string>
+    <string name="backup_confirm_title">Pulihkan cadangan ini?</string>
+    <string name="backup_made_on">Dibuat pada %1$s.</string>
+    <string name="backup_confirm_body">Situs, glosarium, dan catatannya ditambahkan ke milik Anda, dan yang sudah ada diperbarui. Catatan terjemahan Anda diganti dengan yang ada di cadangan.</string>
+    <string name="backup_failed_restore">Cadangan tidak dapat dipulihkan. Coba lagi.</string>
+    <string name="backup_confirm_action">Pulihkan</string>
+    <string name="backup_note">Cadangan adalah file yang Anda simpan di mana saja. Cadangan tidak pernah berisi kunci API, pengaturan lain, model yang diunduh, atau file Studio.</string>
     <string name="set_engines_device">Di ponsel ini · gratis</string>
     <string name="set_engines_cloud">Cloud · kunci Anda sendiri</string>
     <string name="set_engine_gemini_sub">Membaca balon sendiri</string>

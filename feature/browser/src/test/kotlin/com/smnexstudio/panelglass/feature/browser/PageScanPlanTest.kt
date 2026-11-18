@@ -1,6 +1,9 @@
 package com.smnexstudio.panelglass.feature.browser
 
+import com.smnexstudio.panelglass.core.model.EngineFailure
+import com.smnexstudio.panelglass.core.model.EngineId
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -73,5 +76,45 @@ class PageScanPlanTest {
     @Test fun thePageKeyDropsTheFragment() {
         assertEquals("https://a/b?x=1", PageScanPlan.pageKey("https://a/b?x=1#c"))
         assertEquals("https://a/b?x=1", PageScanPlan.pageKey("https://a/b?x=1"))
+    }
+
+    @Test fun aPageThatStaysAtTheTopDidNotMove() {
+        // Asked for one step, still at the top: the page scrolls inside an element, not as a window.
+        assertFalse(PageScanPlan.moved(target = 700, at = 0))
+        // Rounding of a fractional zoom is not a failure to move.
+        assertTrue(PageScanPlan.moved(target = 700, at = 699))
+        assertTrue(PageScanPlan.moved(target = 700, at = 700))
+    }
+
+    @Test fun theNextStopNeverPassesTheBottom() {
+        assertEquals(700, PageScanPlan.nextStop(0, 2000, 1000))
+        assertEquals(2000, PageScanPlan.nextStop(1400, 2000, 1000))
+    }
+
+    @Test fun aPageThatGrewAtTheBottomIsScannedStepByStepNotSkipped() {
+        // At the bottom (2000), the page grew to 6000: the next stop is one step on, not the new bottom, or
+        // everything that loaded in between would never be captured.
+        assertTrue(PageScanPlan.grew(2000, 6000))
+        assertEquals(2700, PageScanPlan.nextStop(2000, 6000, 1000))
+        // A pixel of growth is not a new page.
+        assertFalse(PageScanPlan.grew(2000, 2001))
+    }
+
+    @Test fun keyQuotaAndPackFailuresEndTheScan() {
+        val e = EngineId.GEMINI
+        assertTrue(PageScanPlan.endsScan(EngineFailure.MissingKey(e)))
+        assertTrue(PageScanPlan.endsScan(EngineFailure.QuotaExceeded(e)))
+        assertTrue(PageScanPlan.endsScan(EngineFailure.PackMissing(EngineId.GOOGLE, listOf("ja"))))
+        assertFalse(PageScanPlan.endsScan(EngineFailure.Network(e)))
+        assertFalse(PageScanPlan.endsScan(null))
+    }
+
+    @Test fun onlyPassingFailuresAreTriedAgain() {
+        val e = EngineId.GEMINI
+        assertTrue(PageScanPlan.isTransient(EngineFailure.Network(e)))
+        assertTrue(PageScanPlan.isTransient(EngineFailure.Overloaded(e)))
+        assertTrue(PageScanPlan.isTransient(EngineFailure.Unavailable(e)))
+        assertFalse(PageScanPlan.isTransient(EngineFailure.QuotaExceeded(e)))
+        assertFalse(PageScanPlan.isTransient(null))
     }
 }

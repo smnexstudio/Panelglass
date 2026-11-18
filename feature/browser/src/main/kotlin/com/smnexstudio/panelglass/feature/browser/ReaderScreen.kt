@@ -275,7 +275,7 @@ fun ReaderScreen(
                     // The series' names, characters' pronouns and notes: what the engine is told beyond the page.
                     if (ui.config != null) DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_series_memory)) }, onClick = { menu = false; seriesSheet = true })
                     // The whole page: the app scrolls it by itself and translates every stop.
-                    DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_translate_whole_page)) }, onClick = { menu = false; scope.launch { requestScan() } })
+                    if (ui.config != null) DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_translate_whole_page)) }, onClick = { menu = false; scope.launch { requestScan() } })
                     if (ui.site == null) DropdownMenuItem(text = { Text(stringResource(UiR.string.reader_add_to_sites)) }, onClick = { menu = false; scope.launch { vm.addCurrentSite() } })
                 }
             }

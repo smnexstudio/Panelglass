@@ -286,10 +286,17 @@ class ReaderViewModel @Inject constructor(
     private var holdPage = false
     /** The page the scan is on; a page change drops the scan and its patches. */
     private var scanPageKey: String? = null
-    /** Where the scan started, to scroll back to when it ends. */
-    private var scanStart: Pair<Int, Int> = Pair(0, 0)
-    /** Whether the scan should scroll back to where it started when it ends. */
-    private var scanRestore = false
+    /**
+     * One scan's own state: where it started and whether it scrolls back there when it ends. Each scan has its own,
+     * so cancelling a new scan cannot change what one still finishing does.
+     */
+    private class ScanRun {
+        @Volatile var startY = 0
+        /** On a normal end and on Cancel scan; not when a touch took over. */
+        @Volatile var restore = true
+    }
+    /** The run [scanJob] belongs to. */
+    private var scanRun: ScanRun? = null
     /**
      * Blocks the last capture could not read because its edge cut them, in page pixels at [deferredScale]: they are
      * what a small scroll reveals.
@@ -447,7 +454,7 @@ class ReaderViewModel @Inject constructor(
      */
     fun startFullPage(capture: suspend () -> ViewportCapture?) {
         if (_ui.value.config == null) return
-        if (scanning) return
+        if (scanRunning) return
         if (!_screen.value.active) {
             this.capture = capture
             _screen.value = ScreenSession(active = true)
@@ -455,25 +462,33 @@ class ReaderViewModel @Inject constructor(
         }
         holdPage = true
         scanPageKey = PageScanPlan.pageKey(_ui.value.url)
-        scanRestore = true
         // The scan does its own capturing: the ones the screen would start on its own are dropped.
         settleJob?.cancel(); settleJob = null
         screenJob?.cancel(); screenJob = null
         loadedJob?.cancel(); loadedJob = null
         gestureJob?.cancel(); gestureJob = null
-        scanJob?.cancel()
-        scanJob = viewModelScope.launch { runScan() }
+        // A scan cancelled a moment ago may still be scrolling back: it finishes first, so its restore cannot land
+        // in the middle of this one.
+        val previous = scanJob
+        val run = ScanRun()
+        scanRun = run
+        scanJob = viewModelScope.launch {
+            previous?.join()
+            runScan(run)
+        }
     }
+
+    /** Whether a scan is running and has not been asked to stop. */
+    private val scanRunning: Boolean get() = scanJob?.let { it.isActive && !it.isCancelled } == true
 
     /**
      * Stops a running scan. [restore] scrolls the page back to where the scan started (the Cancel button does;
      * a touch on the page does not, because the user took over).
      */
     fun cancelScan(restore: Boolean = true) {
-        if (!scanning && scanJob == null) { scanRestore = false; return }
-        scanRestore = restore
+        if (!scanRunning) return
+        scanRun?.restore = restore
         scanJob?.cancel()
-        scanJob = null
     }
 
     /** A touch on the page during a scan: the user took over, so the page is not scrolled back. */
@@ -483,10 +498,10 @@ class ReaderViewModel @Inject constructor(
      * The scan itself: scroll, settle, translate, next. One capture at a time, from the top of the page to the
      * bottom, and back to where it started.
      */
-    private suspend fun runScan() {
+    private suspend fun runScan(run: ScanRun) {
         scanning = true
         withContext(Dispatchers.Main) { web?.keepScreenOn = true }
-        scanStart = withContext(Dispatchers.Main) { web?.let { Pair(it.scrollX, it.scrollY) } ?: Pair(0, 0) }
+        run.startY = withContext(Dispatchers.Main) { web?.scrollY ?: 0 }
         var gaps = 0
         try {
             val first = measurePage()
@@ -506,10 +521,10 @@ class ReaderViewModel @Inject constructor(
             while (step < PageScanPlan.MAX_STEPS) {
                 scrollPageTo(y)
                 delay(SCAN_SETTLE_MS)
-                val at = currentScrollY()
-                // The page did not move although it should have: it does not scroll as a window.
-                if (step == 0 && y > 0 && abs(at - y) > SCAN_SCROLL_EPSILON) {
-                    scanStep()
+                // The first move away from the top did not happen: the page scrolls inside an element, not as a
+                // window. The top, already translated, is all the scan can do (without this, every stop captured
+                // the same screen again).
+                if (step == 1 && !PageScanPlan.moved(y, currentScrollY())) {
                     _screen.update { it.copy(error = context.getString(UiR.string.reader_scan_no_scroll)) }
                     return
                 }
@@ -518,7 +533,7 @@ class ReaderViewModel @Inject constructor(
                 val outcome = scanStep()
                 val f = outcome.failure
                 // These end the scan at once: the bottom bar already offers their fix.
-                if (f is EngineFailure.MissingKey || f is EngineFailure.QuotaExceeded || f is EngineFailure.PackMissing) return
+                if (PageScanPlan.endsScan(f)) return
                 // No capture at all: the app is not on screen (PixelCopy needs it).
                 if (!outcome.captured) {
                     _screen.update { it.copy(error = context.getString(UiR.string.reader_scan_paused)) }
@@ -531,11 +546,11 @@ class ReaderViewModel @Inject constructor(
                     delay(SCAN_BOTTOM_WAIT_MS)
                     val again = measurePage()
                     val newMax = if (again == null) max else PageScanPlan.maxScrollY(again.pageHeight, again.viewportHeight)
-                    if (newMax <= y + 1) break
+                    if (!PageScanPlan.grew(y, newMax)) break
                     metrics = again ?: metrics
-                    y = newMax
+                    y = PageScanPlan.nextStop(y, newMax, metrics.viewportHeight)
                 } else {
-                    y = minOf(y + PageScanPlan.stepPx(metrics.viewportHeight), max)
+                    y = PageScanPlan.nextStop(y, max, metrics.viewportHeight)
                 }
                 step++
             }
@@ -548,8 +563,8 @@ class ReaderViewModel @Inject constructor(
                 withContext(Dispatchers.Main) { web?.keepScreenOn = false }
                 _screen.update { it.copy(scan = null, working = false) }
                 // The page goes back to where the scan started: on a normal end, and on a cancel by the button.
-                // A cancel by a touch keeps the place the user took over at (scanRestore is false then).
-                if (scanRestore) scrollPageTo(scanStart.second)
+                // A cancel by a touch keeps the place the user took over at (this run's restore is false then).
+                if (run.restore) scrollPageTo(run.startY)
             }
         }
     }
@@ -563,19 +578,19 @@ class ReaderViewModel @Inject constructor(
         var tries = 0
         while (!o.captured && tries < 2) { delay(1_000L); o = translateViewportOnce(false); tries++ }
         tries = 0
-        while (o.failure.isTransient() && tries < 2) { delay(2_000L * (tries + 1)); o = translateViewportOnce(false); tries++ }
+        while (PageScanPlan.isTransient(o.failure) && tries < 2) { delay(2_000L * (tries + 1)); o = translateViewportOnce(false); tries++ }
         if (o.captured && o.failure == null && o.pending > 0) {
             // Images were still downloading: wait for them (bounded), then capture the same place again (the
             // bubbles already patched are skipped).
-            val until = System.currentTimeMillis() + SCAN_LOAD_WAIT_MS
-            while (System.currentTimeMillis() < until && (o.pendingNow?.invoke() ?: 0) > 0) delay(500L)
+            val until = now() + SCAN_LOAD_WAIT_MS
+            while (now() < until && (o.pendingNow?.invoke() ?: 0) > 0) delay(500L)
             o = translateViewportOnce(false)
         }
         return o
     }
 
-    /** Whether this failure is worth another try. */
-    private fun EngineFailure?.isTransient() = this is EngineFailure.Overloaded || this is EngineFailure.Network || this is EngineFailure.Unavailable
+    /** The clock of the scan's waits; a seam for tests. */
+    internal var now: () -> Long = System::currentTimeMillis
 
     private var loadedJob: Job? = null
 
@@ -764,7 +779,14 @@ class ReaderViewModel @Inject constructor(
             val next = cfg.copy(src = lang)
             _ui.update { it.copy(config = next) }
             prewarm(next)
-            if (_screen.value.active) { clearScreenPatches(); translateViewport() }
+            if (_screen.value.active) {
+                // A scan started before the language was known starts again in the right language, rather than
+                // being stopped without a word.
+                val rescan = scanRunning
+                clearScreenPatches()
+                val cap = capture
+                if (rescan && cap != null) startFullPage(cap) else translateViewport()
+            }
         }
     }
 
@@ -1051,8 +1073,6 @@ class ReaderViewModel @Inject constructor(
         const val SCAN_BOTTOM_WAIT_MS = 1_500L
         /** How long a scan waits for images that were still downloading. */
         const val SCAN_LOAD_WAIT_MS = 15_000L
-        /** How far the page must fail to move before it is taken for a page that does not scroll as a window. */
-        const val SCAN_SCROLL_EPSILON = 2
         /** Memory the held page's patches may take; the farthest from the viewport go first. */
         const val PAGE_PATCH_BUDGET_BYTES = 96L * 1024 * 1024
     }
