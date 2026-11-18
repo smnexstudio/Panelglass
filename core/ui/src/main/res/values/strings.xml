@@ -240,15 +240,15 @@
     <string name="settings_app_language">App language</string>
     <string name="app_language">Language</string>
     <string name="reader_translate_page">Translate page</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">Translate whole page</string>
+    <string name="reader_scan_progress">Scanning page… %1$d of %2$d</string>
+    <string name="reader_scan_cancel">Cancel scan</string>
+    <string name="reader_scan_gaps">Parts of the page not translated: %1$d</string>
+    <string name="reader_scan_no_scroll">This page does not scroll as a whole, so only the visible part was translated</string>
+    <string name="reader_scan_paused">Scan stopped: keep the app open while it runs</string>
+    <string name="reader_scan_confirm_title">Translate the whole page?</string>
+    <string name="reader_scan_confirm_body">About %1$d screens will be translated one after another with %2$s. This can use a lot of your provider\'s quota, or take a while on the device.</string>
+    <string name="reader_scan_start">Translate</string>
     <string name="pt_detect">Detect language</string>
     <string name="pt_detected">%1$s (detected)</string>
     <string name="pt_detecting">Detecting the language…</string>
@@ -760,6 +760,25 @@
     <string name="set_measuring">Measuring…</string>
     <string name="set_page_appearance">Appearance &amp; language</string>
     <string name="set_page_about">About &amp; updates</string>
+    <string name="set_page_backup">Backup &amp; restore</string>
+    <string name="set_page_backup_sub">Sites, glossaries and notes</string>
+    <string name="backup_create">Back up to a file</string>
+    <string name="backup_create_note">Your sites, each series’ glossary and notes, and your translation notes</string>
+    <string name="backup_restore">Restore from a file</string>
+    <string name="backup_restore_note">Adds what the backup holds to yours; nothing is deleted</string>
+    <string name="backup_working">Working…</string>
+    <string name="backup_saved">Backup saved.</string>
+    <string name="backup_restored">Backup restored.</string>
+    <string name="backup_counts">Sites: %1$d · Glossary terms: %2$d · Series: %3$d</string>
+    <string name="backup_failed_write">The backup could not be saved.</string>
+    <string name="backup_failed_read">This file is not a Panelglass backup, or it is damaged.</string>
+    <string name="backup_failed_newer">This backup was made by a newer version of Panelglass. Update the app, then restore it.</string>
+    <string name="backup_confirm_title">Restore this backup?</string>
+    <string name="backup_made_on">Made on %1$s.</string>
+    <string name="backup_confirm_body">Its sites, glossaries and notes are added to yours, and the ones you already have are updated. Your translation notes are replaced by the backup’s.</string>
+    <string name="backup_failed_restore">The backup could not be restored. Try again.</string>
+    <string name="backup_confirm_action">Restore</string>
+    <string name="backup_note">A backup is a file you keep wherever you choose. It never holds API keys, other settings, downloaded models or Studio files.</string>
     <string name="set_engines_device">On this phone · free</string>
     <string name="set_engines_cloud">Cloud · your own key</string>
     <string name="set_engine_gemini_sub">Reads the bubbles itself</string>

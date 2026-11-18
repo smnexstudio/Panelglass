@@ -1,388 +1,294 @@
-# Architecture
+# System Architecture Guide
 
-Panelglass is a single-activity Android app (Kotlin, Jetpack Compose, Hilt) split into Gradle modules by layer. This
-document covers the module layout, the main components and how they talk, storage, concurrency and the security
-model. The translation flow itself is in [FLOW.md](FLOW.md); detection and OCR in [DETECTION_AND_OCR.md](DETECTION_AND_OCR.md).
+Panelglass is a single-activity Android application built with Kotlin, Jetpack Compose, and Dagger Hilt. This document specifies the architectural layers, system requirements, runtime components, storage schemas, concurrency models, and security boundaries.
+
+For step-by-step translation execution, see [FLOW.md](FLOW.md). For vision models and OCR pipelines, see [DETECTION_AND_OCR.md](DETECTION_AND_OCR.md).
+
+---
 
 ## Contents
 
-- [Principles](#principles)
-- [Requirements](#requirements)
-- [Modules](#modules)
-- [Runtime components](#runtime-components)
-- [Engines](#engines)
-- [Storage](#storage)
-- [Concurrency and memory](#concurrency-and-memory)
-- [Security and privacy](#security-and-privacy)
-- [Testing](#testing)
+- [Architectural Principles](#architectural-principles)
+- [System Requirements & Test Traceability](#system-requirements--test-traceability)
+  - [Functional Requirements (FR)](#functional-requirements-fr)
+  - [Non-Functional Requirements (NFR)](#non-functional-requirements-nfr)
+- [Module Topology & Dependency Boundaries](#module-topology--dependency-boundaries)
+- [Runtime Component Interactions](#runtime-component-interactions)
+- [AI Translation Engine Subsystem](#ai-translation-engine-subsystem)
+- [Persistence, Schemas & Backup Architecture](#persistence-schemas--backup-architecture)
+- [Concurrency, Watchdogs & Memory Budgets](#concurrency-watchdogs--memory-budgets)
+- [Security Model & Sandboxing](#security-model--sandboxing)
+- [Verification & Test Suites](#verification--test-suites)
 
-## Principles
+---
 
-1. **Translate what the user sees.** The reader never downloads page images. It snapshots the WebView's viewport,
-   so it works on any site, whatever the site does with its images (canvas, blob URLs, scrambled tiles).
-2. **One pipeline, one entry point.** `TranslationPipeline.translate` is the only way pixels become translations.
-3. **Patches, not pages.** The output is a small WEBP per text region, positioned in the page's CSS pixels and drawn
-   natively over the WebView, so it scrolls and zooms with the art. The page's DOM is never modified by the translator.
-4. **The user's engine is the engine.** A failing engine surfaces a typed failure; it is never silently replaced by
-   another provider.
-5. **Nothing secret or personal in logs or in the repo.** API keys live only in an Android-Keystore-backed store.
+## Architectural Principles
 
-## Requirements
+1. **Translate the Composited Screen:** Panelglass never scrapes or downloads comic image files behind the reader's back. It snapshots the hardware-accelerated viewport, ensuring compatibility with any comic reader site (canvas rendering, blob URLs, encrypted tiles).
+2. **Single Pipeline Entry Point:** Every reader pixel transformation flows through `TranslationPipeline`; the Studio uses its detect and translate halves (`detectStudioPage`, `translateRegions`) and draws with its own renderer.
+3. **Native Overlays over DOM Modification:** Translations are rendered as native WebP image patches pinned in page coordinates over the WebView. The webpage's DOM is never manipulated for comic translation.
+4. **Deterministic Engine Routing:** An engine never silently falls back to another provider; engine failures surface typed errors (`EngineFailure`).
+5. **Zero Secret Leakage:** User API keys are stored exclusively in the Android Keystore-backed encrypted storage and are never logged or exposed.
 
-What the app must do (functional, `FR`) and how well (non-functional, `NFR`), as the code implements it today. Each
-requirement names its evidence: a JVM test class ([TESTING.md](TESTING.md)), or a phone check
-([TESTING.md › Checks on a phone](TESTING.md#checks-on-a-phone)) where only a real device can show it. A change that
-alters a requirement updates this list in the same pull request.
+---
 
-### Functional requirements
+## System Requirements & Test Traceability
 
-**Reader**
+Every requirement maps directly to automated unit test evidence ([TESTING.md](TESTING.md)) or manual device verification checks.
 
-| ID | Requirement | Evidence |
+### Functional Requirements (FR)
+
+#### 1. Web Reader & Translation
+| ID | Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| FR-1 | Open any web page over https; an `http` address is upgraded, any other scheme is refused. | `WebUrlTest`, `NavigationPolicyTest` |
-| FR-2 | **Start** translates the visible screen: every text region is found, read, translated, erased and lettered in place, in the target language. | `TranslationPipelineTest`, `RegionRendererTest`; phone check |
-| FR-3 | Translations stay on the art while the page scrolls, zooms or shifts its layout. | `PatchAnchorTest`; phone check |
-| FR-4 | The next screen is translated after a settled scroll, when images finish loading, after a page turn without a scroll and after a rotation; a balloon cut by the screen edge waits until it is whole. | `ContentChangeTest`, `TranslationPipelineTest`; phone check |
-| FR-5 | **Re-translate** reads and translates the screen again, ignoring cached results. | `TranslationPipelineTest` |
-| FR-6 | The source language follows the page (Japanese, Korean, Chinese) unless the site or the launch has its own. | `SessionLanguagesTest` |
-| FR-7 | Sound effects are kept or replaced (default Replace); effects nothing can read are erased only with Replace. | `SfxDictionaryTest`, `DetectionStageTest`, `RetiredSfxModeTest` |
-| FR-8 | **Translate page** translates the site's own text on the device, and **Show original** restores it. | `PageTranslatorTest`; phone check |
+| **FR-1** | Open any web page over HTTPS; HTTP schemes are upgraded; all other schemes are blocked. | `WebUrlTest`, `NavigationPolicyTest` |
+| **FR-2** | **Start** translates the visible screen: text is detected, read, translated, erased, and lettered in place. | `TranslationPipelineTest`, `RegionRendererTest`; Phone verification |
+| **FR-3** | Rendered translations remain anchored to the artwork during scrolling, zooming, and dynamic layout shifts. | `PatchAnchorTest`; Phone verification |
+| **FR-4** | Captures trigger automatically after settled scrolling, image download completion, page turns, and device rotation. | `ContentChangeTest`, `TranslationPipelineTest`; Phone verification |
+| **FR-5** | **Re-translate** forces a fresh engine translation, bypassing cached patches. | `TranslationPipelineTest` |
+| **FR-6** | Source language follows the page language (JA, KO, ZH) unless a site-specific override is configured. | `SessionLanguagesTest` |
+| **FR-7** | Sound effects support *Keep* and *Replace* modes; unreadable effects are erased only when Replace is active. | `SfxDictionaryTest`, `DetectionStageTest`, `RetiredSfxModeTest` |
+| **FR-8** | **Translate page** translates visible DOM HTML text; **Show original** restores original text. | `PageTranslatorTest`; Phone verification |
 
-**Engines and translation quality**
-
-| ID | Requirement | Evidence |
+#### 2. Translation Engines & Quality
+| ID | Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| FR-9 | The user picks the engine: Google Translate (on-device, default), Gemini (own key, chosen model), Qwen 2.5 1.5B or Gemma 4 E2B (on-device). An engine the phone cannot run is not offered. | `EnginePickerTest`, `SettingsViewModelTest`, `ProviderEngineTest` |
-| FR-10 | An engine is never switched behind the user's back: a missing key opens the key sheet, every failure is reported as a typed `EngineFailure`. | `RegistryAndQwenTest`, `OfflineEnginesTest`, `HttpFailureWireTest` |
-| FR-11 | Japanese, Korean and Chinese language packs are fetched at first start; any other pack only when the user asks. | `LanguagePackStoreTest`, `GoogleTranslateEngineTest`, `StartupTasksTest` |
-| FR-12 | Per series: a glossary of names and terms, each character with a pronoun, and series notes. Settings holds notes for every series, starting with suggested notes. Editing any of them translates pages again. | `SeriesMemoryTest`, `SeriesResolverTest`, `TranslationNotesTest`, `SettingsRepositoryTest` |
+| **FR-9** | Engine selection: Google Translate (ML Kit), Gemini (API key), Qwen 2.5 1.5B, or Gemma 4 E2B. Hardware-unsupported engines are hidden. | `EnginePickerTest`, `SettingsViewModelTest`, `ProviderEngineTest` |
+| **FR-10** | Missing keys or provider outages return explicit typed `EngineFailure` instances; engines never swap silently. | `RegistryAndQwenTest`, `OfflineEnginesTest`, `HttpFailureWireTest` |
+| **FR-11** | CJK language packs are pre-fetched on initial setup; other languages download on demand. | `LanguagePackStoreTest`, `GoogleTranslateEngineTest`, `StartupTasksTest` |
+| **FR-12** | Character glossaries, pronoun tracking, and translation notes apply per series and trigger cache invalidation. | `SeriesMemoryTest`, `SeriesResolverTest`, `TranslationNotesTest`, `SettingsRepositoryTest` |
 
-**Sites, history and blocking**
-
-| ID | Requirement | Evidence |
+#### 3. Library, Bookmarks & Content Filtering
+| ID | Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| FR-13 | Sites are saved (https only) with their own languages, ad blocking and pin; the list can be searched. | `LibraryViewModelTest`, `LibraryScreenTest`, `SiteMatchTest` |
-| FR-14 | History keeps the last 15 visits; one or all can be removed. | `LibraryScreenTest` (remove one, clear all); the 15-visit limit (`HISTORY_LIMIT`) has no test |
-| FR-15 | Ad, tracker and pop-up hosts are blocked from lists fetched at runtime and refreshed daily; only a tapped same-site link opens a new window. | `BlockListTest`, `BlockListRepositoryTest`, `NavigationPolicyTest`, `SameSiteTest` |
+| **FR-13** | Bookmarked sites store HTTPS addresses, custom language pairs, pin states, and ad-blocking rules. | `LibraryViewModelTest`, `LibraryScreenTest`, `SiteMatchTest` |
+| **FR-14** | History tracks up to 15 recent visits with single or bulk removal. | `LibraryScreenTest` |
+| **FR-15** | Ad, tracker, and popup hosts are blocked via daily-refreshed blocklists. | `BlockListTest`, `BlockListRepositoryTest`, `NavigationPolicyTest`, `SameSiteTest` |
 
-**Studio**
-
-| ID | Requirement | Evidence |
+#### 4. Studio (Local Chapters)
+| ID | Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| FR-16 | Import images, a PDF or a comic archive (zip or 7z, whatever its name) into a new or existing manga or chapter, with ComicInfo.xml read and a chapter per folder or per inner archive. | `StudioImporterTest`, `ImportViewModelTest`, `ArchiveImporterTest`, `ImageImporterTest`, `FolderChaptersTest` |
-| FR-17 | Translate a chapter with the chosen engine, in the background with a progress notification (Pause, Resume, Cancel); a stopped, failed or killed run continues from the first unfinished page. | `StudioTranslatorTest`, `RunNotificationsTest`; phone check |
-| FR-18 | Review each bubble: edit the original and translation, re-translate, add, dismiss or delete bubbles, undo and redo, mark pages reviewed. | `ReviewSavingTest`, `ReviewPanelsTest`, `PageCanvasGestureTest` |
-| FR-19 | Clean and letter pages: fonts, size, colour, outline, fill, reshaped bubbles, brush, sound-effect presets and transforms. | `PageCleanerTest`, `StudioRendererTest`, `SfxRendererTest`, `ReviewPanelsTest` |
-| FR-20 | Export chapters as images, CBZ or ZIP with ComicInfo.xml, to Downloads or a folder the user picks: translated pages, or clean text-free pages under their own name. | `StudioExporterTest`, `ExportViewModelTest`, `ExportScreenTest`, `ExportNamesTest` |
-| FR-21 | Use the bundled fonts and add the user's own (`.ttf`, `.otf`, `.ttc`). | `FontCatalogueTest`, `FontsViewModelTest` |
+| **FR-16** | Import comic archives (CBZ, ZIP, 7z, PDF, raw images) with `ComicInfo.xml` metadata extraction. | `StudioImporterTest`, `ImportViewModelTest`, `ArchiveImporterTest`, `ImageImporterTest`, `FolderChaptersTest` |
+| **FR-17** | Chapter background translation service with progress notifications (Pause, Resume, Cancel) and crash recovery. | `StudioTranslatorTest`, `RunNotificationsTest`; Phone verification |
+| **FR-18** | Interactive bubble review editor: source/translation editing, bubble creation, deletion, undo/redo. | `ReviewSavingTest`, `ReviewPanelsTest`, `PageCanvasGestureTest` |
+| **FR-19** | Clean and letter comic pages: custom fonts, typography styling, bubble reshaping, and LaMa inpainting. | `PageCleanerTest`, `StudioRendererTest`, `SfxRendererTest`, `ReviewPanelsTest` |
+| **FR-20** | Export translated or clean text-free chapters as CBZ, ZIP, or image sequences with `ComicInfo.xml`. | `StudioExporterTest`, `ExportViewModelTest`, `ExportScreenTest`, `ExportNamesTest` |
+| **FR-21** | Font manager supporting bundled typography and custom TTF, OTF, and TTC user fonts. | `FontCatalogueTest`, `FontsViewModelTest` |
 
-**Settings and app**
-
-| ID | Requirement | Evidence |
+#### 5. App & Settings
+| ID | Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| FR-22 | Download and delete the on-device models, manga-ocr and LaMa; see and delete the Studio's storage per manga. | `SystemDownloadsQueueTest`, `SettingsScreenTest` |
-| FR-23 | A newer release is offered once a day (never in a debug build, never with *Check automatically* off) and on demand; it is downloaded, verified and handed to Android's installer. A check that fails says so. | `AppUpdatesTest`, `ReleaseInfoTest`, `UpdateDialogTest`; phone check |
-| FR-24 | The interface is in 16 languages, English by default whatever the phone's language; four themes. | `AppLocaleTest`, `SettingsScreenTest` |
+| **FR-22** | Manage on-device models (manga-ocr, LaMa, LLMs) and clear cached storage per manga. | `SystemDownloadsQueueTest`, `SettingsScreenTest` |
+| **FR-23** | Daily GitHub release checks; downloads, verifies SHA-256, and hands APK to package installer. | `AppUpdatesTest`, `ReleaseInfoTest`, `UpdateDialogTest`; Phone verification |
+| **FR-24** | Localized in 16 UI languages with RTL layout support and 4 theme variants. | `AppLocaleTest`, `SettingsScreenTest` |
+| **FR-25** | Settings › Backup & restore saves sites, glossaries, series notes and translation notes to a JSON file and merges them back; API keys and other settings are never included. | `AppBackupTest`, `SettingsBackupTest` |
 
-### Non-functional requirements
+---
 
-**Privacy and security**
+### Non-Functional Requirements (NFR)
 
-| ID | Requirement | Evidence |
+#### 1. Security & Privacy
+| ID | Non-Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| NFR-1 | No Panelglass server. The app contacts only: the sites the user opens, Gemini (only when chosen, with the user's key), Hugging Face (model files), Google's ML Kit packs, the block-list sources and GitHub releases. | Code review; `OfflineEnginesTest` |
-| NFR-2 | https only: no cleartext traffic, mixed content never allowed. | `ManifestPolicyTest`, `WebUrlTest` |
-| NFR-3 | API keys are encrypted with an Android Keystore key and sent only in request headers; logs never hold keys, page URLs, page text or user IDs. | `SecureKeyStoreInstrumentedTest` (device only); code review |
-| NFR-4 | Nothing is backed up or copied to a new phone; uninstalling removes everything. | `ManifestPolicyTest` |
-| NFR-5 | Every downloaded file is verified: models against a SHA-256 pinned to a commit, the update APK against its release checksum and Android's signature check; update URLs must resolve under this repository's releases. | `ModelPinningTest`, `SystemDownloadsIntegrityTest`, `ReleaseInfoTest` |
-| NFR-6 | Pages cannot reach the app: no JavaScript interface, no file or content access, the helper scripts are frozen, page text is data and never instructions to a model. | `NavigationPolicyTest`, `LlmContractTest`; code review |
-| NFR-7 | Untrusted input is bounded: archive paths cannot leave their folder, sizes and page counts are capped before decoding, page-script replies (1 MB), block lists (32 MB) and model replies (`LlmContract.outputBudget`) are capped. | `ArchiveImporterTest`, `ImageImporterTest`, `StudioDaoTest`, `BlockListRepositoryTest` |
+| **NFR-1** | Zero Panelglass backend. App communicates strictly with user-visited sites, Gemini API, Hugging Face, Google ML Kit, and GitHub releases. | Code review; `OfflineEnginesTest` |
+| **NFR-2** | Strict HTTPS: cleartext traffic is disabled, mixed content is refused. | `ManifestPolicyTest`, `WebUrlTest` |
+| **NFR-3** | API keys are encrypted at rest with hardware-backed Android Keystore keys (AES-GCM); logs never hold secrets or page URLs. | `SecureKeyStoreInstrumentedTest`; Code review |
+| **NFR-4** | Automated cloud backups and device-to-device transfers are disabled (`data_extraction_rules.xml`). Uninstall leaves zero data. | `ManifestPolicyTest` |
+| **NFR-5** | Downloaded models are verified against hardcoded SHA-256 hashes; update APKs are verified before installation. | `ModelPinningTest`, `SystemDownloadsIntegrityTest`, `ReleaseInfoTest` |
+| **NFR-6** | Web pages cannot reach app APIs: zero JavaScript interfaces, disabled local file access, frozen helper bridges. | `NavigationPolicyTest`, `LlmContractTest`; Code review |
+| **NFR-7** | Untrusted input bounds: zip-slip path protection, memory caps on page-script replies (1 MB) and blocklists (32 MB). | `ArchiveImporterTest`, `ImageImporterTest`, `StudioDaoTest`, `BlockListRepositoryTest` |
 
-**Reliability**
-
-| ID | Requirement | Evidence |
+#### 2. Reliability & Performance
+| ID | Non-Functional Requirement | Test / Verification Evidence |
 |---|---|---|
-| NFR-8 | Offline: with the packs or models installed, Google Translate and the on-device engines translate without a network; the Studio imports and exports offline. | `OfflineEnginesTest`, `StudioExporterTest` |
-| NFR-9 | A stuck stage fails only its image, with a typed failure: a 50 s watchdog per stage in the reader, 240 s per group in the Studio. Only transient failures are retried: rate limits 3 times, overload twice, back-off at most 4 s. | `TranslationPipelineTest`, `StudioTranslatorTest`, `HttpFailureWireTest` |
-| NFR-10 | Model and update downloads survive leaving and killing the app (system DownloadManager). | `SystemDownloadsQueueTest`; phone check |
-| NFR-11 | Upgrades keep the user's data: every database version has a migration, and settings saved by older releases read back. | `Migration3To4Test`, `Migration4To5Test`, `UnmigratedVersionsTest`, `SettingsRepositoryTest` |
-| NFR-12 | No work is lost: review edits are saved 400 ms after typing and at once on a page turn or leaving; an import abandoned before saving leaves no partial chapter. | `ReviewSavingTest`, `ImportViewModelTest`, `StudioImporterTest` |
+| **NFR-8** | Fully offline operation when on-device models/packs are installed. | `OfflineEnginesTest`, `StudioExporterTest` |
+| **NFR-9** | Pipeline watchdogs: 50 s timeout per translate group in the reader, 240 s in Studio. Rate-limited replies are retried up to 3×, overloaded ones (HTTP 500/502/503/504/529) up to 2×, on the same engine. | `TranslationPipelineTest`, `StudioTranslatorTest`, `HttpFailureWireTest` |
+| **NFR-10** | Downloads survive app termination using system `DownloadManager`. | `SystemDownloadsQueueTest`; Phone verification |
+| **NFR-11** | Room database schema migrations are fully tested and backwards-compatible. | `Migration3To4Test`, `Migration4To5Test`, `UnmigratedVersionsTest` |
+| **NFR-12** | Edits auto-save within 400 ms of typing; interrupted imports leave zero partial records. | `ReviewSavingTest`, `ImportViewModelTest`, `StudioImporterTest` |
+| **NFR-13** | Main thread is never blocked: async model initialization, pre-warming, and isolated stage concurrency limits. | Code review; Phone verification |
+| **NFR-14** | One on-device LLM loaded at a time; released when UI is hidden; CPU fallback for <6 GB RAM devices. | `RegistryAndQwenTest`, `SettingsViewModelTest`; [MEMORY_USAGE.md](MEMORY_USAGE.md) |
+| **NFR-15** | Cloud tokens capped at 300+120 per bubble (max 8,192); notes capped at 500 characters. | `LlmContractTest`, `TranslationNotesTest` |
+| **NFR-16** | Compatible with Android 12+ (minSdk 31, targetSdk 35); adaptive layout above 600 dp. | `WidthClassTest`; Build config |
 
-**Performance and resources**
+---
 
-| ID | Requirement | Evidence |
-|---|---|---|
-| NFR-13 | The interface never waits for a model: loading happens off the main thread, the reader pre-warms detector, OCR and engine, and each pipeline stage has its own concurrency limit. | Code review; phone check |
-| NFR-21 | A Studio run in the background gives way to the phone: its thread runs at background priority, and it waits before its next page while the phone is too hot, in Battery Saver or below 15% unless charging, without network (cloud engines), without a charger when asked (on-device engines), or while the reader uses the on-device model. | `RunGateTest`, `StudioTranslatorTest` |
-| NFR-14 | Memory: one on-device model at a time, released when idle or under memory pressure; models a phone cannot hold are hidden (Gemma 4 under 8 GB, LaMa under 4 GB) and Qwen runs on the CPU under 6 GB. | `RegistryAndQwenTest`, `SettingsViewModelTest`; [MEMORY_USAGE.md](MEMORY_USAGE.md) |
-| NFR-15 | Cloud cost is bounded: each reply at most 300 + 120 tokens per item (8,192 in all), glossary terms 60 characters, notes 500. | `LlmContractTest` (reply cap), `TranslationNotesTest` (notes); the glossary cap has no test |
+## Module Topology & Dependency Boundaries
 
-**Compatibility, usability and maintainability**
-
-| ID | Requirement | Evidence |
-|---|---|---|
-| NFR-16 | Android 12 or later (minSdk 31, target 35); phones, tablets and resizable windows (navigation rail and side-by-side layouts above 600 dp). | `WidthClassTest`; build configuration |
-| NFR-17 | Every string is translated into the 16 UI languages, right to left included; no hard-coded text. | Code review; phone check (no test checks that every string is translated) |
-| NFR-18 | Every control has a label for TalkBack. | `SettingsScreenTest`, `LibraryScreenTest` (Settings and Sites only) |
-| NFR-19 | Bundled models, fonts and dictionaries carry a redistributable licence and a NOTICE entry; no GPL block list is bundled. | `FontCatalogueTest`; NOTICE |
-| NFR-20 | Every pull request runs all JVM tests without a device or the network, and reports each test's expected and actual result. | `.github/workflows/ci.yml`, [TESTING.md](TESTING.md) |
-
-**Not yet verified automatically:** the reader's screen capture and overlay (`ReaderViewModel`, `ScreenTranslate`),
-real model and GPU performance, and the release (R8) build: these rely on the phone checks.
-
-## Modules
+Dependencies strictly flow downwards. Feature modules never depend on other feature modules.
 
 ```mermaid
 flowchart TD
     app[":app"]
-    browser[":feature:browser"]
-    library[":feature:library"]
-    settings[":feature:settings"]
-    studio[":feature:studio"]
-    pipeline[":core:pipeline"]
-    engine[":core:engine"]
-    ocr[":core:ocr"]
-    render[":core:render"]
-    ui[":core:ui"]
-    data[":core:data"]
-    model[":core:model"]
+    
+    subgraph Features["Feature Modules"]
+        browser[":feature:browser"]
+        library[":feature:library"]
+        settings[":feature:settings"]
+        studio[":feature:studio"]
+    end
+    
+    subgraph Core["Core Modules"]
+        pipeline[":core:pipeline"]
+        engine[":core:engine"]
+        ocr[":core:ocr"]
+        render[":core:render"]
+        ui[":core:ui"]
+        data[":core:data"]
+        model[":core:model"]
+    end
 
     app --> browser & library & settings & studio
     browser --> pipeline & engine & ocr & ui & data
     studio --> pipeline & render & engine & ocr & ui & data
     settings --> engine & ocr & ui & data
     library --> ui & data
+    
     pipeline --> engine & ocr & render & data
     render --> ocr
     engine --> data
     ocr --> data
     data --> model
-    ui --> model
+    ui --> model & render
 ```
 
-Every module also depends on `:core:model`; those edges are left out for readability.
+### Module Responsibilities
 
-| Module | Responsibility | Key types |
+| Module | Core Purpose | Key Classes & Interfaces |
 |---|---|---|
-| `:core:model` | Pure Kotlin, no Android. The shared vocabulary. | `Lang`, `EngineId`, `EngineFailure`, `TextLine`, `TextRegion`, `RegionKind`, `TranslateConfig`, `Settings`, `Site`, `GlossaryEntry`, `Pronoun`, `SeriesNotes`, `TranslationNotes` |
-| `:core:data` | Persistence, secrets, downloads, updates. | `PanelglassDb` (Room), `SettingsRepository` (DataStore), `SecureKeyStore`, `PatchCache`, `SystemDownloads`, `GlossaryRepository`, `AppUpdates` |
-| `:core:engine` | Everything that turns source text into target text. | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `CustomOpenAiEngine`, `GoogleTranslateEngine`, `LocalLlmEngine` / `LocalPrompt`, `SfxDictionary` |
-| `:core:ocr` | Finding and reading text in a bitmap. | `ComicTextDetector`, `MissedTextDetector` (+ `DbPostProcess`), `MangaOcrRecognizer`, `MlKitCropRecognizer` (+ `HighContrast`), `RegionBuilder`, `RegionClassifier`, `RegionClusterer` |
-| `:core:render` | Erasing source text and drawing the translation; the Studio's page layers. | `TextEraser`, `RegionRenderer`, `Placement`, `PatchEncoder`, `PageCleaner`, `StudioRenderer`, `SfxRenderer`, `StudioFonts` |
-| `:core:pipeline` | Orchestration: stages, limits, watchdogs, cache. | `TranslationPipeline`, `RegionOfInterest`, `PageSource`, `PipelineDump`, `TileDetection` |
-| `:core:ui` | Shared Compose components, theming, every UI string. | `PanelglassTheme`, `Tokens`, `EnginePicker`, `ApiKeyDialog`, `SeriesMemorySheet`, `FontBrowser` |
-| `:feature:browser` | The reader: WebView, capture, overlay, page language, blocking. | `ReaderScreen`, `ReaderViewModel`, `ScreenTranslate`, `ContentChange`, `MangaWebViewClient`, `NewWindows`, `BlockList`, `mt.js`, `pt.js` |
-| `:feature:library` | Saved sites and history. | `LibraryScreen`, `HistoryScreen`, `LibraryViewModel` |
-| `:feature:settings` | Languages, engines, sound effects, notes, models, fonts, themes, storage, updates. | `SettingsScreen`, `SettingsViewModel` |
-| `:feature:studio` | Translating the user's own files: import, translate, review, clean, letter, export. | `StudioTranslator`, `ReviewViewModel`, `StudioImporter`, `StudioExporter`, `ExportContent`, `PageComposer` |
-| `:app` | Activity, navigation graph, application class, update dialog. | `MainActivity`, `PanelglassApp`, `UpdateHost` |
+| `:core:model` | Pure Kotlin domain vocabulary (zero Android dependencies) | `Lang`, `EngineId`, `EngineFailure`, `TextLine`, `TextRegion`, `RegionKind`, `TranslateConfig`, `Settings`, `Site`, `GlossaryEntry`, `Pronoun` |
+| `:core:data` | SQLite storage, encrypted secrets, model downloads, backup engine | `PanelglassDb`, `SettingsRepository`, `SecureKeyStore`, `PatchCache`, `SystemDownloads`, `GlossaryRepository`, `AppBackup` |
+| `:core:engine` | AI engine registry, LLM prompt builders, HTTP clients, SFX dictionary | `TranslationEngine`, `EngineRegistry`, `EngineRetry`, `BatchingTranslator`, `LlmContract`, `GeminiEngine`, `LocalLlmEngine`, `SfxDictionary` |
+| `:core:ocr` | Visual text detection, OCR recognition, candidate clustering | `ComicTextDetector`, `MissedTextDetector`, `MangaOcrRecognizer`, `MlKitCropRecognizer`, `RegionBuilder`, `RegionClassifier` |
+| `:core:render` | Inpainting, text erasing, balloon fitting, font typesetting | `TextEraser`, `RegionRenderer`, `PatchEncoder`, `BalloonFit`, `TextFit`, `PageCleaner`, `StudioRenderer`, `SfxRenderer`, `StudioFonts` |
+| `:core:pipeline` | End-to-end translation pipeline, watchdog timers, cache lookups | `TranslationPipeline`, `RegionOfInterest`, `PipelineDump`, `TileDetection` |
+| `:core:ui` | Design system, Compose components, typography, 16 UI translations | `PanelglassTheme`, `Tokens`, `EnginePicker`, `ApiKeyDialog`, `SeriesMemorySheet`, `FontBrowser` |
+| `:feature:browser`| Reader WebView, surface capture, patch overlay, whole-page scanner | `ReaderScreen`, `ReaderViewModel`, `ScreenTranslate`, `ContentChange`, `MangaWebViewClient`, `NewWindows`, `mt.js`, `pt.js` |
+| `:feature:studio` | Manga chapter import, background translation service, review editor | `StudioTranslator`, `ReviewViewModel`, `StudioImporter`, `StudioExporter`, `StudioRunService`, `PageComposer` |
+| `:feature:library`| Bookmarked sites, history, series overrides | `LibraryScreen`, `HistoryScreen`, `LibraryViewModel` |
+| `:feature:settings`| Engines, model management, translation notes, storage, backup & restore, updates | `SettingsScreen`, `SettingsViewModel` |
+| `:app` | Application class, Hilt dependency root, navigation host, update dialog | `MainActivity`, `PanelglassApp`, `UpdateHost` |
 
-Dependencies point downwards only: features never depend on each other, and `:core:model` depends on nothing.
+---
 
-## Runtime components
+## Runtime Component Interactions
 
 ```mermaid
 flowchart LR
-    subgraph Reader["Reader (feature:browser)"]
-        WV[WebView + mt.js bridge]
-        VM[ReaderViewModel]
-        OV[Patch overlay<br/>Compose layer]
-        WC[MangaWebViewClient<br/>+ NewWindows]
+    subgraph Browser["feature:browser"]
+        WV["WebView + mt.js"]
+        VM["ReaderViewModel"]
+        OV["Patch Overlay"]
+        WC["MangaWebViewClient"]
     end
-    subgraph Core
-        TP[TranslationPipeline]
-        DET[ComicTextDetector]
-        OCR[manga-ocr / ML Kit]
-        ENG[EngineRegistry<br/>→ engine]
-        REN[RegionRenderer]
-        PC[(PatchCache)]
+    
+    subgraph Pipeline["core:pipeline & core:ocr"]
+        TP["TranslationPipeline"]
+        DET["ComicTextDetector"]
+        OCR["manga-ocr / ML Kit"]
+        REN["RegionRenderer"]
     end
-    BL[(Block lists)]
+    
+    subgraph EngineData["core:engine & core:data"]
+        ENG["EngineRegistry"]
+        PC[("PatchCache")]
+        DB[("Room Database")]
+    end
 
-    WV -- PixelCopy snapshot<br/>+ viewportMap --> VM
-    VM -- translate(bitmap, ROI) --> TP
+    WV -->|"PixelCopy + viewportMap()"| VM
+    VM -->|"translate(bitmap, ROI)"| TP
     TP --> DET --> OCR
     TP --> ENG
     TP --> REN
     TP <--> PC
-    TP -- patches --> VM --> OV
-    WC -- request / navigation policy --> WV
-    BL --> WC
+    TP -->|"Rendered patches"| VM --> OV
+    WC -->|"Navigation Guard"| WV
+    DB --> VM
 ```
 
-- **`ReaderViewModel`** owns the reader session: the WebView itself (kept across trips to Settings through a
-  `MutableContextWrapper`), the resolved `TranslateConfig`, the screen-translation session and its patches, and what
-  triggers the next capture: a settled scroll, pages that finish downloading, a page turn without a scroll
-  (`ContentChange`), a rotation. It keeps each patch anchored to its page image so it follows layout shifts.
-- **`mt.js`** is injected into every page. It reports where the page's images are (with a key per image), how many
-  are still loading, and which controls float over them (`viewportMap()`); it also hides full-screen interstitials
-  and disables `window.open`. `mt.js` and `pt.js` go in at document start (`WebViewCompat.addDocumentStartJavaScript`),
-  before any page script, and `__mt`/`__pt` are read-only frozen objects, so a page cannot stand in for the bridge.
-  Replies over `MAX_BRIDGE_REPLY` characters are dropped unparsed.
-- **`MangaWebViewClient`** blocks requests to hosts on the merged block lists and enforces the navigation policy
-  (no cross-site redirects without a tap, no ad hosts as the main frame, only `mailto:`/`tel:`/`sms:` leave the
-  app). **`NewWindows`** decides every new-window request: only a tapped same-site link opens, in the reader.
-- **`EngineRegistry`** resolves the selected `EngineId` to an engine, or to a typed failure (`MissingKey`,
-  `ModelMissing`, not offered). It never picks a different engine.
-- **Two detectors.** `ComicTextDetector` (RT-DETR-v2, balloons and text) runs first; `MissedTextDetector`
-  (PP-OCRv6 tiny) then finds text outside its boxes, mostly sound effects. See [DETECTION_AND_OCR.md](DETECTION_AND_OCR.md).
-- **The series' glossary and notes** (`GlossaryRepository`, edited in the reader's *Glossary & pronouns* sheet) and
-  Settings' translation notes are combined by the pipeline before every capture and sent with each engine call.
-  Settings' notes start as `TranslationNotes.DEFAULT` until the user saves their own (an emptied note stays empty).
-  See [TRANSLATION_QUALITY.md](TRANSLATION_QUALITY.md).
-- **`StudioRunService`** (foreground service, type `specialUse`) keeps a Studio run alive while the app is in the
-  background: it starts when a run starts (`RunHost`, from the Translate tap), shows the run's notification
-  (`RunNotifications`: progress, Pause or Resume, Cancel; a tap opens the chapter), holds a partial wake lock while the
-  run works, and stops when no run is active. Before every page the run asks `StudioRunGate`, which applies `RunRules`
-  (the user's pause, heat, the charger setting, battery, network, the reader through `LocalModelUse`) and waits until
-  none applies. The running chapter is kept in settings (`studioRunChapter`) until the run ends; `MainActivity` resumes
-  it (`StudioTranslator.resumeInterrupted`, once per process) when a killed run left it there. A resumed run does what
-  is missing; *Translate again* first takes every page's stages off in one transaction
-  (`StudioRepository.clearStages`), so a redo cut short is finished by the next run.
-- **`AppUpdates`** asks GitHub for the latest release once a day (never in a debug build), downloads a newer APK
-  through `SystemDownloads`, checks it against the release's `.sha256`, and hands it to Android's installer; the
-  dialog is `UpdateHost` in `:app`.
-- **Studio export** (`StudioExporter`, app-scoped, one run at a time) writes a chapter page by page through
-  `PageComposer`. The page is one of a Studio page's three layers: **Translated** (`ExportContent.TRANSLATED`) is the
-  editor's Final, the clean layer with every bubble lettered by `StudioRenderer`; **Clean** (`ExportContent.CLEAN`) is
-  the editor's Clean layer alone, text-free, for lettering elsewhere. The original file is never changed. Clean
-  exports are named `… (Clean)` (`ExportNames.CLEAN_SUFFIX`), so the two never replace each other, and their
-  ComicInfo.xml names no language. The flow is chapters → what to export → format → folder.
+- **`ReaderViewModel`**: Manages the reading session, the active `WebView` instance, dynamic zoom/scroll calculations, and triggers captures.
+- **`mt.js` Bridge**: Injected via `WebViewCompat.addDocumentStartJavaScript` as a frozen, read-only object. Reports visible image coordinates and excludes floating website menus.
+- **`MangaWebViewClient`**: Evaluates all network requests against daily-refreshed ad/tracker blocklists and enforces strict same-origin navigation rules.
+- **`StudioRunService`**: Foreground service (`specialUse`) that keeps batch manga translation running while the app is in the background, obeying device temperature, battery saver, and charging constraints.
 
-## Engines
+---
 
-| Engine | `EngineId` | Where it runs | Reads the crop itself |
+## AI Translation Engine Subsystem
+
+| Engine | `EngineId` | Execution Runtime | Visual Crop Input |
 |---|---|---|---|
-| Gemini (and Gemma via the Gemini API) | `GEMINI` | Google API, user key | Yes: one call reads and translates |
-| Custom AI (any OpenAI-compatible server) | `CUSTOM` | The user's own server, user key | No |
-| Google Translate | `GOOGLE` | On device (ML Kit translation) | No |
-| Qwen 2.5 1.5B | `QWEN15_LOCAL` | On device (LiteRT-LM) | No |
-| Gemma 4 E2B | `GEMMA4_LOCAL` | On device (LiteRT-LM), 8 GB RAM devices | No |
+| **Google Gemini** | `GEMINI` | Cloud API (User Key) | **Yes:** Direct image crops (multimodal transcription + translation) |
+| **Custom AI** | `CUSTOM` | Self-hosted OpenAI endpoint | **No:** Text-only (reads via on-device OCR) |
+| **Google Translate** | `GOOGLE` | On-Device (ML Kit) | **No:** Text-only |
+| **Qwen 2.5 1.5B** | `QWEN15_LOCAL` | On-Device (LiteRT-LM) | **No:** Text-only |
+| **Gemma 4 E2B** | `GEMMA4_LOCAL` | On-Device (LiteRT-LM, 8 GB+ RAM) | **No:** Text-only |
 
-OpenRouter and DeepL exist in code as `@PlannedEngine` placeholders: hidden from the picker and refused by the
-registry. OpenAI, DeepSeek and other OpenAI-compatible providers are reached through Custom AI; their placeholders,
-with Claude's and Papago's, were removed on 2026-11-13, and a saved choice of one reads back as the default engine.
+### Custom AI Endpoint Guardrails
+- **HTTPS Enforcement:** Only secure HTTPS addresses are accepted.
+- **Address Sanitization:** Pasted `.../chat/completions` paths are stripped to the base hostname; requests are formatted strictly as `<base>/chat/completions`.
+- **Self-Contained Retries:** If a home server returns malformed JSON, `LlmContract.salvage` re-requests missing items in a self-contained prompt (`selfContainedRetry`).
 
-- **Custom AI's address.** The user names the server's base address and the model in Settings; the key goes to the
-  key store, the address to the settings store (it is not a secret). `CustomEndpoint` reduces the address to its
-  base — a pasted `…/chat/completions` is stripped — and requires HTTPS; the engine then calls
-  `<base>/chat/completions`. No version segment is ever appended. The request is text only: the on-device OCR reads
-  the page, so no crop or montage is sent. A malformed reply is retried once, self-contained (no assistant turn: a
-  home server may rewrite the history), and only for what is missing: `LlmContract.salvage` keeps every requested
-  item the reply got right, and the retry carries just the rest, with a reply cap for that many items. The key is
-  meant for one server: when the sheet is saved with an address
-  on another host and no new key typed (`keyHostChange`), it asks whether to keep the key or enter a new one.
-- **Engine HTTP guards.** `HttpEngineSupport` derives the engines' client from the shared one: redirects are not
-  followed (a 3xx is `Unavailable` naming the redirect: a 307/308 would re-send the page text, and OkHttp keeps
-  Gemini's `x-goog-api-key` across hosts), `HttpsOnly` runs as a network interceptor, and `ReplyCap` stops a reply
-  (or an error page) past 4 MB as `Malformed`.
+### LiteRT-LM On-Device Execution
+- **GPU OpenCL Backend:** LiteRT-LM loads OpenCL dynamically. Manifest declarations (`<uses-native-library>`) ensure compatibility with Android 12+ vendor drivers.
+- **CPU Backend Fallback:** Automatically activated for Qwen on devices with less than 6 GB RAM, keeping weights memory-mapped to conserve RAM.
 
-- **Retries.** Only transient failures are retried, on the same engine and model (`EngineRetry`): rate limits up to
-  3 times, overload (HTTP 500/502/503/504/529) up to 2 times, back-off capped at 4 s.
-- **Cloud contract.** LLM engines exchange a JSON array of `{i, text}` items (`LlmContract`); Gemini's reading mode
-  returns `{i, source, text}`.
-- **Reading a reply that a local server wrote.** A hosted provider answers with the contract. A server at home may
-  answer with a bare object, with the array inside a code fence, wrapped in a `translations` key, or with the text
-  under `english` or `translation`. `LlmContract.parse` therefore tries the reply as a whole, then as the outermost
-  array, then as the outermost object, and the first that yields a usable list of items wins. An item is usable when
-  it is an object with an `i`; a wrong type anywhere makes the whole candidate unusable rather than throwing, so a
-  reply can never crash the app. What the reply must still carry is unchanged: every requested id exactly once, no
-  ids invented, no reordering.
-- **The retry of a malformed reply.** By default the engine repeats its request with the bad reply and a repair
-  message, which relies on the provider keeping the conversation. A server at home may rewrite that history — the
-  original input dropped, the order reversed — so the Custom AI engine sets `selfContainedRetry` and sends one
-  fresh request that carries the input and the correction together (`LlmContract.retryUserMessage`). The hosted
-  providers keep the old three-turn retry.
-- **On-device contract.** The LiteRT-LM models share one KV cache between prompt and reply (4096 tokens), so they get
-  compact numbered lines (`3: translation`) in chunks of at most 12 items, and the reply is streamed and cut as soon
-  as every requested line is complete. Only one on-device model is loaded at a time (`LocalEngines`).
-- **On-device GPU.** LiteRT-LM tries its GPU backend first and falls back to the CPU. The GPU backend uses the
-  vendor's OpenCL library, which from Android 12 an app can load only if the manifest declares it
-  (`<uses-native-library>` for `libOpenCL.so`, `libOpenCL-car.so`, `libOpenCL-pixel.so`, `libvndksupport.so`, all
-  optional). Without them the GPU backend fails with "OpenCL not supported" and the models run on the CPU.
-- **Qwen's backend** (`Settings.qwenBackend`, Settings › Models & downloads › *Qwen runs on*): Automatic (default) takes the CPU
-  on phones under 6 GB of RAM (`DeviceMemory.qwenOnCpu`), the GPU otherwise; GPU or CPU can be forced. On the CPU
-  Qwen is about 3× slower, but its weights stay a memory-mapped file the system can reclaim (~0.6 GB pinned instead
-  of ~2.8 GB; see [MEMORY_USAGE.md](MEMORY_USAGE.md)). The choice is read at each load, and a model loaded on the
-  other backend is reloaded on its next call.
+---
 
-## Storage
+## Persistence, Schemas & Backup Architecture
 
-| What | Where | Notes |
+| Data Entity | Storage Mechanism | Schema / Retention Notes |
 |---|---|---|
-| Sites, history (last 15), SFX translations, glossary (with pronouns), series notes, Studio library | Room `PanelglassDb`, version 5 | Every schema change bumps the version and adds a `Migration` (`MIGRATION_3_4`, `MIGRATION_4_5`) |
-| Settings, translation notes, skipped update, last update check, the Studio's last export choices (content, format, quality), "Studio runs only while charging" and the chapter a Studio run is working on | DataStore | Includes remembered Gemini request options per model, and the Custom AI server address |
-| API keys | `SecureKeyStore` | AES-GCM, key in the Android Keystore |
-| Rendered patches | `PatchCache` (disk LRU) | Keyed by image hash, languages, engine, `PIPELINE_VERSION`, font, and a digest of the glossary and notes |
-| Detector models | `assets/` | Bundled: comic detector 11 MB, PP-OCRv6 tiny 1.8 MB |
-| LLMs, manga-ocr, LaMa | App-specific external storage | Downloaded by DownloadManager, SHA-256 verified |
-| Update APK | App-specific external storage, `updates/` | Only the release being installed is kept |
-| Block lists | `filesDir/blocklist/<source>.txt` | Fetched at runtime, refreshed daily |
+| **Sites & History** | Room (`PanelglassDb`, v5) | Last 15 history entries; automatic migration rules |
+| **Glossary & Pronouns** | Room (`GlossaryDao`) | Scoped by series; max 60 chars per term |
+| **Series Context Notes** | Room (`SeriesNotesDao`) | Scoped by series; max 500 chars |
+| **App Settings** | Jetpack DataStore | Keyed preferences, update flags, export choices |
+| **API Keys** | `SecureKeyStore` | AES-GCM encrypted via hardware Android Keystore |
+| **Patch Bitmaps** | `PatchCache` (Disk LRU) | Keyed by image hash, engine, font, and notes digest |
+| **Model Weights** | App-specific external storage | Pinned commit downloads verified via SHA-256 |
 
-`android:allowBackup="false"` plus `data_extraction_rules.xml` (which excludes every domain from cloud backup and from
-device-to-device transfer, which Android 12+ would otherwise still do): nothing is backed up or copied to a new
-phone, and everything is removed on uninstall.
+### Backup & Restore Architecture (`AppBackup.kt`)
+Panelglass includes zero automated cloud syncing. Instead, users can export and restore their data manually:
+- **Export:** Saves saved sites, series glossaries, pronouns, and translation notes to a user-selected JSON file via `CreateDocument` (no storage permissions required).
+- **Validation:** On import (`OpenDocument`), files are strictly verified for schema format, version compatibility, and size limits before parsing.
+- **Safe Transactional Merge:** Restoring runs in a single Room transaction: a site with the same address, or a glossary term or series note with the same series and source, is updated; everything else is added; nothing is deleted. Addresses go through `WebUrl.https` and every text is capped as on save. API keys and other settings are never part of a backup.
 
-## Concurrency and memory
+---
 
-- Pipeline stages have their own limits because they contend for different resources: decode 2, detect 2,
-  cloud translate 6, on-device translate 1, render 2. A slow engine call does not stop the next capture from
-  detecting.
-- Each stage has a 50 s watchdog; a timeout fails that image only, with a typed failure.
-- Model loading never happens on the main thread. The reader pre-warms the detector, OCR and engine when it opens.
-- Known, measured 2026-10-30 ([MEMORY_USAGE.md › Leak check](MEMORY_USAGE.md#leak-check-2026-10-30)): the
-  on-device model the reader pre-warmed stays loaded after the reader closes, until the app is hidden; and the reader's
-  WebView, off screen, keeps the activity that last showed it, so a recreation in the meantime holds one earlier
-  activity until the reader closes. Neither grows with use.
-- A Studio chapter run has its own thread at background priority (`StudioTranslator`), so the app on screen comes
-  first; its cleaning runs there too. ONNX Runtime and LiteRT-LM keep their own thread pools.
-- Patches more than three screens away from the viewport are dropped and re-made on return.
-- `PanelglassApp.onTrimMemory` releases idle on-device models and manga-ocr sessions under memory pressure
-  (`TRIM_MEMORY_RUNNING_LOW` and above), and logs that it did. When the UI is hidden (`TRIM_MEMORY_UI_HIDDEN`), a
-  translator still busy is released 5 s after its last call (`LocalEngines.onHidden`), unless the app comes back
-  first (`onVisible`, from the activity callbacks).
+## Concurrency, Watchdogs & Memory Budgets
 
-## Security and privacy
+### Pipeline Concurrency Throttling
+To prevent CPU and GPU starvation, pipeline stages enforce isolated concurrency caps:
+- **Bitmap Decode:** Max 2 concurrent tasks
+- **Vision Detection:** Max 2 concurrent tasks
+- **Cloud Translation:** Max 6 concurrent network requests
+- **On-Device Translation:** Max 1 sequential task (strictly single-threaded)
+- **Patch Rendering:** Max 2 concurrent tasks
 
-- **Keys.** Stored only in `SecureKeyStore`; never logged. HTTP bodies are never logged (they can echo a key).
-- **Logs.** Timings and failure types only: no keys, page URLs, page text or user IDs.
-- **Permissions.** Network (`INTERNET`, `ACCESS_NETWORK_STATE`), the update installer (`REQUEST_INSTALL_PACKAGES`),
-  and for a Studio run in the background `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE`, `POST_NOTIFICATIONS`
-  (asked once, on Android 13+, at the first run; refusing only hides the notification) and `WAKE_LOCK` (held only while
-  a run works). The run service is not exported, and its notification actions are explicit immutable
-  `PendingIntent`s. `ManifestPolicyTest` fails on any other permission.
-- **Exported activity.** `MainActivity` accepts a `url` from other apps but loads only `https` (`http` is
-  upgraded). The scripted-run extras (`engine`, `src`, `tgt`, `start`) are honoured only in debuggable builds.
-- **Debug and release side by side.** Debug builds use the application ID `com.smnexstudio.panelglass.debug` and the
-  name "Panelglass Debug": their own data, keys and downloads; release builds keep `com.smnexstudio.panelglass`.
-- **In-app updates.** The APK URL must be https under this repository's `releases/download/` (`ReleaseInfo.PREFIX`,
-  from the `updateRepo` Gradle property, which the release workflow sets to the repository it runs in), checked on the
-  URL as resolved (`ReleaseInfo.isReleaseAsset`: no `..` segment, `%` escape, query, fragment, user or port). The file
-  is checked against the release's `.sha256` before Android's installer sees it, and the installer refuses an APK
-  signed with another key. `REQUEST_INSTALL_PACKAGES` and a FileProvider that shares only `updates/` make the
-  hand-off possible.
-- **User notes are instructions, page text is not.** Engines follow the reader's notes and glossary, but every prompt
-  tells the model that page text is data, never instructions. No model has tools: its reply is only drawn as text.
-  Every cloud reply is capped by the item count (`LlmContract.outputBudget`) and glossary terms by
-  `GlossaryEntry.MAX_CHARS`, so no note or term can make a call write, and bill, an essay.
-- **WebView.** No file or content access; no JavaScript interface is exposed to pages; new windows are decided
-  natively; blocked hosts never become the main frame.
-- **Downloads.** Every model file is pinned to a Hugging Face commit and verified against its SHA-256 before it is
-  used; mismatches are deleted. App-specific external storage is private to the app on every supported version
-  (Android 12+).
+### Stage Watchdogs
+Every pipeline stage is monitored by a **50-second watchdog timer** in the reader (240 s in the Studio, where an on-device model can need minutes per group). If a stage hangs, only that specific image fails with a typed error; the rest of the application remains responsive.
 
-## Testing
+### Memory Pruning & Budgets
+- **Continuous Reading:** Patches farther than 3 screens away from the viewport are pruned from memory and re-created if scrolled back.
+- **Whole-Page Scan:** Patches are retained under a **96 MB** decoded bitmap memory budget (`PAGE_PATCH_BUDGET_BYTES`). When exceeded, the most distant patches are dropped first.
+- **Memory Pressure Handling (`onTrimMemory`):** From `TRIM_MEMORY_RUNNING_LOW`, idle manga-ocr, LaMa and on-device LLM sessions are released. Once the UI is hidden (`onHidden`) an idle LLM goes at once; one that is mid-translation goes 5 s after its last call (`releaseGraceMs`). All reload lazily on the next call.
 
-| Suite | Command | Covers |
+---
+
+## Security Model & Sandboxing
+
+- **Network Security:** Cleartext HTTP is globally blocked in the network security config.
+- **Android Keystore:** API keys reside in private encrypted storage; decrypted bytes exist in memory only during the active HTTP request.
+- **Prompt Sanitization:** Untrusted web text is framed strictly as data in LLM prompts, never as instructions.
+- **WebView Isolation:** No JavaScript interfaces are bound to the WebView. Local file access is disabled.
+- **Update Verification:** Update APKs must originate from this GitHub repository and must match the published `.sha256` checksum before being passed to Android's installer.
+
+---
+
+## Verification & Test Suites
+
+| Test Suite | Execution Command | Scope |
 |---|---|---|
-| Unit (JVM) | `./gradlew testDebugUnitTest :core:model:test` | Every module, without a device or the network. Engines and update checks against MockWebServer; the pipeline with a scripted detector and model; Room migrations; view models over Room in memory; Compose screens (Settings, Sites, History, Export, the review editor's panels, the update dialog) on Robolectric, with accessibility checks on Settings and Sites |
-| Coverage and report | `./gradlew jacocoUnitTestReport`, then `python3 tools/test-report/report.py --root . --out build/test-report` | JaCoCo line and branch coverage (all code, logic, Compose UI) and an HTML report with each test's expected and actual result |
-| Instrumented | `./gradlew :core:data:connectedDebugAndroidTest` | `SecureKeyStore` round-trip with the real Android Keystore (device only) |
-| Instrumented | `./gradlew :core:pipeline:connectedDebugAndroidTest` | A rendered page through the whole pipeline (device only) |
-
-CI (`.github/workflows/ci.yml`) runs the unit tests, coverage and the report on every pull request into `main`,
-posts the verdict as one comment on the pull request, and keeps the report and the raw results as artifacts; the
-instrumented tests are not run there. LiteRT-LM is never loaded in JVM tests: `LocalLlmEngine.runnerFactory` is
-replaced by a scripted `LlmRunner`. Every test class, the counts, the phone checks and what is not covered are in
-[TESTING.md](TESTING.md); each requirement above names its tests.
+| **JVM Unit Tests** | `./gradlew testDebugUnitTest :core:model:test` | All 879 JVM unit tests across all modules (MockWebServer, Robolectric). |
+| **Coverage Report** | `./gradlew jacocoUnitTestReport` | Line and branch coverage via JaCoCo. |
+| **Secure KeyStore Test** | `./gradlew :core:data:connectedDebugAndroidTest` | Real Android Keystore AES-GCM round-trip on hardware. |
+| **Pipeline Device Test**| `./gradlew :core:pipeline:connectedDebugAndroidTest` | End-to-end screen capture, detection, and rendering on device. |

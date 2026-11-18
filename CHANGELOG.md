@@ -7,6 +7,22 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+### Added
+
+- **Translate whole page** (reader ⋮): the app scrolls a vertical reader from the top to the bottom by itself and translates every screen, with 30% overlap so no bubble is cut in two, then returns you to where you were; every translation stays while you read the page. Engines that cost quota or time (a key, or on the device) ask first how many screens it will be. **Cancel scan** stops it and scrolls back; touching the page stops it where you are. Contributed by @marufmoinuddin (#29).
+- **Backup & restore** (Settings, between Appearance & language and About & updates): saves your sites, each series' glossary and notes, and your translation notes to a file you choose, and restores them on another phone or after a reinstall. A restore shows what the file holds and waits for your OK; it adds to what you have (a site at the same address, or a term of the same series, is updated) and never deletes anything. Backups never hold API keys, other settings, downloaded models or Studio files.
+
+### Changed
+
+- The README was rewritten: features, engines, the Studio, getting started and an FAQ, with the screenshots of the reader and the Studio.
+
+### Fixed
+
+- Whole-page scan: the text of the menu item, the dialog and the progress is now translated into every app language (it showed English).
+- Whole-page scan: a page that scrolls inside an element, not as a whole, is now noticed after the first step, instead of the same screen being captured again at every stop.
+- Whole-page scan: when a lazy page loaded more at the bottom, the scan jumped to the new end and skipped what had loaded in between; it now goes on step by step.
+- Whole-page scan: a scan started right after another was cancelled no longer collides with its scroll back, and a scan running when the page's language is detected starts again in that language instead of stopping without a word. The menu item waits until the reader is ready.
+
 ## [0.6.0] - 2026-11-15
 
 ### Added

@@ -1,61 +1,64 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Panelglass logo - Manga Translator for Android" width="112">
+  <img src="docs/assets/logo.svg" alt="Panelglass logo - AI Manga Translator for Android" width="112">
 </p>
 
-<h1 align="center">Panelglass: Real-Time Manga &amp; Webtoon Translator for Android</h1>
+<h1 align="center">Panelglass – AI Manga, Manhwa &amp; Webtoon Translator for Android</h1>
 
 <p align="center">
-  <strong>Read manga, manhwa and manhua in your language, translated in place as you scroll.</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/smnexstudio/Panelglass/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/smnexstudio/Panelglass?label=latest&color=brightgreen&logo=android"></a>
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%2012%2B-3DDC84">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF">
-  <img alt="UI" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4">
-  <img alt="On-device AI" src="https://img.shields.io/badge/on--device-ONNX%20·%20ML%20Kit%20·%20LiteRT--LM-555">
-  <img alt="Status" src="https://img.shields.io/badge/status-early%20development-orange">
-  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <strong>Read manga, manhwa, manhua and webtoons in your language. Translate comic pages in real time, directly inside
+  the reader, with AI-powered translation – even offline.</strong>
 </p>
 
 <p align="center">
-  <a href="#screenshots">Screenshots</a> ·
+  <a href="https://github.com/smnexstudio/Panelglass/releases/latest"><img src="https://img.shields.io/github/v/release/smnexstudio/Panelglass?style=for-the-badge&label=Latest%20Release" alt="Latest release"></a>
+  <a href="https://github.com/smnexstudio/Panelglass/stargazers"><img src="https://img.shields.io/github/stars/smnexstudio/Panelglass?style=for-the-badge" alt="GitHub stars"></a>
+  <a href="https://github.com/smnexstudio/Panelglass/blob/main/LICENSE"><img src="https://img.shields.io/github/license/smnexstudio/Panelglass?style=for-the-badge" alt="License"></a>
+  <a href="https://github.com/smnexstudio/Panelglass"><img src="https://img.shields.io/badge/Platform-Android%2012%2B-green?style=for-the-badge" alt="Android 12+"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/smnexstudio/Panelglass/releases/latest">Download APK</a> ·
   <a href="#features">Features</a> ·
-  <a href="#why-panelglass">Why Panelglass</a> ·
-  <a href="#studio-translate-your-own-chapters">Studio</a> ·
-  <a href="#how-it-works">How it works</a> ·
-  <a href="#getting-started">Getting started</a> ·
-  <a href="#documentation">Documentation</a> ·
-  <a href="#faq">FAQ</a> ·
-  <a href="#roadmap">Roadmap</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="#translation-engines">AI Engines</a> ·
+  <a href="#studio-translate-your-own-manga">Studio</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#privacy--security">Privacy</a> ·
+  <a href="#roadmap">Roadmap</a>
 </p>
 
 ---
 
-Panelglass is an open-source **manga translator for Android**: a dedicated browser for the raw manga, manhwa,
-manhua and webtoon sites you already read. It reads Japanese, Korean and Chinese comics and translates them directly
-on your phone (offline with LiteRT-LM and manga-ocr) or with Gemini. Press **Start** and it translates the screen:
-every speech balloon, caption and sound effect is erased and redrawn in your language, right where it was. Scroll,
-and the next screen is translated as soon as the page settles; translations stay pinned to the art as it moves.
+Panelglass is a free, open-source **Android manga translator** that uses OCR, AI and image processing to translate
+raw Japanese manga, Korean manhwa and Chinese manhua. It replaces the original speech bubbles, captions and sound
+effects with translated text while preserving the original artwork and page layout.
 
-It works on any reader site because it translates **what is on screen** rather than downloading images: whatever a
-site does with its pages, Panelglass sees the same pixels you do.
+Unlike traditional screen translators that display floating translation boxes, Panelglass **erases the original
+lettering and redraws the translation directly inside the comic artwork**.
 
-For files you already have there is the **Studio**: import a chapter (images, PDF, CBZ, ZIP or 7z), translate it on the
-phone, check and restyle every bubble, and export the lettered pages as images, CBZ or ZIP for Kavita, Komga or any
-comic reader, or the clean, text-free pages to letter elsewhere. See [Studio](#studio-translate-your-own-chapters).
-
-
-## Screenshots
+It also includes a built-in **Studio** for translating your own manga chapters, editing individual speech bubbles,
+customizing lettering and exporting translated comics.
 
 <p align="center">
   <img src="docs/ScreenRecordings/translate-peppercarrot.gif" width="280" alt="Panelglass Android comic translator demo - real-time in-place Japanese to English speech bubble translation of the Japanese edition of Pepper&amp;Carrot">
   <br>
   <sub>Real time, on a phone, fully offline (Gemma 4 E2B): the bubbles are redrawn in English as the model finishes them.<br>
-  <a href="docs/ScreenRecordings/translate-peppercarrot.mp4">Watch the full recording</a> (70 s, real speed): two screens
-  of a chapter translated while scrolling, then Stop puts the original back.</sub>
+  <a href="docs/ScreenRecordings/translate-peppercarrot.mp4">Watch the full recording</a> (70 s, real speed).</sub>
 </p>
+
+## Why Panelglass?
+
+Most manga translation tools either require downloading comic pages separately or display translated text in
+floating overlays. Panelglass takes a different approach.
+
+- **Translate while reading:** translate manga and manhwa directly as you scroll through the reader sites you use.
+- **Natural in-place translation:** remove the original text and redraw the translation inside speech bubbles and
+  captions.
+- **Offline AI translation:** use on-device models without sending comic pages to cloud services.
+- **Multiple translation engines:** choose between Google ML Kit, Qwen, Gemma, Gemini or a custom AI provider.
+- **Built-in manga Studio:** translate, proofread, edit and export your own comic chapters.
+- **Privacy-focused:** no Panelglass backend or account. Your API keys are encrypted on your device.
+
+## Screenshots
 
 <table>
   <tr>
@@ -68,342 +71,330 @@ comic reader, or the clean, text-free pages to letter elsewhere. See [Studio](#s
   </tr>
 </table>
 
-<sub>The comic in these captures is <a href="https://www.peppercarrot.com">Pepper&amp;Carrot</a> by David Revoy, Episode 3
-"The Secret Ingredients", read in its Japanese translation by guruguru on peppercarrot.com. It is published under
-<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the English lettering in the captures is
-Panelglass's machine translation, not the official English edition.</sub>
-
 <table>
   <tr>
-    <td align="center"><img src="docs/Screenshots/library.png" width="180" alt="Panelglass manga reader site management and custom sites"></td>
-    <td align="center"><img src="docs/Screenshots/settings-default.png" width="180" alt="Panelglass Settings hub in the Default theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-panel-pop.png" width="180" alt="Panelglass Settings hub in the Panel Pop theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-soft-bloom.png" width="180" alt="Panelglass Settings hub in the Soft Bloom theme"></td>
-    <td align="center"><img src="docs/Screenshots/settings-paper-ink.png" width="180" alt="Panelglass Settings hub in the Paper and Ink theme"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Your sites</sub></td>
-    <td align="center"><sub>Default</sub></td>
-    <td align="center"><sub>Panel Pop</sub></td>
-    <td align="center"><sub>Soft Bloom</sub></td>
-    <td align="center"><sub>Paper &amp; Ink</sub></td>
-  </tr>
-</table>
-
-<sub>Site addresses are blurred. Artwork belongs to its creators and is shown only to demonstrate the translation.</sub>
-
-### Studio
-
-Import a chapter (images, PDF, or a CBZ / ZIP / 7z archive), translate it on the phone, check and restyle every
-bubble, then export the lettered pages, or the clean pages without any text.
-
-<table>
-  <tr>
-    <td align="center"><img src="docs/Screenshots/studio-original.jpg" width="240" alt="Panelglass Studio review editor showing the original Japanese page with every detected speech bubble outlined and numbered"></td>
-    <td align="center"><img src="docs/Screenshots/studio-review.jpg" width="240" alt="Panelglass Studio review editor showing the translated English page with a selected bubble's original and translation"></td>
-    <td align="center"><img src="docs/Screenshots/studio-style.jpg" width="240" alt="Panelglass Studio text style panel with font, size, bold, italic, colour and outline options"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Every bubble found and numbered</sub></td>
-    <td align="center"><sub>Check each translation, bubble by bubble</sub></td>
-    <td align="center"><sub>Restyle the lettering</sub></td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td align="center"><img src="docs/Screenshots/studio-library.jpg" width="180" alt="Panelglass Studio manga library with covers"></td>
-    <td align="center"><img src="docs/Screenshots/studio-manga.jpg" width="180" alt="Panelglass Studio manga details with author, artist, status, languages and chapters"></td>
-    <td align="center"><img src="docs/Screenshots/studio-chapter.jpg" width="180" alt="Panelglass Studio chapter with its translation progress and cleaned pages"></td>
+    <td align="center"><img src="docs/Screenshots/studio-original.jpg" width="180" alt="Panelglass Studio review editor showing the original Japanese page with every detected speech bubble outlined and numbered"></td>
+    <td align="center"><img src="docs/Screenshots/studio-review.jpg" width="180" alt="Panelglass Studio review editor showing the translated English page with a selected bubble's original and translation"></td>
+    <td align="center"><img src="docs/Screenshots/studio-style.jpg" width="180" alt="Panelglass Studio text style panel with font, size, bold, italic, colour and outline options"></td>
     <td align="center"><img src="docs/Screenshots/studio-export.jpg" width="180" alt="Panelglass Studio export as ZIP, images or CBZ"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Your manga</sub></td>
-    <td align="center"><sub>Details and chapters</sub></td>
-    <td align="center"><sub>Translated on device</sub></td>
+    <td align="center"><sub>Every bubble found and numbered</sub></td>
+    <td align="center"><sub>Check each translation</sub></td>
+    <td align="center"><sub>Restyle the lettering</sub></td>
     <td align="center"><sub>Export as images, ZIP or CBZ</sub></td>
   </tr>
 </table>
 
-<sub>The chapters in these captures are <a href="https://www.peppercarrot.com">Pepper&amp;Carrot</a> by David Revoy,
-Episodes 1–3 in their Japanese translation by guruguru, imported into the Studio as CBZ files
-(<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). The English lettering is Panelglass's machine
-translation, restyled in the Studio.</sub>
-
-<sub>Artwork belongs to its creators and is shown only to demonstrate the translation.</sub>
+<p>
+  <sub>The comic in these captures is <a href="https://www.peppercarrot.com">Pepper&amp;Carrot</a> by David Revoy,
+  in its Japanese translation by guruguru: Episode 3 "The Secret Ingredients" read on the Pepper&amp;Carrot site,
+  and Episodes 1–3 imported into the Studio as CBZ files. It is published under
+  <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the English lettering is Panelglass's
+  machine translation, not the official English edition.</sub>
+</p>
 
 ## Features
 
-- **In-place translation.** The original lettering is removed and the translation is fitted into the same balloon or
-  caption box, sized to stay readable.
-- **Your choice of engine**, cloud or fully offline:
+### 1. Real-time manga and manhwa translation
 
-  | Engine | Runs | Needs | Best for |
-  |---|---|---|---|
-  | **Gemini** | Google's API | Your own API key | Best quality and speed. Reads each balloon itself, so no on-device OCR is needed. Any Gemini or Gemma model your key can use. |
-  | **Google Translate (ML Kit)** | On device (Google's ML Kit) | Nothing (~30 MB language packs) | Free and offline |
-  | **Custom AI** | Your own server | Your own API key | Any OpenAI-compatible text server: you name its address and the model. |
-  | **Qwen 2.5 1.5B** | On device (LiteRT-LM; GPU, or CPU on phones under 6 GB) | One-time 1.6 GB download | Offline LLM translation |
-  | **Gemma 4 E2B** | On device (LiteRT-LM, GPU when available) | One-time 2.6 GB download, 8 GB RAM | Offline LLM translation, higher quality |
+- Translate raw manga, manhwa, manhua and webtoon pages directly in the built-in browser.
+- Automatically detect speech bubbles, captions and sound effects on the comic images.
+- Erase the original lettering and replace it with translated text.
+- Preserve the original artwork and comic layout.
+- Keep translated regions aligned with their original positions while scrolling and zooming.
+- Detect page changes in both scrolling and paginated readers.
+- Handle dynamically loaded comic pages.
+- Re-translate the current screen whenever needed.
+- Translate a whole chapter at once with ⋮ › *Translate whole page*.
+- Translate pages while browsing, without downloading individual images.
+- Translate the site's own text too (titles, chapter lists, comments) with ⋮ › *Translate page*, on the device.
 
-- **Built for comics.** A bundled comic text and bubble detector finds the lettering, and a second detector
-  (PP-OCRv6) catches what it misses, above all brush-lettered sound effects; vertical Japanese is read by the optional
-  manga-ocr model or by ML Kit with a rotated second pass.
-- **Names, pronouns and notes.** Give a series' characters their spelling and a pronoun (*he*, *she*, *they*) in
-  ⋮ › *Glossary & pronouns*, and tell the AI engines about tone and honorifics in Settings › Languages & notes › *Translation notes*.
-  Japanese and Korean leave subjects out; this is how the translation gets them right
-  ([more](docs/TRANSLATION_QUALITY.md)).
-- **Reads the page's language.** A Korean, Japanese or Chinese page switches the reader to that source language by
-  itself, unless you set one for the site.
-- **Sound effects your way.** Keep or replace them (Settings › Languages & notes › *Sound effects*); with Replace, even
-  effects nothing can read are erased.
-- **Scrolling and paged readers.** Translations stay on their page image when the site shifts its layout, a page
-  turn that does not scroll (tap or swipe readers) is noticed and translated, pages still downloading are picked up
-  once they arrive, and rotating the phone translates the new layout.
-- **Your sites, your list.** No sites ship with the app. Add the readers you use, pin favourites, and set languages,
-  auto-translate and ad blocking per site.
-- **Ad and pop-up blocking.** Merged public block lists (AdGuard DNS, HaGeZi pop-up ads), a native pop-up and
-  popunder catcher, and cleanup of interstitials and tap-hijacking overlays.
-- **Private by design.** Keys encrypted with the Android Keystore; offline engines keep everything on the device;
-  no Panelglass server.
-- **Translate the page itself.** ⋮ › *Translate page* translates the site's own text (titles, chapter lists,
-  comments) in place, like Chrome's translate bar: the language is detected, English is the default target, and
-  both can be changed. On-device with ML Kit; *Show original* puts the page back.
-- **Studio for your own files.** Import images, a PDF or a comic archive (CBZ, ZIP, CB7, 7z), translate the whole chapter, review and restyle
-  every bubble, and export images, CBZ or ZIP, translated or clean ([more](#studio-translate-your-own-chapters)).
-- **Four themes and 21 lettering fonts** (a comic font for every target language, or your own), and a
-  *Try a translation* box to check an engine before reading.
-- **The app speaks your language.** The interface is in English by default and can be switched to any of the 15
-  languages below (Arabic right to left) in Settings › Appearance & language.
-- **Updates itself.** A newer release is offered once a day (Update or Later), downloaded,
-  checked against its published SHA-256 and handed to Android's installer.
+### 2. Advanced manga OCR and text detection
 
-**Languages.** Source: Japanese, Korean, Chinese (Simplified and Traditional), English, Spanish, French, German,
-Italian, Portuguese, Russian, Indonesian, Vietnamese. Target: all of those, plus Thai, Arabic and Hindi.
+Panelglass combines specialized computer vision and OCR components to identify comic text.
 
-### Download
+- RT-DETR-v2 based comic text and bubble detection.
+- PP-OCRv6 secondary text detection for missed lettering and brush-lettered sound effects.
+- Japanese vertical text recognition.
+- Optional manga-ocr model for Japanese manga.
+- Google ML Kit text recognition.
+- Automatic source-language detection (Japanese, Korean, Chinese).
+
+### 3. Multiple AI translation engines
+
+Choose the engine that best fits your device, privacy requirements and quality preferences. See
+[Translation engines](#translation-engines).
+
+### 4. Translation customization
+
+Make translations more consistent and natural ([more](docs/TRANSLATION_QUALITY.md)).
+
+- **Glossary:** define character names and preferred spellings per series.
+- **Pronouns:** give characters a pronoun (*he*, *she*, *they*); Japanese and Korean leave subjects out.
+- **Translation notes:** customize tone, honorifics, terminology and translation behaviour.
+- **Sound effects:** keep the original sound effects or replace them with translations.
+- **Fonts:** choose from 21 bundled lettering fonts or import your own.
+- **Translation testing:** check an engine with *Try a translation* before reading a whole chapter.
+
+### 5. Built-in ad and pop-up blocker
+
+Enjoy a cleaner reading experience.
+
+- Public filter lists fetched at runtime: AdGuard DNS and HaGeZi pop-up ads (StevenBlack as a fallback).
+- Native pop-up and pop-under blocking.
+- Protection against unwanted redirects and tap-hijacking overlays.
+- Site-specific reading preferences: languages, auto-translate and ad blocking per site.
+
+### 6. Languages
+
+**Source:** Japanese, Korean, Chinese (Simplified), Chinese (Traditional), English, Spanish, French, German, Italian,
+Portuguese, Russian, Indonesian, Vietnamese.
+
+**Target:** all source languages, plus Thai, Arabic and Hindi.
+
+The app interface is available in 16 languages, including Arabic with a right-to-left layout (English by default;
+Settings › Appearance & language).
+
+### 7. And more
+
+- Four themes.
+- Back up your sites, glossaries and notes to a file, and restore them on another phone (Settings › Backup & restore).
+- Updates itself: a newer release is offered once a day, downloaded, checked against its published SHA-256 and handed
+  to Android's installer.
+- Works on phones, tablets and Chromebooks.
+
+## Translation Engines
+
+Panelglass supports cloud-based and on-device translation engines.
+
+| Engine | Processing | Internet | Requirements |
+|---|---|---|---|
+| **Google Translate (ML Kit)** | On-device | No, after language packs download | Language packs (~30 MB each) |
+| **Qwen 2.5 1.5B** | On-device AI | No, after model download | ~1.6 GB model |
+| **Gemma 4 E2B** | On-device AI | No, after model download | ~2.6 GB model, 8 GB RAM |
+| **Gemini** | Cloud AI | Yes | Your own API key |
+| **Custom AI** | Your configured server | Yes | OpenAI-compatible API and your own key |
+
+**Google Translate (ML Kit)**
+- Free, on-device translation, no API key.
+- Japanese, Korean and Chinese packs download at first start; other languages download with one tap when you need them.
+- Suitable for lightweight translation.
+
+**Qwen 2.5 1.5B**
+- Runs an LLM directly on your Android device, powered by LiteRT-LM.
+- GPU acceleration when supported; runs on the CPU on phones under 6 GB of RAM (slower, far less memory).
+
+**Gemma 4 E2B**
+- On-device AI translation, powered by LiteRT-LM, GPU acceleration when available.
+- Higher-quality offline translation on phones with 8 GB of RAM.
+
+**Google Gemini**
+- Cloud-based AI translation that reads and translates the comic text from image crops itself, so no on-device OCR
+  is needed.
+- Uses your own [Google AI Studio](https://aistudio.google.com/apikey) API key; pick any Gemini or Gemma model your key
+  can use.
+
+**Custom AI**
+
+Connect your preferred OpenAI-compatible provider or self-hosted inference server. Presets fill in the address for
+**GPT (OpenAI)**, **DeepSeek**, **Grok**, **Claude** and **OpenRouter**; **Custom** takes any other HTTPS endpoint.
+You set the API key and model. Only text (read on the device) is sent, never images.
+
+## Studio: Translate Your Own Manga
+
+Panelglass is more than a real-time screen translator. The built-in Studio lets you import your own comic files,
+translate entire chapters, edit speech bubbles and export lettered pages. It uses the reader's detector, OCR and
+engines, so it runs fully offline too.
+
+### Supported import formats
+
+- Individual images.
+- PDF documents.
+- CBZ and ZIP archives.
+- CB7 and 7z archives.
+
+A ComicInfo.xml fills in the title, number and credits; an archive with a folder per chapter imports as several
+chapters, and a pack of several series as one manga per series. RAR (`.cbr`) is not supported yet.
+
+### Translation and editing
+
+- Automatically detect speech bubbles and text regions.
+- Translate entire chapters with your selected engine.
+- Process chapters in the background, with Pause, Resume and Cancel; runs wait while the phone is hot or low on
+  battery.
+- Review translations bubble by bubble, and correct the original and translated text.
+- Re-translate individual bubbles.
+- Add missing text regions manually, and remove incorrect detections.
+- Compare the original, cleaned and final pages.
+- Undo and redo every edit.
+
+### Advanced manga lettering
+
+- 21 bundled fonts, with a dialogue and a sound-effect default for every target language.
+- Import your own TTF, OTF and TTC fonts.
+- Adjust font size, weight, italic style and colour.
+- Customize text outlines, fills, borders and rounded corners.
+- Move, rotate, stretch and bend sound effects.
+- Speech balloons are traced to their real shape for natural text placement.
+- Clean remaining lettering with brush tools; LaMa inpainting (an optional 208 MB download) rebuilds the art under it.
+
+### Export options
+
+| Export | Description |
+|---|---|
+| Images | Individual translated pages |
+| CBZ | Comic chapters for compatible readers |
+| ZIP | Translated pages as an archive |
+| Clean pages | Pages with the original lettering removed, to letter elsewhere |
+
+Exports include ComicInfo.xml metadata and a cover, so comic library apps such as Kavita, Komga and Mihon pick up the
+details.
+
+## How Panelglass Works
+
+Panelglass combines computer vision, OCR, machine translation, image processing and Android rendering.
+
+```mermaid
+flowchart TD
+    A["Capture reader viewport"] --> B["Detect comic text and speech bubbles"]
+    B --> C{"Translation engine"}
+    C -->|On-device / Custom AI| D["OCR: manga-ocr / ML Kit"]
+    C -->|Gemini| E["Send text-region crops"]
+    D --> F["Translate extracted text"]
+    E --> G["Gemini reads and translates"]
+    F --> H["Erase original lettering"]
+    G --> H
+    H --> I["Render translated text"]
+    I --> J["Create image patches"]
+    J --> K["Anchor patches to comic artwork"]
+```
+
+1. **Screen capture:** capture the reader viewport with PixelCopy; only the page's comic images are considered.
+2. **Detection:** find speech bubbles and text regions (RT-DETR-v2, plus PP-OCRv6 for missed text).
+3. **OCR:** read the original text on the device, or send image crops to Gemini.
+4. **Translation:** translate the text with the selected engine.
+5. **Text removal:** erase the original lettering.
+6. **Typesetting:** fit the translation into the original speech bubble or caption.
+7. **Rendering:** create image patches and anchor them to their comic pages.
+
+Translations stay aligned with the artwork while scrolling or zooming; rotating the device translates the new layout.
+*Translate whole page* runs the same steps at every stop of an automatic scroll, with 30% overlap between screens so
+no bubble is cut in two. Details: [docs/FLOW.md](docs/FLOW.md).
+
+## Getting Started
+
+### Download Panelglass
+
+Panelglass is distributed through GitHub Releases and is not available on Google Play.
 
 <p align="center">
   <a href="https://github.com/smnexstudio/Panelglass/releases/latest"><img alt="Get it on GitHub" src="docs/assets/get-it-on-github.svg" height="56"></a>
 </p>
 
-### Why Panelglass?
+Requirements:
 
-- **In-place bubble replacement (No floating overlays):** Unlike traditional screen translators that draw clunky floating boxes over the screen, Panelglass erases the original comic lettering and re-typesets the translation directly inside speech balloons, preserving the comic's original layout and artwork.
-- **Scroll-anchored translations:** Translated patches are pinned to comic page elements in the DOM. As you scroll, pan, or rotate your device, translations remain locked to their artwork.
-- **100% Offline AI translation:** Run on-device LLMs (Gemma 4 E2B, Qwen 2.5 1.5B via LiteRT-LM), manga-ocr, and ML Kit locally. Read raw comics anywhere with zero network requests and complete privacy.
-- **Built-in ad and pop-up blocking:** Enjoy uninterrupted reading with integrated AdGuard and HaGeZi filters that eliminate mobile tap-hijacking, redirect loops, and pop-up ads.
+- Android 12 or later (API 31+).
+- About 275 MB for the app.
+- Additional storage for downloaded AI models and language packs.
 
-## Studio: translate your own chapters
+### Installation
 
-The **Studio** tab works on files you already have instead of a website. It uses the reader's detector, OCR and
-engines, so it runs fully offline too.
+1. Visit the [latest release](https://github.com/smnexstudio/Panelglass/releases/latest).
+2. Download `panelglass-<version>.apk`.
+3. Optionally verify it against the `.sha256` file next to it
+   (`sha256sum -c panelglass-<version>.apk.sha256`, or `certutil -hashfile <apk> SHA256` on Windows).
+4. Install the APK on your device (allow your browser or file manager to install unknown apps when Android asks).
+5. Open Panelglass. The first start lists the models and language packs it suggests and asks whether to download them
+   on Wi-Fi only.
 
-1. **Import** a chapter: images (drag them into order), a PDF or a comic archive (`.cbz`, `.zip`, `.cb7` or `.7z`,
-   such as the chapters Mihon and other readers download). A ComicInfo.xml fills in the title, number and credits;
-   an archive with a folder per chapter, or a `.zip` of chapter archives, imports as several chapters, and a pack of
-   several series (a reader app's download folder zipped whole) as one manga per series. RAR (`.cbr`) isn't
-   supported yet. Each manga gets a cover, its details and a chapter list.
-2. **Translate** the whole chapter with the engine chosen in Settings. Every page is read, translated and cleaned;
-   it keeps going in the background with a progress notification, pauses when the phone is hot or low on battery,
-   and can be paused, cancelled, or continued later.
-3. **Review** bubble by bubble: the page with every bubble numbered, the original and the translation to correct,
-   **Re-translate**, a **Proofread** list, and **Original / Clean / Final** to compare. Add text the detector
-   missed, mark a false detection *Not text*, or delete it.
-4. **Restyle** one bubble or the whole page: font, size, bold, italic, colour, outline, fill, border and rounded
-   corners. Speech balloons are traced to their real shape, so fills and text follow the balloon. Brush out what the
-   cleanup missed; every step can be undone.
-5. **Export** a chapter or the whole manga as images, CBZ or ZIP, each with a ComicInfo.xml, to Download/Panelglass
-   or a folder you pick: translated pages, or clean text-free pages to letter elsewhere.
+Later updates are offered in the app (**Update** or **Later**); Settings › About & updates checks on demand.
 
-Also in the Studio:
+### Configure translation
 
-- **Translation in the background:** a chapter keeps translating when you leave the app or turn the screen off,
-  with its progress in a notification (Pause, Resume, Cancel). It waits while the phone is too hot, in Battery Saver
-  or low on battery, while Gemini has no network, and while the reader uses the on-device model; **Settings ›
-  Studio › Studio runs only while charging** makes on-device chapters wait for the charger.
-- **Fonts:** 21 bundled fonts with a dialogue and a sound-effect default for every target language, plus your own
-  `.ttf` / `.otf` / `.ttc`. The reader letters with the same fonts (Settings › Sites › Font).
-- **Sound effects:** keep or replace each one, start from a preset, then move, turn, stretch or
-  bend it.
-- **Better cleanup:** LaMa, a 208 MB model downloaded at first start, rebuilds the artwork under text (phones with 4 GB
-  of RAM or more).
-- **Phones, tablets and Chromebooks:** on a wide window the editor shows its tools, the page, the bubble editor and
-  the chapter's pages side by side, with keyboard shortcuts.
+1. Open **Settings › Languages & notes** and choose your source and target languages.
+2. Open **Settings › Engine & keys** and select your translation engine.
+3. For Gemini or Custom AI, tap **Set key**, paste your API key and choose a model.
+4. For Qwen or Gemma, download the model from its row (or Settings › Models & downloads).
+5. Check the setup with **Try a translation**.
+6. Add your manga website under **Sites**.
+7. Open a chapter and press **Start** to translate as you scroll, or choose ⋮ › **Translate whole page** to translate
+   the whole chapter at once.
 
-## How it works
+For offline Japanese manga translation, also download **Japanese manga OCR** (140 MB).
 
-```mermaid
-flowchart LR
-    A[Viewport snapshot<br/>PixelCopy] --> B[Comic text and<br/>bubble detector]
-    B -->|offline engines| C[Read each box<br/>manga-ocr / ML Kit]
-    B -->|Gemini| D[Crop each box]
-    C --> E[Translate]
-    D --> F[Gemini reads and<br/>translates in one call]
-    E --> G[Erase lettering,<br/>fit translation]
-    F --> G
-    G --> H[WEBP patches pinned<br/>to the page]
-```
+### Translate your own manga
 
-1. The WebView's viewport is captured (after a short wait for pages still downloading), and the page reports where
-   its comic images are and which toolbars float above them, so only comic art is translated.
-2. An RT-DETR-v2 detector finds balloons and text, and a PP-OCRv6 detector adds text it missed (mostly sound
-   effects); balloons cut off by the screen edge wait until they are fully on screen.
-3. Each text area is read on the device, or sent as a crop to Gemini, which reads and translates it in one call.
-4. The lettering is erased, the translation is fitted into the same space, and each region becomes a small patch
-   drawn over the page, anchored to its page image so it moves with it as you scroll.
+1. Open the **Studio** tab.
+2. Import images, a PDF or a supported comic archive.
+3. Select the chapter and start the translation.
+4. Review and correct the detected speech bubbles.
+5. Customize the lettering and sound effects.
+6. Export the chapter as images, CBZ or ZIP.
 
-With Gemini (`gemini-3.5-flash-lite`), one screen of a raw Japanese chapter (8 balloons) takes about **6–9 s** on the
-emulator, against about 25 s through on-device OCR. On a phone, fully offline with Gemma 4 E2B, a screen fills in
-four bubbles at a time; in the recording above, the first screen (7 patches) is finished about 25 s in
-([recording](docs/ScreenRecordings/translate-peppercarrot.mp4)).
+## Privacy & Security
 
-## Getting started
+- No Panelglass account and no Panelglass backend server.
+- API keys are encrypted with the Android Keystore (AES-GCM) and never logged.
+- On-device engines keep translation on your phone.
+- **Gemini** sends crops of the comic text to Google's API.
+- **Custom AI** sends the extracted text to the provider you configured, never images.
+- Every connection is HTTPS; nothing is sent in clear text.
+- Logs contain no API keys, page URLs or page text.
+- Imported Studio files stay in the app's private storage.
 
-### Install
+Your choice of engine decides where translation happens. Read the full [Privacy Policy](PRIVACY.md), also in the app
+under Settings › About & updates › Privacy.
 
-Panelglass is not on Google Play. Each release is published on GitHub:
+## Technology Stack
 
-1. Open the [Releases](../../releases) page and download `panelglass-<version>.apk` from the latest release
-   (Android 12 / API 31 or later; about 250 MB).
-2. Optional but recommended: check the download against the `.sha256` file next to it
-   (`sha256sum -c panelglass-<version>.apk.sha256`, or compare with `certutil -hashfile <apk> SHA256` on Windows).
-3. Open the APK on your phone and allow your browser or file manager to install unknown apps when Android asks.
-4. To update, install the newer APK over the old one; your sites, settings and downloaded models are kept.
-   From 0.3.0 the app does this itself: once a day it asks GitHub for the latest release and offers it
-   (**Update** or **Later**); **Settings › About & updates › Check for updates** checks on demand, and
-   **Check automatically** turns the daily check off. The
-   APK is downloaded by Android, checked against the release's `.sha256`, and handed to Android's installer (allow
-   Panelglass to install apps the first time).
+| Component | Technology |
+|---|---|
+| Language | Kotlin |
+| UI | Jetpack Compose |
+| Database | Room |
+| Preferences | DataStore |
+| Dependency injection | Hilt |
+| On-device LLMs | LiteRT-LM |
+| Text detection | RT-DETR-v2, PP-OCRv6 |
+| OCR | ML Kit, manga-ocr |
+| Model execution | ONNX Runtime |
+| Translation | Gemini, ML Kit, Qwen, Gemma, Custom AI |
 
-### Set up
+## Build from Source
 
-Settings opens on a list of pages (search finds any setting by name): **Engine & keys**, **Languages, notes & sound
-effects**, **Models & downloads**, **Reader**, **Studio**, **Storage**, **Appearance & language** and **About & updates**.
-
-1. Open **Settings › Languages & notes** and choose **From** and **To** (the swap button trades them; recent pairs
-   are one tap away).
-2. Choose an engine under **Settings › Engine & keys**. **Google Translate (ML Kit)** is selected on a new install:
-   - **Google Translate (ML Kit)**: free and on the device, with Google's ML Kit translation (not the Google
-     Translate app or its cloud service). The Japanese, Korean and Chinese language packs (~30 MB each)
-     download by themselves when the app first starts; English is built in. Any other language is downloaded only
-     when you ask: tap **Download** when the reader says a pack is missing, or pick languages under **Models &
-     downloads › ML Kit language packs**, where each one can also be deleted.
-   - **Gemini**: tap **Set key**, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), pick a model
-     (a *flash* or *flash-lite* model is fastest) and save.
-   - **Custom AI**: an OpenAI-compatible server. Pick **DeepSeek**, **Grok**, **GPT**, **Claude** or **OpenRouter**
-     and the address is filled in; or pick **Custom**, for any other server, and give its address. Tap **Set key**,
-     paste the API key and name the model. The address is the one your provider documents (`https://api.example.com/v1`); a full
-     `…/chat/completions` address works too. It must be HTTPS, and no `/v1` is added for you — the path you type is
-     the path that is called. The request is text only: the text is read on the device and no image is sent.
-   - **Qwen 2.5 1.5B** or **Gemma 4 E2B**: tap **Download** on its row (or under **Models & downloads**); the
-     row then says it is downloaded. Qwen runs on the GPU, or on the CPU on phones under 6 GB of RAM (about 3× slower, but far less
-     memory); **Settings › Models & downloads › Qwen runs on** changes it ([details](docs/MEMORY_USAGE.md)).
-3. For Japanese with an offline engine, also download **Japanese manga OCR** (140 MB).
-4. Choose what happens to **Sound effects** (Keep or Replace) and, for Gemini or an on-device model,
-   add a few **Translation notes** ([suggested notes](docs/TRANSLATION_QUALITY.md#translation-notes)).
-5. Check the setup with **Try a translation** (on the Engine & keys page), then add a site under **Sites**, open a chapter and press **Start**.
-   **Stop** ends translation; **⋮ → Re-translate** reads the current screen again from scratch; **⋮ → Glossary &
-   pronouns** sets the series' character names and pronouns.
-6. For files you already have, open the **Studio** tab and tap **Import** ([how it works](#studio-translate-your-own-chapters)).
-
-### Build from source
-
-Requirements: the Android SDK (platform 35) and **JDK 21**. Gradle locates JDK 21 automatically through
-`gradle/gradle-daemon-jvm.properties`; AGP 8.x does not run on newer JDKs.
+Requirements: **JDK 21** (Gradle finds it through `gradle/gradle-daemon-jvm.properties`; AGP 8.x does not run on
+newer JDKs), Android SDK Platform 35, Android Studio recommended.
 
 ```bash
-git clone <repository-url> && cd Panelglass
+git clone https://github.com/smnexstudio/Panelglass.git
+cd Panelglass
 echo "sdk.dir=/path/to/Android/Sdk" > local.properties   # Android Studio writes this for you
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/panelglass-*-debug.apk
 ```
 
-The APK is about 250 MB: it bundles the detector, ML Kit's Japanese, Korean, Chinese and Latin recognizers,
-ONNX Runtime and the LiteRT-LM runtime. The language models are downloaded in the app. A build you make yourself is
-signed with a different key from the published releases, so uninstall one before installing the other.
-
-## Privacy
-
-The full policy is [PRIVACY.md](PRIVACY.md), also in the app under **Settings › About & updates › Privacy**; the
-licences of everything the app ships with are in [LICENSES.md](LICENSES.md) (and **Settings › About & updates ›
-Licences**). In short:
-
-- **API keys** are encrypted with the Android Keystore (AES-GCM) and never logged. Requests go straight from your
-  device to the provider.
-- **Translate page** runs on the device (ML Kit language identification and translation); page text is never sent
-  anywhere.
-- **With Gemini**, crops of the text on your screen are sent to Google to be read and translated. With Google
-  Translate, Qwen or Gemma 4, translation happens on the device. **Custom AI** sends the text (read on the device)
-  to the server you named, never an image.
-- **https only**: the app sends nothing in clear text. An `http://` address or link is opened as `https://`, and a
-  site that only serves plain http will not load.
-- **Links from other apps** open in the reader but are never translated automatically, even with
-  translate-on-open on: you tap Start yourself.
-- **Logs** contain timings and failure types only: no keys, page URLs or page text.
-- **Permissions:** the network, installing an update you accept, and for a Studio chapter translating in the
-  background a foreground service, its notification (Android 13+ asks once; refusing only hides it) and keeping the
-  phone awake while the chapter is worked on. No storage, camera, location or contacts.
-- **Other network use**: the block lists ([AdGuard DNS filter](https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt),
-  [HaGeZi pop-up ads](https://github.com/hagezi/dns-blocklists), [StevenBlack hosts](https://github.com/StevenBlack/hosts)
-  as a fallback), the model downloads you start (Hugging Face; Google for ML Kit language packs), and once a day a
-  request to GitHub for the latest release (nothing about you is sent; turn it off in **Settings › About & updates › Check
-  automatically**; debug builds never check by themselves). Every model file and update is verified against a
-  SHA-256, and an installed update's APK is deleted at the next start.
-- **Translation notes and glossaries** stay on the device; they are sent only to the engine you chose, with the text
-  being translated.
-- **Studio files** (imported pages, edits, your own fonts) stay in the app's private storage. An export is written
-  only where you choose, and Settings › Storage deletes a manga with everything it took.
-- **Uninstalling** removes everything the app stored; nothing is backed up.
+Debug builds install beside the release app as "Panelglass Debug". Unit tests:
+`./gradlew testDebugUnitTest :core:model:test`. See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 ## Documentation
 
-Start at the **[documentation map](docs/README.md)**, which sends you to the right document for your question.
-
-| Document | Contents |
+| Document | Description |
 |---|---|
-| [docs/TRANSLATION_QUALITY.md](docs/TRANSLATION_QUALITY.md) | Better translations: engines, source language, glossary and pronouns, notes, sound effects, known limits |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Requirements, modules, components, engines, storage, concurrency, security model |
-| [docs/FLOW.md](docs/FLOW.md) | A screen's journey: capture → pipeline → translation → rendering → overlay; failures; diagnostics |
-| [docs/DETECTION_AND_OCR.md](docs/DETECTION_AND_OCR.md) | The comic text and bubble detector, recognizers, regions and classification |
-| [docs/MEMORY_USAGE.md](docs/MEMORY_USAGE.md) | RAM per engine on a phone: running, translating, in the background, cleared |
-| [docs/TESTING.md](docs/TESTING.md) | Every test class and what it covers, instrumented tests, checks on a phone, gaps |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch model, build, pull request checklist, rules |
-
-### Project structure
-
-```
-app/                  MainActivity, navigation, application class, update dialog
-core/model/           Pure Kotlin types: languages, engines, failures, regions, settings, glossary, notes
-core/data/            Room, DataStore settings, encrypted key store, patch cache, verified downloads, updates
-core/engine/          Engine registry and retry policy; Gemini, Custom AI, ML Kit translation, on-device LLMs, SFX dictionary
-core/ocr/             Comic detector and PP-OCRv6 second pass (ONNX), manga-ocr and ML Kit recognizers, regions
-core/render/          Text erasing and fitting, WEBP patches; the Studio's cleaning, lettering and fonts
-core/pipeline/        TranslationPipeline: detect → read → translate → render, with per-stage watchdogs
-core/ui/              Shared Compose components, themes, engine picker, key sheet, all UI strings (16 languages)
-feature/browser/      Reader: WebView, capture, patch overlay, ad and pop-up blocking
-feature/library/      Sites and history
-feature/settings/     Languages, engines, models, fonts, themes, storage
-feature/studio/       Studio: library, import (images, PDF, CBZ), translate, review editor, fonts, export
-docs/                 Documentation (start at docs/README.md)
-```
-
-### Development
-
-```bash
-./gradlew testDebugUnitTest :core:model:test      # unit tests (JUnit 5 + Robolectric)
-./gradlew :core:data:connectedDebugAndroidTest    # key store on a device
-./gradlew :core:pipeline:connectedDebugAndroidTest  # whole pipeline on a device
-```
-
-- Provider requests are tested against MockWebServer; the on-device LLM is replaced by a scripted runner in JVM tests.
-- A **debug dump** of any translated screen (snapshot, regions, fitting decisions, patches) is described in
-  [docs/FLOW.md](docs/FLOW.md#diagnostics).
+| [Documentation map](docs/README.md) | Where to start for any question |
+| [Architecture](docs/ARCHITECTURE.md) | Modules, components, engines, storage, security model |
+| [Translation Flow](docs/FLOW.md) | From screen capture to rendered translation; diagnostics |
+| [Detection & OCR](docs/DETECTION_AND_OCR.md) | Text detection, recognition and regions |
+| [Translation Quality](docs/TRANSLATION_QUALITY.md) | Engines, glossary, pronouns, notes, sound effects |
+| [Memory Usage](docs/MEMORY_USAGE.md) | RAM per engine on a phone |
+| [Testing](docs/TESTING.md) | Test coverage and checks on a phone |
+| [Contributing](CONTRIBUTING.md) | Contribution guidelines |
+| [Changelog](CHANGELOG.md) | Release history |
 
 ## Roadmap
 
-Contributions are welcome. Pick an item, open an issue to say you are on it, and follow
-[CONTRIBUTING.md](CONTRIBUTING.md). Items marked **good first issue** need little context.
+Pick an item, open an issue to say you are on it, and follow [CONTRIBUTING.md](CONTRIBUTING.md). Items marked
+**good first issue** need little context.
 
 ### Engines
 
@@ -418,36 +409,84 @@ OpenAI-compatible providers need no engine of their own: **Custom AI** reaches t
 ### Quality and performance
 
 - [ ] Gemini mode: recover text the detector misses (a cheap backstop or a second-pass prompt).
-- [ ] Re-render patches sharply after a large zoom-in (today the bitmap made at the old zoom is scaled).
-- [ ] Use panel boundaries (`PanelCutter`) when placing free text, not just the image bounds.
 
 ### App
 
-- [ ] Opt-in backup of sites and settings (never API keys).
 - [ ] Native-speaker review of the UI translations (`core/ui/src/main/res/values-*`). **good first issue**
 - [ ] Accessibility pass: content descriptions, touch targets, contrast in every theme. **good first issue**
 
+## Frequently Asked Questions
 
-## Frequently Asked Questions (FAQ)
+<details>
+<summary>Is Panelglass free?</summary>
 
-### How does Panelglass translate manga and manhwa in real time?
-Panelglass captures the web reader viewport and uses an RT-DETR-v2 detector to locate speech balloons and text boxes. It cleans the original Japanese, Korean, or Chinese lettering and fits the translated text into the balloon, pinning lightweight WebP patches directly to the comic page as you scroll.
+Yes. Panelglass is open source and distributed through GitHub Releases. Some translation providers may charge for API
+usage.
 
-### Can I translate manga completely offline without an internet connection?
-Yes. Panelglass supports fully offline translation using on-device models including **Gemma 4 E2B**, **Qwen 2.5 1.5B** (via LiteRT-LM), **manga-ocr**, and **Google ML Kit**. Once model packs are downloaded, no data leaves your device.
+</details>
 
-### How does in-place translation differ from standard screen translators?
-Standard screen translators typically place opaque floating popups or subtitle banners over the screen, blocking the artwork. Panelglass erases the original lettering inside the bubble and re-renders translated text formatted to fit the speech balloon, preserving the original panel art.
+<details>
+<summary>Can I translate manga offline?</summary>
 
-### Which comic languages and scripts are supported?
-Panelglass translates from **Japanese** (including vertical text), **Korean**, **Chinese** (Simplified and Traditional), **English**, **Spanish**, **French**, **German**, **Italian**, **Portuguese**, **Russian**, **Indonesian**, and **Vietnamese** into all of those languages plus **Thai**, **Arabic** (with RTL text support), and **Hindi**.
+Yes. Google ML Kit, Qwen 2.5 and Gemma 4 translate on the device. Download the language packs or AI models
+beforehand.
 
-### Does Panelglass require an API key?
-An API key is only required if you choose the cloud-based **Gemini** engine (which uses free-tier keys from Google AI Studio). If you choose Google Translate (ML Kit), Qwen 2.5, or Gemma 4, no API key is required.
+</details>
 
-### Where can I download the Panelglass APK?
-Panelglass is an open-source project distributed directly via [GitHub Releases](../../releases). It is not hosted on Google Play.
+<details>
+<summary>Does Panelglass support Japanese manga?</summary>
 
+Yes. Panelglass supports Japanese, Korean and Chinese comics, including vertical Japanese text.
+
+</details>
+
+<details>
+<summary>Does it work with existing manga reader websites?</summary>
+
+Panelglass translates the visible comic content in its built-in browser instead of downloading individual comic
+images. No sites ship with the app: you add the reader websites you use.
+
+</details>
+
+<details>
+<summary>Does Panelglass require an API key?</summary>
+
+No. Google ML Kit and the on-device AI models need no API key. Gemini and Custom AI need your own provider key.
+
+</details>
+
+<details>
+<summary>Can I translate downloaded CBZ chapters?</summary>
+
+Yes. Import CBZ, ZIP, CB7, 7z, PDF or individual images in the Studio, then translate and export your chapters.
+
+</details>
+
+<details>
+<summary>Does Panelglass upload my manga pages?</summary>
+
+On-device engines process everything locally. Gemini receives image crops of the text, while Custom AI receives
+extracted text only. See the [Privacy Policy](PRIVACY.md).
+
+</details>
+
+<details>
+<summary>Can I use my own AI model or server?</summary>
+
+Yes. Custom AI works with any OpenAI-compatible HTTPS endpoint, so you can use your own provider or inference server.
+
+</details>
+
+## Contributing
+
+Contributions, bug reports, feature requests and suggestions are welcome.
+
+1. Look through the existing [issues](https://github.com/smnexstudio/Panelglass/issues) and the [Roadmap](#roadmap).
+2. Read the [Contributing Guidelines](CONTRIBUTING.md).
+3. Fork the repository and create a feature branch.
+4. Submit a pull request.
+
+Found a bug? Please [open an issue](https://github.com/smnexstudio/Panelglass/issues/new).
 
 ## Acknowledgements
 
@@ -482,10 +521,29 @@ the rights of creators and publishers, and support official releases where they 
 
 ## License
 
-Copyright 2026 smnexstudio.
-
-Panelglass is licensed under the [Apache License, Version 2.0](LICENSE). You may use, modify and distribute it,
-including commercially, provided you keep the copyright and licence notices and state significant changes.
+Copyright 2026 smnexstudio. Panelglass is licensed under the [Apache License 2.0](LICENSE).
 
 The licence covers the Panelglass source code and documentation. Third-party files in this repository (the two
-detector models and the fonts) keep their own licences, listed in [NOTICE](NOTICE); downloaded models keep theirs.
+detector models and the fonts) keep their own licences; see [LICENSES.md](LICENSES.md) and [NOTICE](NOTICE).
+Downloaded models keep theirs.
+
+---
+
+<p align="center">
+  <b>Enjoy reading manga in your language.</b>
+  <br>
+  Translate smarter. Read freely. Keep the original artwork.
+  <br><br>
+  <a href="https://github.com/smnexstudio/Panelglass">GitHub Repository</a> ·
+  <a href="https://github.com/smnexstudio/Panelglass/releases/latest">Download Panelglass</a> ·
+  <a href="https://github.com/smnexstudio/Panelglass/issues">Report an Issue</a>
+</p>
+
+<!--
+SEO keywords:
+manga translator android, manhwa translator, manhua translator,
+webtoon translator, offline manga translator, AI manga translator,
+Japanese manga OCR, Korean manhwa translation, comic translator,
+manga image translator, CBZ translator, manga lettering,
+on-device AI translation, manga OCR Android, raw manga translator.
+-->

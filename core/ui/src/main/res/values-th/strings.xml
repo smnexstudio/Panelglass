@@ -204,15 +204,15 @@
     <string name="settings_app_language">ภาษาของแอป</string>
     <string name="app_language">ภาษา</string>
     <string name="reader_translate_page">แปลหน้าเว็บ</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">แปลทั้งหน้า</string>
+    <string name="reader_scan_progress">กำลังสแกนหน้า… %1$d จาก %2$d</string>
+    <string name="reader_scan_cancel">ยกเลิกการสแกน</string>
+    <string name="reader_scan_gaps">ส่วนของหน้าที่แปลไม่ได้: %1$d</string>
+    <string name="reader_scan_no_scroll">หน้านี้ไม่ได้เลื่อนทั้งหน้า จึงแปลเฉพาะส่วนที่มองเห็น</string>
+    <string name="reader_scan_paused">หยุดสแกนแล้ว: เปิดแอปไว้ระหว่างสแกน</string>
+    <string name="reader_scan_confirm_title">แปลทั้งหน้าหรือไม่</string>
+    <string name="reader_scan_confirm_body">จะแปลประมาณ %1$d หน้าจอทีละหน้าจอด้วย %2$s ซึ่งอาจใช้โควตาของผู้ให้บริการมาก หรือใช้เวลาสักพักบนอุปกรณ์</string>
+    <string name="reader_scan_start">แปล</string>
     <string name="pt_detect">ตรวจหาภาษา</string>
     <string name="pt_detected">%1$s (ตรวจพบ)</string>
     <string name="pt_detecting">กำลังตรวจหาภาษา…</string>
@@ -715,6 +715,25 @@
     <string name="set_measuring">กำลังคำนวณ…</string>
     <string name="set_page_appearance">รูปลักษณ์และภาษา</string>
     <string name="set_page_about">เกี่ยวกับและการอัปเดต</string>
+    <string name="set_page_backup">สำรองและกู้คืน</string>
+    <string name="set_page_backup_sub">เว็บไซต์ อภิธานศัพท์ และโน้ต</string>
+    <string name="backup_create">สำรองลงไฟล์</string>
+    <string name="backup_create_note">เว็บไซต์ของคุณ อภิธานศัพท์และโน้ตของแต่ละเรื่อง และโน้ตการแปลของคุณ</string>
+    <string name="backup_restore">กู้คืนจากไฟล์</string>
+    <string name="backup_restore_note">เพิ่มข้อมูลในไฟล์สำรองเข้าไปในข้อมูลของคุณ โดยไม่ลบสิ่งใด</string>
+    <string name="backup_working">กำลังดำเนินการ…</string>
+    <string name="backup_saved">บันทึกไฟล์สำรองแล้ว</string>
+    <string name="backup_restored">กู้คืนแล้ว</string>
+    <string name="backup_counts">เว็บไซต์: %1$d · คำศัพท์: %2$d · เรื่อง: %3$d</string>
+    <string name="backup_failed_write">บันทึกไฟล์สำรองไม่ได้</string>
+    <string name="backup_failed_read">ไฟล์นี้ไม่ใช่ไฟล์สำรองของ Panelglass หรือไฟล์เสียหาย</string>
+    <string name="backup_failed_newer">ไฟล์สำรองนี้สร้างจาก Panelglass เวอร์ชันที่ใหม่กว่า โปรดอัปเดตแอปก่อน แล้วจึงกู้คืน</string>
+    <string name="backup_confirm_title">กู้คืนไฟล์สำรองนี้หรือไม่</string>
+    <string name="backup_made_on">สร้างเมื่อ %1$s</string>
+    <string name="backup_confirm_body">เว็บไซต์ อภิธานศัพท์ และโน้ตในไฟล์จะถูกเพิ่มเข้าไปในข้อมูลของคุณ และรายการที่มีอยู่แล้วจะถูกอัปเดต โน้ตการแปลของคุณจะถูกแทนที่ด้วยโน้ตในไฟล์สำรอง</string>
+    <string name="backup_failed_restore">กู้คืนไฟล์สำรองไม่ได้ โปรดลองอีกครั้ง</string>
+    <string name="backup_confirm_action">กู้คืน</string>
+    <string name="backup_note">ไฟล์สำรองคือไฟล์ที่คุณเก็บไว้ที่ใดก็ได้ ไฟล์นี้ไม่มีคีย์ API การตั้งค่าอื่น โมเดลที่ดาวน์โหลด หรือไฟล์ของสตูดิโอ</string>
     <string name="set_engines_device">บนโทรศัพท์นี้ · ฟรี</string>
     <string name="set_engines_cloud">คลาวด์ · คีย์ของคุณเอง</string>
     <string name="set_engine_gemini_sub">อ่านบอลลูนเองได้</string>

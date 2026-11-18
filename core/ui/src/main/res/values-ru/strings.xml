@@ -219,15 +219,15 @@
     <string name="settings_app_language">Язык приложения</string>
     <string name="app_language">Язык</string>
     <string name="reader_translate_page">Перевести страницу</string>
-    <string name="reader_translate_whole_page" translatable="false">Translate whole page</string>
-    <string name="reader_scan_progress" translatable="false">Scanning page… %1$d of %2$d</string>
-    <string name="reader_scan_cancel" translatable="false">Cancel scan</string>
-    <string name="reader_scan_gaps" translatable="false">%1$d parts of the page could not be translated</string>
-    <string name="reader_scan_no_scroll" translatable="false">This page does not scroll as a whole, so only the visible part was translated</string>
-    <string name="reader_scan_paused" translatable="false">Scan stopped: keep the app open while it runs</string>
-    <string name="reader_scan_confirm_title" translatable="false">Translate the whole page?</string>
-    <string name="reader_scan_confirm_body" translatable="false">About %1$d screens will be translated one after another using %2$s. This can use a lot of your provider\'s quota, or take a while on-device.</string>
-    <string name="reader_scan_start" translatable="false">Translate</string>
+    <string name="reader_translate_whole_page">Перевести всю страницу</string>
+    <string name="reader_scan_progress">Сканирование страницы… %1$d из %2$d</string>
+    <string name="reader_scan_cancel">Отменить сканирование</string>
+    <string name="reader_scan_gaps">Непереведённых частей страницы: %1$d</string>
+    <string name="reader_scan_no_scroll">Эта страница не прокручивается целиком, поэтому переведена только видимая часть</string>
+    <string name="reader_scan_paused">Сканирование остановлено: не закрывайте приложение, пока оно идёт</string>
+    <string name="reader_scan_confirm_title">Перевести всю страницу?</string>
+    <string name="reader_scan_confirm_body">Около %1$d экранов будут переведены один за другим с помощью %2$s. Это может израсходовать много квоты вашего провайдера или занять время на устройстве.</string>
+    <string name="reader_scan_start">Перевести</string>
     <string name="pt_detect">Определить язык</string>
     <string name="pt_detected">%1$s (определён)</string>
     <string name="pt_detecting">Определение языка…</string>
@@ -763,6 +763,25 @@
     <string name="set_measuring">Подсчёт…</string>
     <string name="set_page_appearance">Оформление и язык</string>
     <string name="set_page_about">О приложении и обновления</string>
+    <string name="set_page_backup">Резервная копия</string>
+    <string name="set_page_backup_sub">Сайты, глоссарии и заметки</string>
+    <string name="backup_create">Сохранить в файл</string>
+    <string name="backup_create_note">Ваши сайты, глоссарий и заметки каждой серии и ваши заметки к переводу</string>
+    <string name="backup_restore">Восстановить из файла</string>
+    <string name="backup_restore_note">Добавляет содержимое копии к вашим данным; ничего не удаляется</string>
+    <string name="backup_working">Выполняется…</string>
+    <string name="backup_saved">Резервная копия сохранена.</string>
+    <string name="backup_restored">Восстановлено.</string>
+    <string name="backup_counts">Сайты: %1$d · Термины: %2$d · Серии: %3$d</string>
+    <string name="backup_failed_write">Не удалось сохранить резервную копию.</string>
+    <string name="backup_failed_read">Этот файл не является резервной копией Panelglass или повреждён.</string>
+    <string name="backup_failed_newer">Эта копия создана более новой версией Panelglass. Обновите приложение, затем восстановите её.</string>
+    <string name="backup_confirm_title">Восстановить эту копию?</string>
+    <string name="backup_made_on">Создана %1$s.</string>
+    <string name="backup_confirm_body">Её сайты, глоссарии и заметки добавятся к вашим, а уже имеющиеся обновятся. Ваши заметки к переводу будут заменены заметками из копии.</string>
+    <string name="backup_failed_restore">Не удалось восстановить резервную копию. Попробуйте ещё раз.</string>
+    <string name="backup_confirm_action">Восстановить</string>
+    <string name="backup_note">Резервная копия — это файл, который вы храните где угодно. В ней никогда нет ключей API, других настроек, скачанных моделей и файлов Студии.</string>
     <string name="set_engines_device">На этом телефоне · бесплатно</string>
     <string name="set_engines_cloud">Облако · ваш ключ</string>
     <string name="set_engine_gemini_sub">Сам читает пузыри</string>

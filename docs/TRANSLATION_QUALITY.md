@@ -1,92 +1,121 @@
-# Translation quality
+# Translation Quality Guide
 
-What you can do to get better translations, what Panelglass does on its own, and what it cannot fix yet. For how a
-screen is translated step by step, see [FLOW.md](FLOW.md).
+This guide explains how to get the highest translation accuracy in Panelglass, how the app's internal prompt and cleanup pipeline works, and how to configure glossaries, pronouns, notes, and sound effects for manga, manhwa, and manhua.
+
+For an architectural breakdown of the translation pipeline, see [FLOW.md](FLOW.md).
+
+---
 
 ## Contents
 
-- [The quick checklist](#the-quick-checklist)
-- [Pick the engine for the job](#pick-the-engine-for-the-job)
-- [Source language: set it, or let the page decide](#source-language-set-it-or-let-the-page-decide)
-- [Glossary and pronouns (per series)](#glossary-and-pronouns-per-series)
-- [Translation notes](#translation-notes)
-- [Sound effects](#sound-effects)
-- [What Panelglass cleans up by itself](#what-panelglass-cleans-up-by-itself)
-- [Known limits](#known-limits)
-- [Measuring a change](#measuring-a-change)
+- [The Quick Checklist](#the-quick-checklist)
+- [Translation Engine Selection](#translation-engine-selection)
+- [Source Language: Manual vs. Automatic](#source-language-manual-vs-automatic)
+- [Character Glossaries & Pronouns (Per Series)](#character-glossaries--pronouns-per-series)
+- [Custom Translation Notes](#custom-translation-notes)
+- [Sound Effects (SFX) Handling](#sound-effects-sfx-handling)
+- [Automated Pipeline Cleanups](#automated-pipeline-cleanups)
+- [Known Limits & Edge Cases](#known-limits--edge-cases)
+- [Benchmarking & Measuring Changes](#benchmarking--measuring-changes)
 
-## The quick checklist
+---
 
-1. **Source language right?** The bar shows it (`KO → EN`). Panelglass switches to Japanese, Korean or Chinese by
-   itself when the page is clearly in one of them; a saved site's language always wins.
-2. **Engine suited to the series?** Gemini reads the bubbles itself and is the most accurate; the on-device models are
-   private and offline; ML Kit is free but literal.
-3. **Names and pronouns in the glossary** (reader ⋮ › *Glossary & pronouns*), for the characters that matter.
-4. **A few translation notes** (Settings › Languages & notes › *Translation notes*): tone, honorifics, how to treat missing subjects.
-5. **Sound effects mode** (Settings › Languages & notes › *Sound effects*): *Replace* to erase the original effects.
+## The Quick Checklist
 
-## Pick the engine for the job
+Follow these 5 steps to optimize quality before reading a new series:
 
-| Engine | Strengths | Weak spots seen on real chapters |
-|---|---|---|
-| **Gemini** (your key) | Reads each bubble from the image, so OCR errors do not reach it; follows notes and pronouns well | Needs a network; crops of the screen go to Google |
-| **Gemma 4 E2B** (on device, 8 GB RAM) | Natural dialogue; follows notes and glossary pronouns | 5–15 s per screen; occasionally switches language mid-sentence (cleaned up, see below) |
-| **Qwen 2.5 1.5B** (on device) | Runs on smaller phones | Weaker on tone and context |
-| **ML Kit** (on device) | Free, fast, offline | Literal; titles and honorifics go wrong (공자님 "young lord" came out as "Confucius"); ignores notes and pronouns, uses only glossary terms |
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ 1. Verify Source Language  → Check reader bottom bar (e.g., KO → EN)   │
+│ 2. Select Optimal Engine   → Gemini for art-rich text, Gemma for offline│
+│ 3. Add Character Pronouns  → Reader ⋮ › Glossary & pronouns (he/she)  │
+│ 4. Set Translation Notes   → Settings › Languages & notes (tone/honor) │
+│ 5. Choose SFX Mode         → Settings › Sound effects (Keep vs Replace) │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-Notes and pronouns are used by **Gemini and the on-device models**. ML Kit has no prompt: it only replaces
-glossary terms.
+1. **Verify the Source Language:** Check the bottom bar (`KO → EN`, `JA → EN`, `ZH → EN`). Panelglass auto-detects Japanese, Korean, or Chinese; saved sites preserve your manual overrides.
+2. **Match the Engine to the Series:** Use Gemini when text overlaps busy art (reads images directly); use Gemma 4 for natural offline dialogue; use ML Kit for fast, low-battery offline reading.
+3. **Set Names & Pronouns in the Glossary:** Tap reader **⋮ › Glossary & pronouns** to define main character names and gender pronouns (*he*, *she*, *they*).
+4. **Tune Translation Notes:** Go to **Settings › Languages & notes › Translation notes** to specify dialogue tone, formality, honorific handling, and missing-subject behavior.
+5. **Set Sound Effect Preferences:** Configure **Settings › Languages & notes › Sound effects** to *Replace* (erase original art lettering) or *Keep*.
 
-## Source language: set it, or let the page decide
+---
 
-A wrong source language is the most damaging mistake: Korean read with the Japanese recognizer comes out as nonsense.
+## Translation Engine Selection
 
-- **Settings › Languages & notes › From** is the default for every site.
-- **A saved site** (Sites › long-press › languages) can have its own pair; it always wins.
-- **The page's own language.** After a page loads, the reader identifies the language of its visible text (ML Kit
-  language identification, with `<html lang>` as a hint). If the page is Japanese, Korean or Chinese and differs from
-  the configured source, this reading session switches to it, and the bar shows the new pair. The choice is kept for
-  later chapters on the same site. A source language saved on the site, or set by a launch intent, is never
-  overridden.
+Each engine has distinct trade-offs between speed, offline capability, OCR robustness, and contextual awareness:
 
-## Glossary and pronouns (per series)
+| Engine | Type | Strengths | Known Limitations | Best For |
+|---|---|---|---|---|
+| **Google Gemini** | Cloud (User API Key) | • Directly inspects image crops (bypasses OCR errors)<br>• Follows complex character pronouns and notes<br>• Preserves nuance and comic idioms | • Requires active internet connection<br>• Image crops sent to Google API | Complex artwork, stylized lettering, dialogue with implicit subjects |
+| **Gemma 4 E2B** | On-Device (LiteRT-LM) | • Completely private and offline<br>• Natural, conversational dialogue flow<br>• Accurately adheres to character pronouns | • Requires device with 8 GB+ RAM<br>• Takes 5–15 s per screen | High-end phones, offline reading of character-driven manga |
+| **Qwen 2.5 1.5B** | On-Device (LiteRT-LM) | • Fully offline<br>• Runs on 6 GB RAM devices (or CPU mode) | • Slightly more literal phrasing<br>• Less sensitive to subtle character tone | Offline reading on mid-range hardware |
+| **Google Translate** | On-Device (ML Kit) | • Instant (sub-second)<br>• Zero setup, minimal RAM (~30 MB) | • Literal, machine-like translations<br>• Ignores notes/pronouns (replaces glossary only)<br>• Prone to honorific errors (e.g. 공자님 → "Confucius") | Fast action series, low battery, low-spec phones |
+| **Custom AI** | Cloud / Local (OpenAI-compatible) | • Full user control over provider and model<br>• Flexible self-hosted inference | • Latency depends on server<br>• Text-only (relies on device OCR) | Power users with local servers or specialized LLMs |
 
-Open a chapter, then **⋮ › Glossary & pronouns**.
+> [!NOTE]
+> Character notes and pronoun hints are passed directly to **Gemini, Gemma 4, Qwen 2.5, and Custom AI**. Google ML Kit does not accept prompt instructions; it applies exact dictionary term substitution.
 
-- **Names and terms.** Add a name or term as written on the page and how it should read in your language (60
-  characters each). Every engine uses these: the AI engines are told, ML Kit substitutes them.
-- **Pronoun.** Give a character *He*, *She* or *They*. Japanese and Korean often leave the subject out, and a model
-  then guesses, usually *he*. With pronouns set, the AI engines receive a characters list:
+---
 
-  ```
-  Characters:
-  - Yuki (ユキ): female, she/her
-  - Ren (レン): male, he/him
-  ```
+## Source Language: Manual vs. Automatic
 
-- **Notes for this series** (500 characters): who is who, how characters speak. For example:
+> [!IMPORTANT]
+> Selecting the wrong source language causes severe translation failures (e.g., reading Korean characters with the Japanese OCR model yields gibberish).
 
-  ```
-  The narrator is a boy. The innkeeper speaks formally; the twins talk like kids.
-  ```
+Panelglass resolves the source language through a clear priority chain:
 
-- **Scope.** The sheet shows what the notes apply to (*For peppercarrot.com/ja*). For a saved site it is that site's
-  own address and path, so two series on one site keep separate notes; for an unsaved page it is the host and first
-  path segment. Save a series as a site to give it notes of its own.
-- Closing the sheet after a change translates what is on screen again with it.
+1. **Saved Site Override (Highest Priority):** Saved in **Sites › Long-press site › Languages**. This override is always respected.
+2. **Launch Intent:** An explicit source passed via external launcher extras (`--es src JA`).
+3. **Automatic Page Detection:** When a page loads, the reader inspects visible DOM text (`pt.js` + ML Kit Language Identification). If Japanese, Korean, or Chinese is detected with high confidence and differs from the current setting, the session switches automatically, updating the bottom bar.
+4. **Global Default (Fallback):** Defined in **Settings › Languages & notes › Source language**.
 
-**Verified on a phone (Gemma 4, Japanese → English):** without notes, the lines with no subject came out as *he*
-(4 lines) and none as *she*; with a note saying the characters are female, the same screens gave 5 *she* lines and 1
-*he*, and the one *he* left was a line where the Japanese itself writes 彼 ("he"). The model fills in what the
-original leaves out and keeps what it states.
+---
 
-## Translation notes
+## Character Glossaries & Pronouns (Per Series)
 
-**Settings › Languages & notes › Translation notes** apply to every series; series notes add to them. Short, factual lines work best,
-especially for the on-device models (each note is capped at 500 characters).
+Japanese and Korean comic dialogue frequently omits grammatical subjects. Without context, AI models guess the subject (defaulting to "he"). Providing pronoun definitions resolves this ambiguity.
 
-Settings starts with these notes (`TranslationNotes.DEFAULT`); edit them, or empty them to send none (emptied
-notes stay empty):
+Open any chapter, tap **⋮ › Glossary & pronouns**:
+
+### 1. Character Pronouns & Names
+Define major characters, their original spellings, and their pronouns (terms are capped at 60 characters):
+
+Each glossary entry has the original spelling, your rendering, and an optional pronoun (*he*, *she* or *they*). Entries with a pronoun are sent to the engine as a "Characters" list:
+
+```
+Characters:
+- Yuki (ユキ): female, she/her
+- Ren (レン): male, he/him
+```
+
+Entries without a pronoun are still substituted as terms (Google Translate uses only this part).
+
+### 2. Series Context Notes
+Provide concise, factual context (up to 500 characters) about relationships and speech registers:
+
+```
+The narrator is a young boy. 
+The innkeeper speaks in an arch, formal tone.
+The twins speak informally in sync.
+```
+
+### 3. Scope & Persistence
+- **Series Scope:** Notes apply to the current series (derived from the domain and first path segment, e.g. `site.com/series-name`, or a saved site).
+- **Auto-Retranslation:** Saving changes in the glossary sheet automatically invalidates the on-screen patch cache and retranslates the visible viewport.
+- **Backup Support:** Glossaries and series notes can be saved to a file and merged back, on this or another phone, via **Settings › Backup & restore**.
+
+> [!TIP]
+> **Real-World Impact (Gemma 4, JA → EN):** In a test chapter with unstated subjects, translating without notes produced 4 *he* lines and 0 *she* lines. Adding a note specifying that the characters were female yielded 5 *she* lines and 1 *he* line (where the original explicitly wrote 彼 / "he").
+
+---
+
+## Custom Translation Notes
+
+Global instructions configured in **Settings › Languages & notes › Translation notes** apply to every translated series. Series-specific notes are appended to these global instructions.
+
+Default translation notes (`TranslationNotes.DEFAULT`):
 
 ```
 Natural, casual English dialogue. Keep honorifics (-san, -sama, senpai).
@@ -94,69 +123,66 @@ Never add a pronoun or object that isn't in the original; if the subject is uncl
 Short lines that fit a speech bubble.
 ```
 
-What it changed on a real screen (Gemma 4, Japanese → English): the register became more casual ("Get out of here,
-kid!!" → "Get lost, kid!!"; "defeat me" → "take me down"), and nothing else got worse. Notes cannot fix a word the
-OCR misread.
+### How Notes Reach the Engines
+1. **Composition:** The pipeline merges the character pronoun list, series notes, and global settings notes via `TranslationNotes.compose`.
+2. **Prompt Injection:** Notes are passed as system instructions (`LlmContract` for cloud, `LocalPrompt` for LiteRT-LM). Page text is strictly framed as untrusted data, never instructions.
+3. **Cache Invalidation:** The hash of the composed notes forms part of the `PatchCache` key. Changing notes automatically prompts fresh translations.
+4. **Billing Safety:** Every cloud call (Gemini and Custom AI) caps its reply at `300 + 120` tokens per bubble (maximum 8,192 tokens), so verbose notes cannot make one call write thousands of tokens.
 
-How notes reach the engines: the pipeline puts the characters list, the series notes and the Settings notes together
-(`TranslationNotes.compose`) and sends them with every call as the reader's own instructions, which the models follow
-(page text never counts as instructions). The glossary and notes are part of the patch-cache key, so editing them
-translates cached pages again.
+---
 
-With Gemini, the notes and glossary leave the phone with each request, on your own key. Every reply is capped by the
-number of bubbles (300 + 120 tokens each, at most 8,192), so no note can make a call write, and bill, more than a
-page needs.
+## Sound Effects (SFX) Handling
 
-## Sound effects
+Configure sound effects in **Settings › Languages & notes › Sound effects**:
 
-**Settings › Languages & notes › Sound effects** decides what happens to them in the reader:
+| Mode | Visual Behavior | How It Works |
+|---|---|---|
+| **Replace** *(Default)* | The original Japanese/Korean sound effect is erased and typeset with the translated equivalent. | Detectors identify SFX; dictionary/OCR reads the text; inpainter erases the original; translated lettering is drawn over the artwork. |
+| **Keep** | The original artwork lettering remains untouched. | Sound effect regions are excluded from the erase and render stages. |
 
-| Mode | Result |
-|---|---|
-| **Keep** | The original effect stays untouched |
-| **Replace** (default) | The original is erased and the translation drawn in its place |
+### How Sound Effects are Detected & Translated
+1. **Two-Tier Detection:** The primary comic detector locates speech balloons; the secondary `PP-OCRv6 tiny` detector finds brush-lettered sound effects outside balloons.
+2. **Recognition:** manga-ocr (Japanese) or ML Kit reads the crop; if ML Kit finds nothing, it retries with Otsu high-contrast inversion. Gemini reads the image crop directly.
+3. **Dictionary Lookup:** Common Japanese and Korean sound effects are checked against an internal dictionary (`SfxDictionary`), normalizing variants (ignoring prolonged sound marks like ー or small ッ).
+4. **Unreadable Effects Fallback:** Stylized artwork effects that cannot be deciphered by OCR are never fabricated. Under *Replace* mode, the original effect is cleanly erased only if the background can be safely inpainted; otherwise, the original art is left intact.
 
-Gloss (a small translation beside the original) and Overlay (the translation drawn over the original) were removed;
-a choice of either now reads as Replace.
+---
 
-How effects are found and read:
+## Automated Pipeline Cleanups
 
-1. **Two detectors.** The comic detector finds balloons and most text; a second pass (PP-OCRv6 tiny) looks for text
-   it missed. On Korean webtoon screenshots the comic detector found 1 of 8 brush-lettered effects, the second pass 7.
-2. **Reading.** ML Kit reads the crop; if it finds nothing, it reads it again in high contrast (black ink on white).
-   Gemini reads the crop itself.
-3. **Translating.** A bundled dictionary of common Japanese and Korean effects (hiragana and katakana treated alike,
-   extra ッ or ー ignored) answers first, then a cache of earlier translations, then the engine.
-4. **Unreadable effects.** An effect the detectors are sure of but nothing can read is never translated. With
-   **Replace** it is still erased, unless the art behind it is too busy to repaint cleanly; then it is left as it
-   is rather than covered with a blank box.
+Panelglass includes automated heuristics to sanitize machine translations before rendering:
 
-## What Panelglass cleans up by itself
+| Anomaly | Root Cause | Automated Resolution |
+|---|---|---|
+| **Source Text Echo** | LLM outputs `예를 들자면: For example.` | The source prefix is detected and trimmed (`withoutSource`). |
+| **Mid-Sentence Script Switch** | Model outputs `I was गहराईly impressed` or `..., ofもちろん` | The line is isolated and re-translated; if foreign characters persist, stray words are dropped (`withoutStrayScript`). |
+| **False Positive Single Glyphs** | UI status indicator (e.g. ✓) read as Japanese ソ | The app's own status disc is excluded from detection; a lone letter found only by the full-page backstop is dropped. |
+| **Punctuation-Only Bubbles** | Speech balloon containing only `……` or `———` | Erased cleanly with the balloon, avoiding redundant punctuation rendering. |
+| **Outlined Lettering Artifacts** | Dark outlines around white comic text | Inpainting mask is expanded by 8% of glyph height, erasing both fill and outline. |
 
-| Problem | What happens |
-|---|---|
-| The model repeats the source before the translation (`예를 들자면: For example.`) | Cut to the translation |
-| The model switches script mid-line (`…, ofもちろん`, `I was गहराईly impressed`) | The line is translated again on its own; if the retry still has foreign words, they are removed |
-| A lone character only the full-page OCR saw (the app's own ✓ read as ソ) | Dropped; the status disc's corner is never read |
-| A line of only punctuation (`……`) inside a balloon | Erased with the balloon, not left behind |
-| Outlined lettering on dark art | The erase reaches the outline, not only the fill |
+---
 
-## Known limits
+## Known Limits & Edge Cases
 
-- **OCR misreads on stylised or small text.** One rare word (矮軀, "puny body") was read as two different wrong
-  words in two runs; no prompt fixes that. Gemini, which reads the image itself, avoids this class of error.
-- **Big stylised exclamations and most sound effects are found but not read**, so they are erased (Replace) rather
-  than translated.
-- **Busy or rainbow art.** When the eraser cannot repaint the background cleanly, a caption is covered with a flat
-  box in a colour taken from the art, which can look out of place.
-- **Joined balloons split one sentence.** ML Kit translates each balloon alone ("Good" / "Morning.").
-- **Notes on unsaved series are shared** by every series under the same host and first path segment.
+- **Stylized Typography:** Ornate calligraphy, distressed lettering, or extremely small background text may be misread by OCR. Gemini avoids this by reading directly from raw image pixels.
+- **Complex Art Backgrounds:** When sound effects cross multicolored gradients or intricate line art, the ray-inpainter may decline the erase operation to avoid smearing the artwork.
+- **Conjoined Balloons:** Balloons linked by narrow necks may be split or merged depending on detector confidence. ML Kit translates each balloon independently, whereas LLM engines see several bubbles together to preserve context (cloud: up to 60 per call; on-device: 4 at a time, in reading order).
+- **Unsaved Series Scope:** For unsaved websites, notes and glossaries are scoped to `host/first-path-segment`. Save the series as a bookmark in **Sites** to isolate notes.
 
-## Measuring a change
+---
 
-Judge a prompt or setting change on the same screens, before and after:
+## Benchmarking & Measuring Changes
 
-1. Install the debug build ([CONTRIBUTING › Building](../CONTRIBUTING.md#building)); it sits beside the release app.
-2. Turn on the debug dump ([FLOW.md › Diagnostics](FLOW.md#diagnostics)) and translate a fixed set of screens.
-3. Compare `regions.txt` between runs: the translations, how many still hold source script, which pronouns appear,
-   and the `timing` lines in logcat.
+To objectively evaluate prompt adjustments, glossary changes, or model upgrades:
+
+1. **Install the Debug Build:** Build and deploy `com.smnexstudio.panelglass.debug` (runs side-by-side with the release app).
+2. **Enable Diagnostic Dumps:** Create the debug directory via ADB:
+   ```bash
+   adb shell run-as com.smnexstudio.panelglass.debug mkdir -p files/debug-dump
+   ```
+3. **Capture & Translate:** Scroll through a test chapter.
+4. **Inspect the Output:** Pull the generated artifacts:
+   ```bash
+   adb exec-out run-as com.smnexstudio.panelglass.debug tar c -C files debug-dump > debug-dump.tar
+   ```
+5. **Analyze `regions.txt`:** Inspect each region's kind, box, text, translation and erase method; pipeline timings are logged under the `TranslationPipeline` logcat tag. Delete `files/debug-dump` when done.

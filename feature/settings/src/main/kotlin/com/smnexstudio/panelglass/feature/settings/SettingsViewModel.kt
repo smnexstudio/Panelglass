@@ -2,6 +2,11 @@ package com.smnexstudio.panelglass.feature.settings
 
 import androidx.lifecycle.ViewModel
 import com.smnexstudio.panelglass.core.model.TranslationNotes
+import com.smnexstudio.panelglass.core.data.backup.AppBackup
+import com.smnexstudio.panelglass.core.data.backup.BackupException
+import com.smnexstudio.panelglass.core.data.backup.BackupFile
+import com.smnexstudio.panelglass.core.data.backup.BackupProblem
+import com.smnexstudio.panelglass.core.data.backup.BackupSummary
 import com.smnexstudio.panelglass.core.data.block.BlockListUpdater
 import com.smnexstudio.panelglass.core.data.db.GlossarySummary
 import com.smnexstudio.panelglass.core.data.repo.GlossaryRepository
@@ -38,6 +43,7 @@ import com.smnexstudio.panelglass.core.model.RegionKind
 import com.smnexstudio.panelglass.core.model.Settings
 import com.smnexstudio.panelglass.core.model.TranslateRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import android.net.Uri
 import android.content.Intent
@@ -111,6 +117,23 @@ data class StorageSummary(
     }
 }
 
+/** Settings › Backup & restore: what the page shows under its two rows. */
+sealed interface BackupUi {
+    data object Idle : BackupUi
+    data object Working : BackupUi
+    /** A file was read and checked; nothing is applied until the user confirms. */
+    data class Confirm(val file: BackupFile, val summary: BackupSummary) : BackupUi
+    data class Saved(val summary: BackupSummary) : BackupUi
+    data class Restored(val summary: BackupSummary) : BackupUi
+    data class Failed(val problem: BackupFailure) : BackupUi
+}
+
+/**
+ * Why a backup or a restore did not happen: the file could not be written ([WRITE]), is not a backup or is damaged
+ * ([UNREADABLE]), is from a newer version ([NEWER]), or was fine but could not be saved into the app ([RESTORE]).
+ */
+enum class BackupFailure { WRITE, UNREADABLE, NEWER, RESTORE }
+
 /** Settings › Reader › Block lists › Update. */
 enum class BlockListUpdate { IDLE, RUNNING, DONE, FAILED }
 
@@ -137,6 +160,7 @@ class SettingsViewModel @Inject constructor(
     private val patchCache: PatchCache,
     private val glossary: GlossaryRepository,
     private val blockLists: BlockListUpdater,
+    private val backups: AppBackup,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, Settings())
     val keys: StateFlow<Set<EngineId>> = registry.observeKeys().stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
@@ -193,6 +217,71 @@ class SettingsViewModel @Inject constructor(
 
     /** Set when the folder just picked could not be kept (the provider refused a lasting permission). */
     val exportFolderRefused = MutableStateFlow(false)
+
+    // ---- backup & restore --------------------------------------------------------------------
+
+    private val _backup = MutableStateFlow<BackupUi>(BackupUi.Idle)
+    val backup: StateFlow<BackupUi> = _backup
+
+    /** The name the save dialog offers: the day's date in it. */
+    fun backupFileName(): String = AppBackup.fileName(java.time.LocalDate.now())
+
+    /**
+     * Writes a backup to [target], a document the user created in the save dialog. The dialog creates the file
+     * before anything is written, so a backup that fails deletes it again: no empty file is left behind.
+     */
+    fun saveBackup(target: Uri) = viewModelScope.launch {
+        _backup.value = BackupUi.Working
+        _backup.value = try {
+            val file = backups.create(appVersion)
+            withContext(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(target, "wt")?.use { backups.write(file, it) }
+                    ?: throw java.io.IOException("no stream")
+            }
+            BackupUi.Saved(backups.summary(file))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            withContext(Dispatchers.IO) {
+                runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, target) }
+            }
+            BackupUi.Failed(BackupFailure.WRITE)
+        }
+    }
+
+    /** Reads and checks [source]; the restore waits for [confirmRestore]. */
+    fun openBackup(source: Uri) = viewModelScope.launch {
+        _backup.value = BackupUi.Working
+        _backup.value = try {
+            val file = withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(source)?.use { backups.read(it) }
+                    ?: throw BackupException(BackupProblem.UNREADABLE)
+            }
+            BackupUi.Confirm(file, backups.summary(file))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: BackupException) {
+            BackupUi.Failed(if (e.problem == BackupProblem.NEWER) BackupFailure.NEWER else BackupFailure.UNREADABLE)
+        } catch (_: Exception) {
+            BackupUi.Failed(BackupFailure.UNREADABLE)
+        }
+    }
+
+    /** Applies the backup [openBackup] read. A failure here is the phone's (its storage), never the file's. */
+    fun confirmRestore() = viewModelScope.launch {
+        val pending = _backup.value as? BackupUi.Confirm ?: return@launch
+        _backup.value = BackupUi.Working
+        _backup.value = try {
+            BackupUi.Restored(backups.restore(pending.file))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            BackupUi.Failed(BackupFailure.RESTORE)
+        }
+    }
+
+    /** Clears the message, or cancels a restore not yet confirmed. */
+    fun dismissBackup() { _backup.value = BackupUi.Idle }
 
     /**
      * Exports go to [tree] (a folder the system picker returned) from now on, for every manga without its own folder;
