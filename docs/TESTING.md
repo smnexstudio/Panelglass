@@ -190,6 +190,7 @@ If the build fails with "jlink executable … does not exist", see [CONTRIBUTING
 | Class | Tests | Covers |
 |---|---|---|
 | `BlockListTest` | 11 | Hosts and AdBlock formats parsed; exact hosts and their subdomains blocked, parents and unrelated hosts not; `@@` exceptions win; wildcard and context-scoped rules skipped; localhost ignored; cached form round-trips |
+| `PageScanPlanTest` | 12 | The plan of a whole-page scan: a step is 70% of the viewport, the stops ascend and end at the bottom of the page, a page that fits is one stop, a very long page is capped, the patches that do not fit in memory go first when they are the farthest from the viewport, and the page key drops the fragment |
 | `PatchAnchorTest` | 8 | A patch is anchored to the image under its centre; it follows a reader moving its page in its own layer and scroll anchoring; no key, no anchor; an image off screen leaves the patch in place; the anchor is the same place on the art at any zoom; a patch's CSS rect scales with the zoom; one bubble captured at two zooms is a duplicate |
 | `SessionLanguagesTest` | 4 | The page's detected language applies on its host only; a site's saved source wins over it; the launch intent wins over both; ML Kit tags map to Japanese, Korean or Chinese (a chosen Chinese script is kept) |
 | `SeriesMemoryTest` | 2 | Glossary edits (Robolectric, in-memory Room): nothing is saved before the series is known; terms are trimmed and saved to the current series, a term with no rendering is not, and the writes are handed over once |
