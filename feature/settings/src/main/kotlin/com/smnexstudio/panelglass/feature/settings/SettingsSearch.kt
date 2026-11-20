@@ -5,7 +5,7 @@ import java.util.Locale
 
 /** The Settings hub and the pages it opens; [LICENCES] and [PRIVACY] are opened from [ABOUT]. */
 enum class SettingsPage {
-    HUB, ENGINE, LANGUAGES, MODELS, READER, STUDIO, STORAGE, APPEARANCE, ABOUT, LICENCES, PRIVACY;
+    HUB, ENGINE, LANGUAGES, MODELS, READER, STUDIO, STORAGE, APPEARANCE, BACKUP, ABOUT, LICENCES, PRIVACY;
 
     /** Where Back goes: About for the documents it opens, else the hub. */
     val parent: SettingsPage get() = when (this) {

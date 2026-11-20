@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.MaterialTheme
@@ -129,6 +130,9 @@ internal fun SettingsHub(
             HubRow(Icons.Outlined.Palette, "appearance", pageTitle(SettingsPage.APPEARANCE), "$theme · ${nativeName(appLang)}",
                 selected == SettingsPage.APPEARANCE) { onOpen(SettingsPage.APPEARANCE) }
             CardDivider()
+            HubRow(Icons.Outlined.SettingsBackupRestore, "backup", pageTitle(SettingsPage.BACKUP), stringResource(UiR.string.set_page_backup_sub),
+                selected == SettingsPage.BACKUP) { onOpen(SettingsPage.BACKUP) }
+            CardDivider()
             HubRow(Icons.Outlined.Info, "about", pageTitle(SettingsPage.ABOUT), stringResource(UiR.string.update_version, vm.appVersion),
                 selected == SettingsPage.ABOUT) { onOpen(SettingsPage.ABOUT) }
         }
@@ -146,6 +150,7 @@ internal fun pageTitle(page: SettingsPage): String = when (page) {
     SettingsPage.STUDIO -> stringResource(UiR.string.nav_studio)
     SettingsPage.STORAGE -> stringResource(UiR.string.settings_storage)
     SettingsPage.APPEARANCE -> stringResource(UiR.string.set_page_appearance)
+    SettingsPage.BACKUP -> stringResource(UiR.string.set_page_backup)
     SettingsPage.ABOUT -> stringResource(UiR.string.set_page_about)
     SettingsPage.LICENCES -> stringResource(UiR.string.set_licences)
     SettingsPage.PRIVACY -> stringResource(UiR.string.set_privacy)
@@ -177,6 +182,7 @@ private fun settingsIndex(vm: SettingsViewModel): List<SearchHit> {
         )) +
         hits(SettingsPage.STORAGE, listOf(pageTitle(SettingsPage.STORAGE), s(UiR.string.settings_studio_storage), s(UiR.string.set_cache_title))) +
         hits(SettingsPage.APPEARANCE, listOf(pageTitle(SettingsPage.APPEARANCE), s(UiR.string.settings_theme), s(UiR.string.settings_app_language))) +
+        hits(SettingsPage.BACKUP, listOf(pageTitle(SettingsPage.BACKUP), s(UiR.string.backup_create), s(UiR.string.backup_restore))) +
         hits(SettingsPage.ABOUT, listOf(
             pageTitle(SettingsPage.ABOUT), s(UiR.string.update_check), s(UiR.string.update_auto), s(UiR.string.set_source),
             s(UiR.string.set_report),

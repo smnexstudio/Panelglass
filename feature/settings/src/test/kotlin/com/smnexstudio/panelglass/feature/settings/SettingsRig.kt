@@ -2,6 +2,7 @@ package com.smnexstudio.panelglass.feature.settings
 
 import android.content.Context
 import androidx.room.Room
+import com.smnexstudio.panelglass.core.data.backup.AppBackup
 import com.smnexstudio.panelglass.core.data.block.BlockListUpdater
 import com.smnexstudio.panelglass.core.data.cache.PatchCache
 import com.smnexstudio.panelglass.core.data.db.PanelglassDb
@@ -54,7 +55,7 @@ internal class SettingsRig(private val context: Context) {
         private set
     private val models = TestViewModels()
 
-    fun vm(): SettingsViewModel {
+    fun vm(backup: AppBackup = AppBackup(db, settings)): SettingsViewModel {
         val keys = SecureKeyStore(MemoryDataStore(), Plain)
         val offline = HttpEngineSupport(
             OkHttpClient.Builder().addInterceptor { synchronized(attempted) { attempted += it.request().url.host }; throw IOException("offline") }.build(),
@@ -80,6 +81,7 @@ internal class SettingsRig(private val context: Context) {
             patchCache, glossary, object : BlockListUpdater {
                 override suspend fun updateNow(): Boolean { blockListUpdates++; return blockListsUpdate }
             },
+            backup,
         ))
     }
 

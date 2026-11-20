@@ -1,357 +1,336 @@
-# Testing
+# Testing & Quality Assurance Guide
 
-What the automated tests cover, how to run them, and the checks that still need a phone. The architecture under test
-is in [ARCHITECTURE.md](ARCHITECTURE.md); the translation flow in [FLOW.md](FLOW.md).
+This document catalogs the test suites, verification procedures, CI reporting pipelines, and real-device testing protocols for Panelglass.
 
-Counts as of 2026-11-14: **848 unit tests** in 115 classes, all passing; **2 instrumented tests** (need a device, not run
-in CI). Line coverage of the JVM tests, measured by JaCoCo: 56.9% of all code (branch 41.7%): 66.9% of the logic and
-41.8% of the Compose UI (coverage measured 2026-11-05); per module in the test report.
+For architectural components under test, see [ARCHITECTURE.md](ARCHITECTURE.md). For pipeline execution stages, see [FLOW.md](FLOW.md).
+
+---
 
 ## Contents
 
-- [Running the tests](#running-the-tests)
-- [Test report and CI](#test-report-and-ci)
-- [How the tests are built](#how-the-tests-are-built)
-- [Unit tests by module](#unit-tests-by-module)
-- [Instrumented tests](#instrumented-tests)
-- [Checks on a phone](#checks-on-a-phone)
-- [Not covered](#not-covered)
-- [Known flaky test](#known-flaky-test)
-- [Adding a test](#adding-a-test)
+- [Test Suite Summary](#test-suite-summary)
+- [Quick Execution Commands](#quick-execution-commands)
+- [CI Reporting & Pull Request Integration](#ci-reporting--pull-request-integration)
+- [Test Harness Architecture & Seams](#test-harness-architecture--seams)
+- [Unit Test Catalog by Module](#unit-test-catalog-by-module)
+  - [core:model (73 tests)](#coremodel-73-tests)
+  - [core:data (100 tests)](#coredata-100-tests)
+  - [core:engine (151 tests)](#coreengine-151-tests)
+  - [core:ocr (45 tests)](#coreocr-45-tests)
+  - [core:render (62 tests)](#corerender-62-tests)
+  - [core:pipeline (27 tests)](#corepipeline-27-tests)
+  - [feature:browser (67 tests)](#featurebrowser-67-tests)
+  - [feature:studio (241 tests)](#featurestudio-241-tests)
+  - [feature:settings (58 tests)](#featuresettings-58-tests)
+  - [feature:library (16 tests)](#featurelibrary-16-tests)
+  - [app (21 tests)](#app-21-tests)
+  - [core:ui (18 tests)](#coreui-18-tests)
+- [Instrumented Device Tests](#instrumented-device-tests)
+- [Physical Device Verification Checklist](#physical-device-verification-checklist)
+- [Non-Automated / Out-of-Scope Areas](#non-automated--out-of-scope-areas)
+- [Known Flaky Tests](#known-flaky-tests)
+- [Guidelines for Adding Tests](#guidelines-for-adding-tests)
 
-## Running the tests
+---
 
-```bash
-./gradlew testDebugUnitTest :core:model:test          # every unit test (what CI runs)
-./gradlew :core:engine:testDebugUnitTest --tests "*RegistryAndQwenTest*"   # one class
-./gradlew :core:data:connectedDebugAndroidTest         # key store, on a device
-./gradlew :core:pipeline:connectedDebugAndroidTest     # whole pipeline, on a device
+## Test Suite Summary
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  TOTAL JVM UNIT TESTS: 879 tests across 118 test classes (all passing) │
+│  INSTRUMENTED TESTS:   2 on-device hardware tests                      │
+│  CODE COVERAGE (from the last 690-test run, not yet re-measured):      │
+│  56.9% Line / 41.7% Branch; logic 66.9%, Compose UI 41.8%              │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## Quick Execution Commands
+
+| Target | Command Line | Description |
+|---|---|---|
+| **All Unit Tests** | `./gradlew testDebugUnitTest :core:model:test` | Executes every JVM test across all Gradle modules (what CI runs). |
+| **Single Test Class** | `./gradlew :core:engine:testDebugUnitTest --tests "*RegistryAndQwenTest*"` | Executes an isolated test class. |
+| **Coverage Report** | `./gradlew jacocoUnitTestReport` | Run after the tests, in its own invocation: generates JaCoCo coverage for every module. |
+| **HTML Test Report** | `python3 tools/test-report/report.py --root . --out build/test-report` | Produces interactive test report with expected vs. actual outputs. |
+| **Device KeyStore Test**| `./gradlew :core:data:connectedDebugAndroidTest` | Tests hardware Android Keystore AES-GCM round-trip. |
+| **Device Pipeline Test**| `./gradlew :core:pipeline:connectedDebugAndroidTest` | Tests end-to-end screen capture, OCR, and patch rendering on device. |
+
+> [!NOTE]
+> `:core:model` is a pure Kotlin module; its tests run under `test`, not `testDebugUnitTest`.
+
+---
+
+## CI Reporting & Pull Request Integration
+
+- **Automated Workflow (`.github/workflows/ci.yml`):** Runs on every pull request and push to `main`. Executes all JVM tests with `--continue`, calculates JaCoCo coverage, generates the HTML report, and builds the debug APK.
+- **Sticky Pull Request Comments:** A dedicated GitHub Actions job parses JUnit XML and posts a single unified comment summarizing verdicts, module-level coverage, and assertion deltas. Updates automatically on subsequent pushes.
+- **Artifact Preservation:** The interactive `test-report.html` and raw JUnit/JaCoCo XML are archived as build artifacts (retained for 30 days).
+
+---
+
+## Test Harness Architecture & Seams
+
+Panelglass adheres to strict testing constraints to keep unit tests deterministic and fast:
+
+1. **Zero External Network Dependencies:**
+   - Cloud AI engines are validated against **MockWebServer**, verifying headers, JSON bodies, status codes, and timeouts.
+   - Update checks route GitHub API calls to local MockWebServer endpoints.
+2. **Scripted LLM Runner (`LlmRunner`):**
+   - LiteRT-LM binary weights are never loaded on the JVM.
+   - `LocalLlmEngine.runnerFactory` is substituted with scripted fakes that record prompts, simulate generation delays, and test cancellation.
+3. **In-Memory Storage Fakes (`Fakes.kt`):**
+   - `MemoryDataStore`: Process-isolated in-memory DataStore (prevents file-lock issues on Windows).
+   - In-Memory Room: DAOs and database migrations execute against volatile SQLite instances.
+   - `PlainCrypto` (`BlobCrypto` fake): stands in for Android Keystore encryption, which is unavailable on the JVM.
+4. **Virtual Time & Main Dispatcher:**
+   - Tests employ `StandardTestDispatcher` and `UnconfinedTestDispatcher` to test debouncing (e.g., 400 ms typing pauses in review editor) without thread sleeps.
+5. **Robolectric & Compose Semantics:**
+   - UI tests run via Robolectric using Compose Semantics actions, validating TalkBack accessibility labels and screen states.
+
+---
+
+## Unit Test Catalog by Module
+
+### core:model (73 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `BubbleFontTest` | 4 | Font identifier serialization; migration of legacy font names; Studio catalog ID mapping. |
+| `ComicInfoTest` | 12 | Full `ComicInfo.xml` round-trip; Mihon publishing status tags; CDATA/XML entity sanitization; linear parsing of malformed 256 KB inputs. |
+| `StageInvalidationTest` | 2 | Polygon reshaping and brush strokes invalidate cleaned art layers without resetting translated text. |
+| `NaturalSortTest` | 6 | Natural filename sorting (`2` before `10`, `p9` before `p10`, numeric runs longer than `Long.MAX_VALUE`). |
+| `SiteMatchTest` | 6 | URL hostname matching, subdomains, path prefixes, and series-scoped glossary resolution. |
+| `TranslationNotesTest` | 5 | Character pronoun formatting, note composition, character caps (60 chars for terms, 500 for notes). |
+| `PatchTest` | 2 | Immediate in-memory bitmap rendering and lazy background WebP disk encoding. |
+| `ReadStateTest` | 3 | Region state transitions (`UNREAD`, `UNREADABLE`, `READ`); legacy state migration. |
+| `WebUrlTest` | 6 | Strict HTTPS enforcement; HTTP auto-upgrade; rejection of `javascript:`, `file:`, `intent:`. |
+| `CustomProviderTest` | 6 | Custom AI provider presets; host extraction; preservation of custom paths. |
+| `CustomEndpointTest` | 18 | Custom endpoint normalization; strips `/chat/completions`; rejects insecure or credentialed URLs. |
+| `ModelSizeHintTest` | 3 | Parses small-model parameter hints (e.g. `1.5B`, `0.5B`) from model identifiers. |
+
+### core:data (100 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `AppBackupTest` | 9 | Full JSON backup and restore round-trip; safe merging (updates matches, inserts new, deletes nothing); schema validation and size bounds. |
+| `Migration3To4Test` | 2 | Database migration from v3 to v4: preserves sites, history, glossary; drops legacy OCR caches. |
+| `Migration4To5Test` | 2 | Database migration from v4 to v5: adds pronoun fields to glossary entries; creates series notes table. |
+| `RetiredSfxModeTest` | 3 | Backward-compatibility migration of retired Gloss/Overlay SFX modes to Replace mode. |
+| `StudioDaoTest` | 14 | Room operations for Studio library: chapter numbering, page reordering, cascade deletion of image files, orphan sweeps. |
+| `PatchCacheTest` | 5 | Disk LRU cache round-trip; cache eviction under byte budgets; corrupted file recovery. |
+| `ReleaseInfoTest` | 11 | GitHub release JSON parser; draft/prerelease filtering; SHA-256 asset verification; path traversal protection. |
+| `AppUpdatesTest` | 20 | Update lifecycle against local server; update dialog states; APK checksum verification; daily cadence limits. |
+| `SettingsRepositoryTest` | 19 | DataStore settings persistence; language pair history; model preferences; charging-only run states. |
+| `SystemDownloadsQueueTest` | 7 | Android `DownloadManager` lifecycle wrapper; handles interrupted downloads and deduplication. |
+| `UnmigratedVersionsTest` | 2 | Graceful handling of unmigrated database versions (rebuilds clean DB without crashing). |
+| `SystemDownloadsIntegrityTest`| 5 | SHA-256 verification of downloaded models before moving to production directories. |
+| `HttpsOnlyTest` | 1 | Interceptor gating preventing cleartext network transmissions. |
+
+### core:engine (151 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `RegistryAndQwenTest` | 28 | Engine resolution; missing key errors; on-device prompt formatting; model switching; 5 s grace period background release. |
+| `ProviderEngineTest` | 8 | MockWebServer tests for cloud engines; handles 401 unauthorized; model selection fallback. |
+| `LlmContractTest` | 17 | JSON array contract parsing; output token budget caps (`300 + 120` tokens); source-echo stripping; foreign script purge. |
+| `LlmContractTolerantParseTest`| 19 | Lenient JSON parsing for home servers (code blocks, wrapped objects, extra keys); partial salvage. |
+| `PromptPartsTest` | 2 | Consistent formatting of character glossaries and previous lines across cloud and local engines. |
+| `CustomOpenAiEngineTest` | 19 | Custom AI client; endpoint concatenation; temperature fallback; text-only payloads; self-contained retries. |
+| `EngineHttpGuardTest` | 6 | Blocks redirects (prevents API key leakage); enforces 4 MB maximum response caps. |
+| `GoogleTranslateEngineTest` | 9 | ML Kit translation integration; language pack download triggers; Japanese preprocessing. |
+| `JaPrepTest` | 7 | Japanese text normalization: honorific extraction, loanword deduplication, romaji transliteration. |
+| `PageTranslatorTest` | 5 | In-situ DOM webpage translation; language detection fallback; element order preservation. |
+| `BatchingTranslatorTest` | 6 | Batching engine: batches up to 60 items for cloud; streams 4-bubble groups for local LLMs; cancellation. |
+| `SfxDictionaryTest` | 4 | Onomatopoeia lookup dictionary: hiragana/katakana unification; prolonged sound normalization. |
+| `LanguagePackStoreTest` | 6 | ML Kit language pack manager; auto-downloads CJK packs; protects English baseline. |
+| `HttpFailureWireTest` | 8 | HTTP status code mapping (429 → `QuotaExceeded`, 503 → `Overloaded`, network drops → `Network`). |
+| `OfflineEnginesTest` | 4 | Airplane mode verification: ensures ML Kit and local models never attempt network calls. |
+| `ModelPinningTest` | 3 | Verifies hardcoded Hugging Face commit hashes and SHA-256 fingerprints for models. |
+
+### core:ocr (45 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `HighContrastTest` | 3 | Otsu binarization and inversion for light lettering on dark art backgrounds. |
+| `MissedTextTest` | 4 | PP-OCRv6 second pass: probability component clipping; adjacent character block merging (`타` + `닥`). |
+| `UnsureFreeTextTest` | 2 | manga-ocr confidence filtering: drops free-text readings below 0.80 confidence to stop hallucinations. |
+| `RegionClustererTest` | 9 | Merging adjacent vertical columns (RTL); top-to-bottom horizontal line merging; line spacing limits. |
+| `RegionBuilderTest` | 7 | Assembles bounding boxes into semantic text regions; suppresses punctuation-only lines. |
+| `RegionClassifierTest` | 6 | Outer ring pixel analysis: classifies `ENCLOSED`, `CAPTION`, `FREE`, `SFX`, `IN_SCENE`. |
+| `CropGeometryTest` | 4 | Dynamic crop scaling; ±90° rotated shadow pass coordinate re-mapping. |
+| `MangaOcrRepeatTest` | 3 | Deduplication of autoregressive repetition loops in manga-ocr output. |
+| `UprightTiltTest` | 3 | Clamps vertical text orientation to ±45° of nearest axis to prevent sideways rendering. |
+| `PanelCutterTest` | 2 | Comic panel boundary detection and reading order sequencing. |
+| `ModelPinningTest` | 2 | Commit pinning and hash checks for manga-ocr and LaMa models. |
+
+### core:render (62 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `FontCatalogueTest` | 5 | Bundled typography catalog: verifies TTF/OTF files, license entries, and language script coverage. |
+| `FontNameTableTest` | 4 | Binary font header parser: extracts family/style names from OpenType `name` tables. |
+| `SfxRendererTest` | 4 | Sound effect native canvas rendering: position transforms, rotation handles, typography presets. |
+| `PageCleanerTest` | 7 | Background inpainting: flood-fill erasing for balloons; ray inpainting; LaMa neural cleanups. |
+| `PolygonFitTest` | 4 | Text placement inside non-rectangular contours (ellipses, L-shapes, convex hulls). |
+| `StudioRendererTest` | 9 | Studio typography rendering: stroke outlines, fill opacities, round corners, auto-wrap. |
+| `BalloonFitTest` | 4 | Balloon paper boundary tracing; separates artwork spikes from usable bubble area. |
+| `BalloonShapeTest` | 3 | Generates candidate rectangular bounds inside traced organic balloon geometry. |
+| `TextEraserTest` | 8 | Glyph mask expansion (8% padding); gradient variance checking; dark outline elimination. |
+| `LongestRunTest` | 5 | Calculates unbreakable text run lengths for hyphenation and wrapping calculations. |
+| `PanelInkTest` | 3 | Contrast calculation for inpainting ink: selects black or white based on background luminance. |
+| `RegionRendererTest` | 6 | End-to-end patch generation: creates WebP bitmaps formatted to exact region geometry. |
+
+### core:pipeline (27 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `TranslationPipelineTest` | 10 | Stage gates, per-stage watchdog, patch-cache hits and misses, Re-translate bypassing the cache, streamed patches. |
+| `DetectionStageTest` | 7 | Detect, build, classify and order; nested readings dropped; text boxes of one balloon merged; unreadable SFX handling. |
+| `TileDetectionTest` | 8 | Overlapping tile plan for tall webtoon strips and merging of boxes seen in two tiles. |
+| `SeriesResolverTest` | 2 | Series glossary and notes merged and hashed into the cache key before lookup. |
+
+### feature:browser (67 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `BlockListTest` | 11 | Parses AdBlock and hosts formats; verifies exact host and subdomain blocking rules. |
+| `PageScanPlanTest` | 17 | Whole-page scan planner: 70% step sizing; 96 MB patch cache memory budget; edge cases. |
+| `PatchAnchorTest` | 8 | Pins patches to underlying DOM image keys; maintains alignment during zoom and scroll. |
+| `SessionLanguagesTest` | 4 | Session language resolution: site overrides vs. DOM auto-detection vs. intent extras. |
+| `SeriesMemoryTest` | 2 | Scoped series glossary updates; ensures writes commit before viewport retranslates. |
+| `ContentChangeTest` | 4 | Detects page turns in non-scrolling readers via luminance thumbnail delta comparison. |
+| `SameSiteTest` | 3 | Validates same-site popup rules using public suffix lists. |
+| `NavigationPolicyTest` | 11 | WebView security policy: blocks non-web schemes; handles mailto/tel; prevents ad redirects. |
+| `BlockListRepositoryTest`| 7 | Blocklist download, merging, and fallback mechanisms (AdGuard to StevenBlack). |
+
+### feature:studio (241 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `CanvasTransformTest` | 10 | Review canvas zoom/pan maths (1×–8×); selection tracking; keyboard resize handling. |
+| `PageCanvasGestureTest` | 8 | Touch gesture recognition: tap to select, double-tap zoom, long-press to edit, two-finger pinch. |
+| `PolygonHitTest` | 6 | Accurate point-in-polygon collision detection for arbitrary speech bubble contours. |
+| `ScrollbarTest` | 5 | Custom Compose scrollbar behavior for long chapter listings. |
+| `StorageSpaceTest` | 2 | Enforces 64 MB minimum storage reserve before allowing chapter imports or exports. |
+| `ExportNamesTest` | 6 | Sanitizes export filenames; generates CBZ structures and Mihon-compatible `ComicInfo.xml`. |
+| `StudioExporterTest` | 21 | Chapter export pipeline: writes CBZ, ZIP, or image folders; handles clean/translated exports. |
+| `CoverCropTest` | 3 | Calculates 2:3 aspect ratio cover crop windows from arbitrary comic pages. |
+| `LibraryOrderTest` | 2 | Studio library search filtering and sorting (title A–Z, date modified). |
+| `WidthClassTest` | 1 | Adaptive UI layout switching at 600 dp and 840 dp breakpoints. |
+| `FolderChaptersTest` | 6 | Auto-detects multi-chapter archives and parses folder naming conventions. |
+| `PeopleTest` | 2 | Parses author and artist metadata strings into distinct structured entities. |
+| `ColorMathTest` | 5 | HSV color conversions; hex color validation (`#RGB`, `#RRGGBB`, `#AARRGGBB`). |
+| `TileCacheTest` | 6 | Multi-resolution bitmap tile caching for ultra-smooth 8× zooming. |
+| `StudioTranslatorTest` | 18 | Chapter background translation: page-by-page execution, crash resumption, progress tracking. |
+| `RunGateTest` | 10 | Studio execution throttling: pauses on high thermal state, low battery, or active reader use. |
+| `RunNotificationsTest` | 6 | Foreground service notifications: progress bar, Pause, Resume, and Cancel actions. |
+| `GridReorderTest` | 2 | Drag-and-drop reordering of manga chapters and pages. |
+| `ArchiveImporterTest` | 31 | Complex archive extractor: handles CBZ, ZIP, 7z; protects against zip-slip and decompression bombs. |
+| `ImageHeaderTest` | 9 | Inspects magic bytes to detect image formats without full file decoding. |
+| `ImageImporterTest` | 8 | Imports loose image selections; renders PDF pages at 2× scale. |
+| `StudioImporterTest` | 11 | High-level import orchestrator: stages files and ensures clean rollback on cancellation. |
+| `ReviewPanelsTest` | 22 | Review editor controls: typography styling, color pickers, bubble reshaping, brush tool. |
+| `ExportViewModelTest` | 10 | View model state machine for chapter export workflows. |
+| `ExportScreenTest` | 6 | Compose UI test for chapter export selection screens. |
+| `ImportViewModelTest` | 14 | View model state machine for import flows and metadata assignment. |
+| `FontsViewModelTest` | 6 | Custom user font import, validation, and role assignment. |
+| `ReviewSavingTest` | 5 | Validates that bubble text edits auto-save 400 ms after typing pauses. |
+
+### feature:settings (58 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `SettingsViewModelTest` | 13 | Engine selection flows; API key sheets; language swapping; storage measurement. |
+| `SettingsBackupTest` | 5 | Backup & restore view model: file validation, error handling, transactional restore. |
+| `SettingsScreenTest` | 25 | Compose UI testing for settings hub and sub-pages; accessibility TalkBack labels. |
+| `MarkdownLiteTest` | 6 | In-app Markdown renderer: parses headings, links, bullets, and privacy documents. |
+| `SettingsSearchTest` | 4 | In-app settings search indexing and fuzzy query matching. |
+| `EnginePickerTest` | 5 | UI test for the engine selection dialog and API key entry prompts. |
+
+### feature:library (16 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `LibraryScreenTest` | 11 | Saved sites and history screens; site creation dialog; TalkBack accessibility. |
+| `LibraryViewModelTest` | 5 | Site persistence: auto-prepends HTTPS; pins bookmarks; tracks visit timestamps. |
+
+### app (21 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `UpdateDialogTest` | 8 | In-app update dialog UI states (Checking, Available, Downloading, Verified, Error). |
+| `StartupTasksTest` | 7 | Cold-start initialization: fetches default language packs; handles model queues. |
+| `ManifestPolicyTest` | 6 | Validates committed AndroidManifest.xml: ensures zero unauthorized permissions or exposed components. |
+
+### core:ui (18 tests)
+| Test Class | Tests | Scope & Key Behaviors Verified |
+|---|---|---|
+| `ApiKeyValidationTest` | 11 | Validates API key formatting and prevents saving insecure HTTP endpoints. |
+| `AppLocaleTest` | 7 | Dynamic per-app language switching across 16 supported UI translations. |
+
+---
+
+## Instrumented Device Tests
+
+Run with a physical device or hardware emulator connected:
+
 ```bash
-./gradlew jacocoUnitTestReport                         # coverage, after the tests, in its own invocation
-python3 tools/test-report/report.py --root . --out build/test-report   # HTML report: expected vs actual per test
+./gradlew :core:data:connectedDebugAndroidTest
+./gradlew :core:pipeline:connectedDebugAndroidTest
 ```
 
-`:core:model` is a plain Kotlin module: its tests run under `test`, not `testDebugUnitTest`, so name it explicitly.
-Reports land in `<module>/build/reports/tests/`. CI (`.github/workflows/ci.yml`) runs the unit tests and a debug
-build for every pull request into `main` and every push to `main`; the instrumented tests need a device and are run
-by hand.
-
-If the build fails with "jlink executable … does not exist", see [CONTRIBUTING.md › Building](../CONTRIBUTING.md#building).
-
-## Test report and CI
-
-- **Coverage**: Gradle's own JaCoCo plugin (no added dependency, root `build.gradle.kts`). Every JVM test task runs
-  with the agent; `jacocoUnitTestReport` in each module writes XML and CSV for that module's classes, crediting any
-  module's tests that ran them. It reads other modules' test runs, so run it after the tests in its own invocation.
-  Coverage is reported, never a gate: a line run is not a behaviour checked.
-- **Report** (`tools/test-report/report.py`, Python standard library only): reads the JUnit XML results, the JaCoCo
-  CSVs and the test sources. For every test it shows **Expected** (the test's KDoc, else its name read as a sentence),
-  **Actual** (every assertion held, or the failed assertion's own expected and actual values and message) and a
-  **PASS / FAIL / SKIP** verdict, with per-module counts and coverage, a filter and a search. Coverage is given
-  three ways: all code, **logic** and **Compose UI** (the classes of files that declare `@Composable` functions; view
-  models and everything else are logic), so well-tested logic is not hidden behind untested UI. It writes
-  `test-report.html`, `summary.md` (for a pull request) and `results.json`; exit code 1 when a test failed or none ran.
-- **CI** (`.github/workflows/ci.yml`): every pull request into `main` and every push to `main` runs all JVM tests
-  (`--continue`, so every module reports), coverage, the report, then the debug build. The report is uploaded as the
-  `test-report` artifact (30 days), the raw JUnit and JaCoCo XML as `test-results` (30 days), and its summary written
-  to the run's summary page. On a pull request a separate
-  `report` job, the only one allowed to write to the pull request and never running its code, posts the verdict, the
-  per-module table and every failed test's expected and actual as **one comment, edited on each push** (marker
-  `<!-- panelglass-test-report -->`), linking to the HTML report. GitHub cannot attach a file to a comment, so the HTML
-  is the linked artifact (a zip; open `test-report.html`). A fork's pull request has a read-only token: no comment,
-  the verdict stays in the run's summary. Instrumented tests are not run in CI.
-
-## How the tests are built
-
-- **JUnit 5**, with Robolectric tests (anything that needs a `Context`, bitmaps or Android classes) run through the
-  JUnit vintage engine.
-- **Providers are never called live.** Cloud engines are tested against **MockWebServer**: the request each one sends
-  (model, key header, JSON options) and how every status maps to an `EngineFailure`.
-- **LiteRT-LM is never loaded on the JVM.** `LocalLlmEngine.runnerFactory` is swapped for a scripted `LlmRunner`
-  (fixed replies, prompts recorded, closes counted). `GatedRunner` suspends inside a generation so a test can act
-  while the model is busy.
-- **Storage fakes** (`core/engine/src/test/…/Fakes.kt`): `MemoryDataStore` (an in-memory DataStore),
-  `testSettings()` (a real `SettingsRepository` on it), `testKeyStore()` (a `SecureKeyStore` with reversible
-  "encryption", since the JVM has no AndroidKeyStore), `testSupport()` (OkHttp + JSON for the HTTP engines).
-- **Device RAM** is set with Robolectric's `ShadowActivityManager.setMemoryInfo` to test RAM-dependent choices.
-- **No live network.** HTTP goes to MockWebServer, or an OkHttp interceptor that answers (or fails) each request
-  (`AppUpdatesTest` routes GitHub's hosts to a local server; `OfflineEnginesTest` fails every request and checks none
-  was tried).
-- **Time through seams, not sleeps**: `AppUpdates(now)`, `PatchCache(now)`, `BlockListRepository.now`,
-  `TranslationPipeline.stageTimeoutMs`, `LocalEngines.releaseGraceMs`, and a virtual-time main dispatcher for view
-  models (`ReviewSavingTest`). A wait is on a condition with a timeout, never a fixed delay.
-- **Preferences**: tests that write more than once use an in-memory DataStore (`MemoryDataStore`, one per module's
-  tests): a file-backed one cannot replace its file on Windows.
-- **View models** run on `Dispatchers.setMain(UnconfinedTestDispatcher())` with the real repositories on Room in
-  memory; `onCleared` is reached through a `ViewModelStore`. A view model built by hand is kept in `TestViewModels`
-  (one per feature module's tests) and cleared before the database closes: a scope left running queries a closed
-  database and fails a later test.
-- **Compose screens** run on Robolectric with their real view model (`SettingsRig`, `ExportRig`, or the repositories
-  directly), and a click is the node's own semantics action (a sheet or dialog still animating would miss an injected
-  touch). Room answers on its own threads, so a check waits on a condition with real time between tries
-  (`eventually`); the database is closed by an outer rule (`RuleChain`), after the compose rule has disposed the
-  screen.
-- **Pixels** are synthetic: bubbles, hatched art, grey boxes and text drawn onto bitmaps in the test.
-
-## Unit tests by module
-
-### core:model (67)
-
-| Class | Tests | Covers |
+| Test Class | Module | Verification Scope |
 |---|---|---|
-| `BubbleFontTest` | 4 | Saved font names round-trip; retired fonts map to their successor; unknown names are null; each names its Studio catalogue id (`cat:…`), what a choice saved before the catalogue reads back as |
-| `ComicInfoTest` | 12 | ComicInfo.xml round-trip (Mihon's `ty:PublishingStatusTachiyomi` included, read and written as Mihon writes it, the prefix declared on the element; statuses map both ways, "Publishing finished" is Completed, an unknown one is left out); blank fields left out; escaping of `& < > " '` and control characters; a DOCTYPE entity (external or internal) is never resolved, character references are; CDATA, self-closing and nested elements; garbage gives an empty result; the first complete element of each field wins (attributes, `</Title >`, self-closing left to a later one); an unclosed comment or CDATA; ten crafted 256 KB inputs (unclosed tags, comments, CDATA, DOCTYPEs) each parsed in linear time, under 2 s |
-| `StageInvalidationTest` | 2 | A reshape or a brush stroke clears Cleaned and nothing else; editing text or style clears nothing |
-| `NaturalSortTest` | 6 | Page order by file name: numbers by value (`2` before `10`, `p9` before `p10`), zero padding, case ignored, several number runs, runs longer than a Long |
-| `SiteMatchTest` | 6 | Which saved site owns a URL: subdomains, segment-boundary prefixes, several sites on one host; a saved series scopes its own glossary and notes (`seriesKeyFor`) |
-| `TranslationNotesTest` | 5 | What the AI engines are told: characters with pronouns first, then series and Settings notes; a term without a pronoun is no character; each note capped; a glossary term is trimmed and cut to 60 characters |
-| `PatchTest` | 2 | A rendered patch is shown from its pixels and encoded to WEBP only when its bytes are first read, once; a cached patch has bytes only |
-| `ReadStateTest` | 3 | Only the read state marks a region unread or unreadable, never its text; a Studio region saved before the state existed is upgraded from its filler text; a region with a state round-trips unchanged |
-| `WebUrlTest` | 6 | https only: https kept, http upgraded, a bare host gets `https://`, whitespace trimmed; `javascript:`/`file:`/`content:`/`intent:`/`data:` and non-URLs are null |
-| `CustomProviderTest` | 6 | Custom AI's named providers: each preset reads back from its own address, also with another case, a trailing slash or a pasted `…/chat/completions`; each preset address is a usable https base kept as written; another path on a preset's host, any other address, a blank or unusable one are Custom; Custom has no address and is not a preset |
-| `CustomEndpointTest` | 18 | The "Custom AI" server address: a base is kept as written; whitespace trimmed; a pasted `…/chat/completions` (with or without a trailing slash) is reduced to its base; any version path is preserved and `/v1` is never added; blank, scheme-less, host-less, spaced, query, fragment, other-scheme and credential-bearing addresses are null; plain http is refused unless the test switch allows it |
-| `ModelSizeHintTest` | 3 | The Custom AI sheet's small-model hint: a size in the model name is read (`…-1.5b`, `0.5B`), the last one wins, a name without one gives none |
+| **`SecureKeyStoreInstrumentedTest`** | `:core:data` | Verifies AES-GCM encryption/decryption using the real hardware-backed Android Keystore. |
+| **`PipelineInstrumentedTest`** | `:core:pipeline` | Processes a synthetic comic page through detection, OCR, translation, and WebP patch rendering. |
 
-### core:data (86)
+---
 
-| Class | Tests | Covers |
-|---|---|---|
-| `Migration3To4Test` | 2 | A version-3 database opened by the app: sites, history, glossary and SFX cache survive; the Studio tables exist; `url_etag` and `ocr_cache` are dropped |
-| `Migration4To5Test` | 2 | A version-4 database opened by the app: glossary entries survive without a pronoun and take one; series notes are stored, read and removed per series |
-| `RetiredSfxModeTest` | 3 | Studio effects saved as Gloss or Overlay (removed) open as Replace with their text and transform kept; Overlay, never written, reads as Replace; Keep and Replace read as saved |
-| `StudioDaoTest` | 14 | Studio library (Robolectric, in-memory Room): an import numbers its pages and counts them; appended pages and new chapters go last; reviewed progress; reordering pages and chapters sticks; moving pages renumbers both chapters and leaves the files; deleting pages, a chapter or a manga cascades to rows and files; a chapter moves to another manga; the orphan sweep spares saved and in-flight pages; JSON columns round-trip; paths outside the Studio root are refused |
-| `PatchCacheTest` | 5 | Round-trip of patch geometry and bytes; LRU eviction over budget (on a stepped clock, no sleeps); a corrupt file is dropped, not thrown; an out-of-range length is refused before allocating and the file deleted; the key includes everything that changes rendering, the reader's font too |
-| `ReleaseInfoTest` | 11 | In-app updates: GitHub's latest-release reply is read; drafts, pre-releases and a release without its `.sha256` are not offered; an APK URL that leaves this repository's releases once resolved (`..`, encoded dots, `%2F`, a query, a fragment, a user or a port) is refused, as is one outside this repository's https releases is refused; versions compare as numbers; the checksum line is matched by file name; a tag with a suffix (`v0.3.0-test`) is not a release; installed, older and interrupted downloads are spent, a newer APK is kept; missing or odd optional fields are read or refused without throwing; only a release-shaped reply counts as an answer; nothing is newer than an installed version that cannot be read |
-| `AppUpdatesTest` | 20 | The update flow against a local server standing in for GitHub (no internet): a newer release is offered and the check remembered, with GitHub's media type and nothing about the user; the same, older, pre-release or asset-less release is up to date; an unreadable installed version is never offered an update; HTTP 403, 404, 429, 500, 502, 503, an HTML page, an empty or cut reply, no connection, a refused connection and a server that never answers are a failed check, never "up to date", and not remembered; repeated checks end with one answer; at start nothing happens in a debug build, with the check turned off or within a day, a failure shows nothing and is retried next start, only a newer release is shown; spent APKs and `.part` files are deleted at start; a verified download is ready for the installer, a checksum mismatch or a missing checksum fails with nothing handed over, an earlier finished download is reused; Cancel and a check during the download remove the system download; Later is ignored while downloading |
-| `SettingsRepositoryTest` | 19 | Settings as stored across releases: defaults on a fresh install; From then To picked within a minute is one recent pair (the pair passed through is not kept), a later pick a new one; the Studio's default export folder (Downloads until one is set, blank or null goes back); a removed engine (Qwen 0.5B, Gemma 3) reads as the default; removed sound-effect modes read as Replace; a retired Gemini model resolves to the current default, blank clears; a font saved before the catalogue reads as its catalogue id, and Auto chosen afterwards sticks; unknown values fall back; notes trimmed and capped; update settings, the automatic-packs flag, per-model request profiles and favourite fonts round-trip; the Studio's "only while charging" (off by default) and the running chapter, kept until cleared; setting both languages remembers the pair (newest first, at most four, never one language on both sides, broken entries skipped); the page-translate target is observable |
-| `SystemDownloadsQueueTest` | 7 | DownloadManager bookkeeping (stray `name-N.part` copies cleared when a model is queued again; waiting downloads at one address — ML Kit's packs — removed, the app's own kept; Robolectric's): a download is queued once and remembered across restarts; a stale half file is cleared when one starts; cancel removes and forgets it; following a download never started fails; one the system lost is reported and forgotten, never awaited forever |
-| `UnmigratedVersionsTest` | 2 | The database as the app opens it (`DataModule.db`): a version with no migration (2) and a newer one (an older APK over a newer build) are rebuilt empty at version 5 and usable, not a crashed launch |
-| `SystemDownloadsIntegrityTest` | 5 | A download matching its SHA-256 is moved into place and remembered; a mismatch is deleted, never placed; a file already on disk is checked once; a file changed after its check is checked again; a cleartext download is refused before it is queued |
-| `HttpsOnlyTest` | 1 | The update client's guard: a cleartext request is refused before it reaches the server |
+## Physical Device Verification Checklist
 
-### core:engine (151)
+Certain hardware-dependent behaviors (GPU runtimes, thermal throttling, real WebView surface compositing) require manual validation on a physical device.
 
-| Class | Tests | Covers |
-|---|---|---|
-| `RegistryAndQwenTest` | 28 | **Engine selection:** the default is Google Translate; only Gemini, Custom AI, Google Translate and the on-device models are offered; a planned engine never resolves; a removed engine saved by an older version reads back as the default; a keyed engine without its key is `MissingKey`, never a fallback; removing a key keeps the selection. **On-device prompts:** numbered-line payload with SFX marked; token-budget chunking; lenient line parser that drops echoes and stray numbers; streamed reply cut when complete; partial replies keep what parsed and retry only the rest; byte-level stand-ins repaired; system text and payload as separate turns. **Model lifecycle:** a missing model is a typed failure; loading one model releases the other; Gemma 4 only on 8 GB phones; *Qwen runs on* reloads Qwen on the other backend at its next call; Automatic picks the CPU under 6 GB; a model busy when the UI is hidden is released after its last call; coming back first keeps it |
-| `ProviderEngineTest` | 8 | Against MockWebServer: 401 → `MissingKey`; a missing key never reaches the network; Gemini steps down past a request option a model refuses and remembers it; display names resolve to ids, Gemma models get no Gemini-only options; the model list keeps text models, Gemini first; OpenRouter sends the user's model and key |
-| `LlmContractTest` | 17 | The cloud JSON contract: strict and tolerant parsing (prose, code fences), length mismatch and garbage are `Malformed`; HTTP status mapping, Gemini "high demand" is `Overloaded` with the provider's message; the retry policy is bounded and capped; glossary and montage mapping in the prompt; the reader's notes reach the cloud, on-device and per-item prompts and survive `withItems`; an on-device reply that repeats the source before its translation is cut to the translation, an ordinary colon is kept; a line holding another writing system than the target's (もちろん, गहराई in English) is retried, then its foreign words are cut; the reply's output-token budget grows with the items (300 + 120 each) up to 8,192; the Custom AI prompt shows what a one-item reply looks like, and its retry message carries the input with it |
-| `LlmContractTolerantParseTest` | 19 | Replies from compatible servers: a bare object, a fenced pretty-printed array, a `translations` wrapper, prose before the array, brackets inside a bubble's text, `english` / `translation` keys and extra keys are read; a wrong id or count, duplicate requested ids (also as string and number, also inside a wrapper), a non-primitive id or text, numbers or booleans as text and a missing text are `Malformed`; an empty text is kept; `salvage` keeps the good items of a refused reply, drops an id that comes twice or was not asked for, and finds nothing in garbage |
-| `PromptPartsTest` | 2 | Glossary terms and the last two preceding lines are rendered once, the same way in the cloud and on-device prompts |
-| `CustomOpenAiEngineTest` | 19 | The "Custom AI" engine against MockWebServer: the user's model and key reach the configured server at `<base>/chat/completions`; a pasted full address is not appended twice; the path the user wrote is the path called; the request is text only (no image, no base64); a missing key, a missing model and a missing address are typed failures that never reach the network; a plain http address is refused in production; a server that refuses `temperature` is asked once more without it, and twice-refused is a typed failure; 401 → `MissingKey`; a garbled reply is retried once with the input and no history, a second is `Malformed`; a reply with empty fields or content as a list of parts is read, one without content is `Malformed`; a partly good reply keeps its good items and asks again only for the rest, with a cap for that many; every item among junk needs no second call |
-| `EngineHttpGuardTest` | 6 | Every engine call: a 301/302/307/308 is not followed (the other host gets nothing) and is `Unavailable` naming it; plain HTTP is refused before anything is sent; a reply or error page past the cap is `Malformed`, declared or chunked; a reply under it reads as before |
-| `GoogleTranslateEngineTest` | 9 | ML Kit translation behind its seam: every item translated, pack downloaded once; a pack the user has not downloaded is a typed `PackMissing` and nothing is fetched; glossary terms before and after; names learned in one request apply to the next; Japanese prepared first, Korean passed through; an echoed sound word romanised for Latin targets; a failed pack download is a typed `Unavailable` |
-| `JaPrepTest` | 7 | Japanese preparation for ML Kit: names found by honorific, whole-bubble and repetition (a loanword seen twice is not a name); names and honorifics swapped; casual negatives standardised; romaji for names and sound words |
-| `PageTranslatorTest` | 5 | *Translate page*: language detection falls back to the page language and rejects romanised text; same language returned unchanged; order kept, a failed text left as it was; all failing is an error; a language pair prepared once |
-| `BatchingTranslatorTest` | 6 | A page of more than one call's items (60) is translated whole; Gemini reads unread regions from their crops and returns what it read (its request capped at the items' output budget); an on-device model gets one image per call; two series whose notes have the same hash never share a call; a failure surfaces typed instead of switching provider; a cancelled caller cancels its generation |
-| `SfxDictionaryTest` | 4 | The bundled SFX tables: hiragana finds the katakana entry; another ッ or ー still matches (ガツーン → ガツン); other words miss; both tables parse with a rendering for every entry |
-| `LanguagePackStoreTest` | 6 | Google Translate packs: every app language once (Chinese variants share a pack); only Japanese, Korean and Chinese download automatically; any other pack is missing until the user downloads it, and asking never downloads; English and packs already present are never fetched; a failure is reported for that language only; delete removes one pack, never English |
-| `HttpFailureWireTest` | 8 | Cloud failures through Retrofit and OkHttp, not the status mapper alone: a server that never answers and a dropped connection are `Network`; 429 carries the server's Retry-After, a quota 429 is `QuotaExceeded`; 500/502/503/504 are `Overloaded` with the provider's message; a 200 that is no JSON (a captive portal) is `Malformed`, never an untyped exception; an overloaded provider is retried on the same engine and model, retries are bounded, a rejected key is never retried |
-| `OfflineEnginesTest` | 4 | Airplane mode with every HTTP request failing: Google Translate (packs on the phone) and both on-device models warm up and translate without trying a single request; the cloud engine fails as its own `Network` failure, no fallback; its warm-up offline is silent |
-| `ModelPinningTest` | 3 | Every on-device model's URL is https and pinned to a 40-hex commit, with a 64-hex SHA-256 and sane sizes; files, hashes and engines are distinct; a retired model's file is no current model's |
+```bash
+# Compile debug build with speed optimizations
+adb shell cmd package compile -m speed -f com.smnexstudio.panelglass.debug
+```
 
-### core:ocr (45)
+### 1. Reader & Viewport Translation
+- [ ] **Continuous Translation:** Open a live manga chapter; press Start; verify bubbles translate and patch overlays align smoothly during scrolling.
+- [ ] **Zoom & Pan Stability:** Pinch-zoom to 200%; verify patches remain anchored to comic artwork.
+- [ ] **Orientation Handling:** Rotate device between portrait and landscape; verify patches refresh to match the new layout after 1.2 s.
+- [ ] **Whole-Page Scan:** Run **⋮ › Translate whole page**; confirm auto-scrolling, 30% overlap retention, and memory budget containment.
 
-| Class | Tests | Covers |
-|---|---|---|
-| `HighContrastTest` | 3 | The second OCR reading: dark lettering stays black on white, light lettering on dark art is inverted, a flat crop has nothing to separate |
-| `MissedTextTest` | 4 | The PP-OCRv6 second pass: a confident probability blob becomes a box grown as PaddleOCR unclips, a faint one is not text; nearby characters (타 + 닥) merge into one block; only boxes outside the comic detector's, and not tiny art print, are kept |
-| `UnsureFreeTextTest` | 2 | manga-ocr's unsure readings of free-text boxes (speed lines, small print, a watermark: 0.62–0.73) are not text; real free text (≥ 0.87), any balloon and an empty reading are kept |
-| `RegionClustererTest` | 9 | A region takes its lines' read state (unread, unreadable), and with read lines only their text; vertical columns merge right to left; centred horizontal lines merge top to bottom; vertical and horizontal never merge; font-size mismatch and distance keep bubbles apart; Japanese reads top-right first, English top-left; a Korean caption read twice is kept once |
-| `RegionBuilderTest` | 7 | One region per text box, read right to left; text boxes claim lines before the balloon around them; lines outside every box fall back to clustering; the box class seeds the kind but keeps colours; free text is left for the pixel classifier; lines with no letter are not text; a region knows whether a detector boxed it (a lone full-page letter is dropped by the pipeline) |
-| `RegionClassifierTest` | 6 | White bubble on busy art is `ENCLOSED`; grey box is `CAPTION`; text over art is `FREE`; big katakana over art is `SFX`; rotated free text is `IN_SCENE`; white lettering on a black burst reads light on dark |
-| `CropGeometryTest` | 4 | Crop scaling (small crops grow up to 3×, large ones shrink to the cap); rotated-pass rows map back to their column, both directions; corners round-trip |
-| `MangaOcrRepeatTest` | 3 | A looped sentence collapses to one; a partial repeat cut by the token cap is dropped only when truncated; short real repeats are kept |
-| `UprightTiltTest` | 3 | ML Kit's angle as a tilt from upright: a vertical column (±90°) and upside-down text are upright; a real tilt is kept |
-| `PanelCutterTest` | 2 | Synthetic panels detected and regions ordered by panel, right to left for manga |
-| `ModelPinningTest` | 2 | manga-ocr's and LaMa's download bases are pinned to a commit; LaMa's hash and size floor are sane |
+### 2. AI Translation Engines
+- [ ] **Google Translate (ML Kit):** Translates offline without network; sub-second response times.
+- [ ] **Google Gemini:** Verify direct image-crop translation mode with a valid API key.
+- [ ] **Gemma 4 E2B:** Run on an 8 GB device; verify natural dialogue flow and character pronoun accuracy.
+- [ ] **Qwen 2.5 1.5B (GPU vs CPU):** Toggle **Settings › Models & downloads › Qwen runs on**; verify execution on both OpenCL GPU and CPU backends.
+- [ ] **Custom AI:** Configure self-hosted OpenAI-compatible endpoint; confirm translation over HTTPS.
 
-### core:render (62)
+### 3. Studio Chapter Pipeline
+- [ ] **Archive Import:** Import a `.cbz`, `.zip`, `.7z`, and multi-image selection; confirm page ordering and `ComicInfo.xml` reading.
+- [ ] **Background Chapter Translation:** Start translating a 20-page chapter; press Home; turn screen off; verify notification progress and completion.
+- [ ] **Crash Resilience:** Force-kill app mid-translation (`adb shell am kill`); reopen Studio; verify translation resumes from first unfinished page.
+- [ ] **Interactive Bubble Review:** Tap bubbles; edit original transcription and translation; verify auto-saving after 400 ms.
+- [ ] **LaMa Inpainting:** Download LaMa; clean a sound effect over complex artwork; verify seamless background reconstruction.
+- [ ] **Export Options:** Export chapter as CBZ, ZIP, and raw image folders; verify clean (text-free) export modes.
 
-| Class | Tests | Covers |
-|---|---|---|
-| `FontCatalogueTest` | 5 | The bundled font catalogue as shipped: every file is there with its pinned SHA-256 and its licence beside it; every target language's dialogue and sound-effect default draws that language's script; roles and variation settings are read; search ignores case and accents and needs every word; every font the reader offered before the catalogue is in it |
-| `FontNameTableTest` | 4 | A font file's kind from its signature (TrueType, CFF, collection; a ZIP refused); family and style from the `name` table, the typographic names (16/17) winning; truncated or table-less files give nothing |
-| `SfxRendererTest` | 4 | Sound effects on a native canvas: an effect starts centred on its box in the Settings mode (a tall one turned, never on its side); Keep draws nothing and Replace draws around the centre; moving and rotating follow the transform (the transform box turns with it); presets set the look and keep the place, and switching preset drops a double outline |
-| `PageCleanerTest` | 7 | The Studio's clean layer on plain pixels: a flat balloon is filled with its own colour; pixels outside the bubble's polygon never change; dismissed bubbles and sound effects not set to Replace are kept; a clean stroke removes what it covers and nothing else; a restore stroke brings the original back; the original is never modified; with LaMa, a brush stroke and a replaced effect over art go to it (nothing outside the polygon changes) while a plain balloon keeps its exact flat fill |
-| `PolygonFitTest` | 4 | Where text goes in a shape: a rectangle keeps almost all of itself; an ellipse gets the centred inscribed rectangle (1/√2 of its axes); a concave L stays out of its notch; degenerate shapes give nothing |
-| `StudioRendererTest` | 9 | Studio lettering on a Robolectric native canvas: a transparent fill keeps every pixel outside the polygon; a 50% fill blends over the art; text stays inside the inner rectangle; dismissed and empty bubbles are not lettered; a fixed size is used as given; a bubble border is drawn along the shape in its colour, and none by default; round corners leave the corner itself and keep the edges; text in an oval balloon shaped as its box stays on the paper (nothing drawn in the box's corners); a filled bubble's text uses its shape as drawn |
-| `BalloonFitTest` | 4 | A balloon's paper: the text box stays inside an oval, not its bounding box; a speck of leftover text at the centre does not stop it; the traced outline follows the oval with text still in it; dark art or a small white patch is no balloon |
-| `BalloonShapeTest` | 3 | The reader's balloon text: every rectangle offered lies on the balloon's paper, wide and tall ones included; the outline follows the balloon, not its box; a balloon without paper or outside the crop keeps its box |
-| `TextEraserTest` | 8 | Bubble glyphs filled with the background; a text box as large as the balloon still erases the ink; bright halo uses the halo fill; inpainting on a smooth gradient is accepted, a smear over busy art rejected; mask rotation recovered; light lettering in a thick dark outline loses the outline too (the mask reaches with the glyph size) |
-| `LongestRunTest` | 5 | The unbreakable run the text fitter tests: an English word with its punctuation; hyphens break; ellipses and quotes do not join words; CJK breaks between any two characters |
-| `PanelInkTest` | 3 | Ink on a mask: contrasting ink kept, otherwise black on a light mask and white on a dark one |
-| `RegionRendererTest` | 6 | The reader's patches on synthetic pages: balloon text becomes a patch over the whole balloon, its bitmap the patch's size; outside the balloon the patch is transparent or the art's own colour, never painted; nothing is drawn for an empty translation, free text off or sound effects kept; overlay mode covers free text; an unreadable effect is erased to its background; an erase that changes nothing is no patch |
+---
 
-### feature:browser (49)
+## Non-Automated / Out-of-Scope Areas
 
-| Class | Tests | Covers |
-|---|---|---|
-| `BlockListTest` | 11 | Hosts and AdBlock formats parsed; exact hosts and their subdomains blocked, parents and unrelated hosts not; `@@` exceptions win; wildcard and context-scoped rules skipped; localhost ignored; cached form round-trips |
-| `PatchAnchorTest` | 8 | A patch is anchored to the image under its centre; it follows a reader moving its page in its own layer and scroll anchoring; no key, no anchor; an image off screen leaves the patch in place; the anchor is the same place on the art at any zoom; a patch's CSS rect scales with the zoom; one bubble captured at two zooms is a duplicate |
-| `SessionLanguagesTest` | 4 | The page's detected language applies on its host only; a site's saved source wins over it; the launch intent wins over both; ML Kit tags map to Japanese, Korean or Chinese (a chosen Chinese script is kept) |
-| `SeriesMemoryTest` | 2 | Glossary edits (Robolectric, in-memory Room): nothing is saved before the series is known; terms are trimmed and saved to the current series, a term with no rendering is not, and the writes are handed over once |
-| `ContentChangeTest` | 4 | Page turn without a scroll: another page is a change; our own patches and a fading control are not; all-patched cannot tell |
-| `SameSiteTest` | 3 | Same-site test for pop-ups: subdomains share a site, public suffixes do not; case and trailing dot ignored |
-| `NavigationPolicyTest` | 11 | The WebView's policy (Robolectric `WebView`): non-web schemes (`javascript:`, `intent:`, `market:`, `file:`, `data:`, `content:`, custom) never load or leave the app; only a tapped `mailto:`/`tel:`/`sms:` opens another app; an http link is followed as https, a redirect down to http is not upgraded; same-site https loads; a script-driven cross-site navigation is a blocked pop-up, a tapped one or a redirect is not; a blocked host never gets the main frame, even on a tap; sub-frames are left alone; only a tapped same-site https new window opens; blocked sub-requests get an empty body of the expected type; a new page resets the count |
-| `BlockListRepositoryTest` | 7 | The runtime block lists (Update during a running refresh joins it and gets its answer, never "failed"); (an interceptor answers each URL): AdGuard failing falls back to StevenBlack; a list too small to be real is refused; offline, the cached lists are loaded and kept; one source failing keeps its last copy in the merge; the legacy cache file seeds the ad list; a stale list is refreshed on load and replaced |
+The following components are verified exclusively through manual physical device checks:
+- **Real OpenCL GPU Acceleration:** Hardware-specific driver variations across Adreno, Mali, and PowerVR GPUs.
+- **PixelCopy Surface Pipeline:** Hardware-protected DRM streams or canvas surfaces in third-party WebViews.
+- **R8 Minification / ProGuard Verification:** Release APK shrinking is validated via smoke-testing release artifacts.
 
-### feature:studio (239)
+---
 
-| Class | Tests | Covers |
-|---|---|---|
-| `CanvasTransformTest` | 10 | The review canvas's view: the fit shows the whole page centred; a touch maps to the same page pixel at 1×, 3× and 8× and after a pan; a pinch keeps the point under the fingers; zoom stays within 1–8×; panning never shows space beyond the page; double-tap on a bubble fits it, on the art toggles fit ↔ 2.5×; following a selection keeps the zoom and pans it into view, zooming out only for a bubble that cannot fit; a resized canvas (keyboard) keeps the centre and scale |
-| `PageCanvasGestureTest` | 8 | The canvas's gestures on a Robolectric Compose tree: a tap selects the bubble under it and empty art clears it; double-tap zooms to a bubble, and on the art in and back out; two fingers zoom; a long press edits in place; in Add mode a drag draws a box in page pixels; one finger pans when zoomed |
-| `PolygonHitTest` | 6 | Tap tests on bubble shapes: rectangle, concave L, ellipse; the smallest containing shape wins (a text box inside its balloon); a tap just outside picks within the slop; a degenerate polygon never contains |
-| `ScrollbarTest` | 5 | The editor's scrollbar: none when everything fits; at the top for a long list; reaches the bottom at the end; moves with the scroll; a very long list still has a thumb to see |
-| `StorageSpaceTest` | 2 | Imports and exports need their size plus a 64 MB reserve (an unknown free space is not refused); a full storage is recognised from `ENOSPC` through an exception's causes, other write errors are not |
-| `ExportNamesTest` | 6 | Export names: reserved characters, trailing dots, device names and long names are made safe, any script kept; `Ch 012 - Title`, `Ch 012.5`, the title alone, or `Chapter <n>` by position; `001.png` widening past 999 pages, `001.jpg` for JPEG pages; archives named `Ch 012 - Title.cbz`; a clean export's name ends in ` (Clean)`, kept whole; ComicInfo from the manga and chapter (date split, the chapter's own language, right-to-left only for a right-to-left source, the manga's status); the series ComicInfo holds the series and no chapter (status, language unless clean) |
-| `StudioExporterTest` | 21 | Export into plain directories (the MediaStore / SAF seam replaced): a manga can choose Downloads over another default folder (`StudioExporter.DOWNLOADS`), and back; the default folder takes every manga without its own, a manga's own folder wins and dropping it goes back to the default; by default pages and ComicInfo.xml in Downloads `<Manga>/<Ch …>/`; a CBZ holds the pages and ComicInfo.xml; a second export replaces files and deletes page files beyond the new last page but keeps other files; the overwrite count per format; chapters in order, an unnumbered one named by position and lettered in its own language, several chapters named by the manga's folder; a picked folder serves its manga only and can be dropped for Downloads; a folder without permission fails before writing; not enough free space is refused before writing; a full storage while writing is told from another write error; an unreadable page stops it and leaves no half archive; the format and page quality are remembered; JPEG pages replace the PNG ones; each folder or archive is listed with its size on disk; the plan names the files, the pages, the size estimate, the free space, the files it will replace and the unreviewed pages; the run's start, end and time left; a clean export sits beside the translated one, each counting only its own earlier file, its ComicInfo without a language; the manga folder gets `cover.jpg` (the first page as exported when no cover is set, the Studio's cover when set, replaced when it changes) and its own ComicInfo.xml with the status, also in each chapter; a first page that cannot be drawn leaves no cover and the export still succeeds |
-| `CoverCropTest` | 3 | The 2 : 3 cover window: a wide picture is cut across and slides sideways, a long strip is cut downwards (top first for a page), an exact 2 : 3 picture is kept whole, the bias is clamped |
-| `LibraryOrderTest` | 2 | The Studio library's search matches the title or alternative title, ignoring case and spaces; newest first or title A–Z |
-| `WidthClassTest` | 1 | The phone / tablet / laptop breakpoints (600 and 840 dp) every Studio layout switches on |
-| `FolderChaptersTest` | 6 | A CBZ's folders as chapters: two chapter folders become two numbered chapters (title after the number kept); numbers from `Chapter 66`, `c012`, `第14話`, a bare `15`; folders holding chapter folders (`<source>/<series>/<chapter>`) are series; ComicInfo names the series (any case) and fills a missing number; volumes, numbered parts, chapters at two depths, one series or no folder above the chapters are not several series, names that only start like a volume are; one folder, loose pages, or loose pages beside folders stay one chapter |
-| `PeopleTest` | 2 | Several authors or artists in one field: names split on commas and semicolons (Japanese 、 too), trimmed, a repeat dropped; one name or none stays as it is |
-| `ColorMathTest` | 5 | The colour picker's maths: colours survive a trip through hue / saturation / value; primary hues land at 0, 120 and 240; alpha is kept; the hex field takes `RGB`, `RRGGBB` and (for fills) `AARRGGBB`, keeps the opacity when none is typed, and refuses anything else; codes are written back without alpha when opaque |
-| `TileCacheTest` | 6 | Zoom tiles: the base is enough until the zoom needs more pixels, then the matching sample; only visible tiles are listed; edge tiles clipped to the page; the LRU stays under its byte budget and frees what it drops; 12 MB under 4 GB of RAM, 24 MB otherwise; a page change frees everything |
-| `StudioTranslatorTest` | 18 | Chapter runs with a scripted detector and engine (Robolectric, in-memory Room): every page is read before any is translated, and each page gets the previous page's last lines; a run stopped by a failure resumes from the page missing a stage without reading or translating anything twice; a missing key stops before any work and never switches the engine; a timeout fails only its page; an engine that reads the crops fills in the source text, and a text engine reads such a page again; Translate again redoes every page but keeps dismissed bubbles and clears Reviewed; an edited source text is what gets translated; one bubble is translated again with the bubbles before it as context; a boxed bubble is read, translated and added last; a boxed bubble is kept when the engine cannot be used; every page is cleaned after every page is translated, and a second run has nothing to clean; cleaning a page uses its bubbles and strokes; in the background: before every page of every phase the run asks the gate, and while held it says why and reads nothing; a run cut short (the app killed) carries on at the next start and an ended one is forgotten; nothing is resumed when no run was cut short; cancelling a held run ends it, forgets it and clears the pause; a Translate again cut short after its first page is finished by the next ordinary run, nothing done twice; one that cannot start (no key) clears nothing |
-| `RunGateTest` | 10 | When a Studio run gives way: a healthy phone never waits; the user first, then heat; Battery Saver and a low battery unless charging; "only while charging" holds on-device runs only, off by default; no network holds cloud engines only (not ML Kit or the on-device models); the reader holds on-device runs only; the gate returns at once when open, holds a user pause until Resume, waits out heat and follows the reasons as the phone changes, and wakes when the reader leaves |
-| `RunNotificationsTest` | 6 | The run's notification (Robolectric): the page in progress per phase; why the run waits, and "pausing after this page" at once; Pause and Cancel with the progress bar while it works, ongoing; Resume when paused, each action aimed at the service; a tap opens the chapter; a quiet (low-importance) channel |
-| `GridReorderTest` | 2 | Compose (Robolectric): a long press and drag over clickable tiles moves the item and drops once, without clicking; a tap still clicks |
-| `ArchiveImporterTest` | 31 | Archives through `ArchiveReader` and `PageStager`, each built in the test: natural page order; `__MACOSX`, hidden files and known side files (`.txt`, `.nfo`, `Thumbs.db`, unfinished `.tmp` downloads) left out silently; every ComicInfo reported with the folder of its pages (top, inner zip, inner 7z, a plain folder); entry names never become paths (zip-slip); ComicInfo.xml read, an oversized one ignored; an oversized entry (declared or unpacked) refuses the archive; a bomb offered as a page stops at the total cap, one in a left-out entry is never unpacked; too many entries refused; an over-pixel page skipped; GIF / AVIF / animated WebP converted; a fake image skipped; something that is no archive refused. What the old stream reader could not open: stored entries with their sizes after the data; Shift_JIS names without the UTF-8 flag, UTF-8 ones without it; pages without an extension, `.jfif`, AVIF behind `mif1`; HEIC / JPEG XL / BMP skipped as unsupported; an encrypted zip refused; an entry in PPMd skipped. 7z read with its ComicInfo; zip / 7z / RAR told apart by their first bytes; RAR refused with its own reason; a 7z bomb stops at the cap. Inner archives: each becomes a chapter folder (zip and 7z, folders flattened) and is deleted once read; one two levels deep is skipped; a broken one or a RAR (also named `.cbz`) is skipped, not fatal; inner archives share the outer caps. `readAtMost` (the API 31 stand-in for `readNBytes`) across short reads |
-| `ImageHeaderTest` | 9 | Size and format from the header alone: PNG, JPEG past a large EXIF segment, the three WebP forms; animated WebP, GIF and AVIF are converted, still images copied; AVIF behind a generic `mif1` main type is AVIF, HEIC behind it is not; HEIC, JPEG XL (both forms), BMP and TIFF are told apart from junk as unsupported images; HEIC and junk are not images |
-| `ImageImporterTest` | 8 | Twenty picked images keep the natural order and their bytes; a preview reorder sticks; over-cap, oversized and HEIC files (as an unsupported format) are refused without leaving a file; converted formats have their own cap; an undecodable file is skipped; discarded pages are deleted; series / chapter / volume guessed from file names; PDF pages rendered at 2×, capped at 2000 px wide and by pixels |
-| `StudioImporterTest` | 11 | The import orchestrator over content URIs (a fake documents provider): picked images staged in natural order with progress; an unreadable file skipped and the rest imported; a pick with no image refused and nothing left; too many pages refused before staging; a cancelled import leaves no page directory; a CBZ staged with its ComicInfo and title; a plain `.zip`, a `.cb7` and a 7z named `.cbz` all import, and the cache folder is emptied; an inner RAR is listed as skipped; a RAR and a non-archive refused, nothing left; an archive without pages refused; discard deletes staged pages |
-| `ReviewPanelsTest` | 22 | The review editor's panes in Compose, each hosted with its value in state: bold, italic and capitals switch on their own; Auto size toggles with 32 px; an outline offers its colour, none removes it; "Every bubble" applies at once and keeps applying; Auto text colour; the colour picker previews a typed hex code and Cancel restores, Use keeps it; a fill starts opaque white, No fill clears it; reshape presets and a border with its colour row; brush mode, size, stroke count and undo (none without strokes); Add as text or effect; a sound effect's Keep hides the replacement controls, bold and double outline toggle, a preset is recorded, Remember until remembered; the Bubble tab's hint, both text fields, re-translate, Not text, delete only after confirming, a dismissed bubble's Restore; Proofread numbers (none for a dismissed bubble), the effects-only filter and selection; the header's bubble stepper and tab switch |
-| `ExportViewModelTest` | 10 | The export view model over the real exporter and plain directories: chapters with translated pages start ticked, or only the chapter the screen was opened for; select all / none / one; Next needs a ticked chapter, then what to export, format and folder, and Back steps one at a time; the plan naming `Ch 001/` (Images by default); an export writes the chosen format and remembers format and quality; a finished export is not shown on the next visit; Export again returns to the list; a folder that cannot be kept is refused and Downloads restores; a picked folder is used, named and kept for the manga; a clean export writes clean pages under `(Clean)` and is remembered |
-| `ExportScreenTest` | 6 | The export screen in Compose end to end: an untranslated chapter is marked and Next disabled; the whole flow writes a ZIP of smaller pages and Done leaves; Back returns step by step to the list; a clean export writes text-free pages; the confirm step warns about a file it replaces; Select all ticks every chapter with pages |
-| `ImportViewModelTest` | 14 | One import from pick to save over the real importer and Room: the picker is not opened again when the screen is rebuilt from its saved state; picked images become a new manga in the order shown, a new manga needing a title; pages reordered and removed before saving (a removed page's directory deleted), Settings' source language prefilled; a CBZ's ComicInfo names series, number and title and joins the manga of that title; its summary, `LocalizedSeries` (alternative title) and Mihon's status fill and save the new manga; an existing manga suggests the next chapter number; a folder per chapter becomes one chapter each; a pack of several series becomes one manga each (titled, credited and summarised from ComicInfo, no title to type, an existing manga of that title gets its chapters), or one manga when that is switched off; pages added to a chapter join it; a refused pick says why and stages nothing; an empty pick does nothing; leaving before saving deletes the staged pages; saving twice saves once |
-| `FontsViewModelTest` | 6 | My fonts over the real font store (Comic Neue from `core:render`'s assets, native graphics): a picked font is added under its family name with its scripts; a second style joins its family; the same file again and a file that is no font are refused; an empty pick does nothing; rename, role and delete with its files (the file check is skipped on Windows, which cannot delete a font the process has loaded); a blank name is ignored |
-| `ReviewSavingTest` | 5 | The review editor never loses typing (Room in memory, virtual time): a translation is saved when typing pauses (400 ms), not before; fast typing is one save and one undo step, with undo and redo; a page turn and leaving the screen save pending typing at once; an edit that changes nothing is no undo step |
+## Known Flaky Tests
 
-### core:pipeline (27)
+- **`StudioImporterTest.discardDeletesStagedPages`:** Occasionally encounters transient `EPERM` or file-lock errors on Windows host environments when local antivirus scanners inspect newly written PNG files. Passes reliably on Linux CI workers and physical Android devices.
 
-| Class | Tests | Covers |
-|---|---|---|
-| `TileDetectionTest` | 8 | Tall pages (over 2 widths) are tiled, short ones not; tiles cover a 800 × 20000 strip and overlap; the copies an overlap makes merge into one; the copy a tile saw whole wins over a cut one; a box cut in every tile is their union; different box kinds and separate bubbles stay apart; page edges are not cuts |
-| `DetectionStageTest` | 7 | A free-text box the detector is sure of with nothing read in it becomes an unreadable line; read, unsure and balloon boxes do not; a reading nested in one that holds its text is dropped, neighbours and other text are kept; two columns of one balloon (a narrow one beside a wide one, the balloon smaller than the lettering) become one region read right to left; text far apart in a box spanning joined balloons is not merged |
-| `SeriesResolverTest` | 2 | The patch-cache digest: empty with no glossary or notes; follows terms and notes, not their order |
-| `TranslationPipelineTest` | 10 | The reader's pipeline on the JVM with a scripted detector and on-device model and the real detection stage, batching translator, renderer, patch cache and glossary: a page is detected, translated and rendered to in-page patches; the same pixels again come from the cache with no detection or engine call; Re-translate bypasses the cache; a notes or glossary change misses it; a hung engine fails its image with the watchdog; a broken engine is a typed failure; cancelling the caller cancels the generation; a snapshot too small is skipped before detection; nothing in the region of interest, or an area already translated, means no engine call |
+---
 
-### feature:settings (42)
+## Guidelines for Adding Tests
 
-| Class | Tests | Covers |
-|---|---|---|
-| `SettingsViewModelTest` | 13 | The engine choice (real registry, every HTTP request failing): a keyed engine without a key opens its sheet and keeps the selection; saving the key there completes it; a sheet closed without a key selects nothing; an engine needing no key is selected at once; removing a key keeps the selection; planned engines and models the phone cannot hold are not offered; the Try box without a key fails typed without a request, and translates with the selected on-device engine; swap trades the languages and remembers the pair, but never swaps in a target the reader cannot read; updating the block lists says whether it worked; the glossary is counted across series; storage is measured (packs as ~30 MB each) |
-| `SettingsScreenTest` | 25 | The Settings hub and its pages in Compose over a real view model (`SettingsRig`: no network): the hub says what each page holds; search finds a row and opens its page, and says when nothing matches; the system Back clears a search (never leaving Settings) and returns from a result to the results; Back returns to the hub; every button and switch on the hub and on every page has a label for TalkBack (`unlabelledControls`); a theme tapped is saved; the Studio's charging switch; From picked and saved; the swap button; sound effects kept; notes saved as they are typed, emptied notes stay empty until Reset; ad blocking and the daily update check; block lists updated now; Qwen told to run on the CPU; only an engine's check disc selects it (an on-device name is not a button), a cloud engine's name opens and closes its setup without selecting it, a keyed one's disc without a key asks for it; a Custom AI provider fills in its locked address, Custom asks for one, and Save stores the preset's address and the model; arriving for a key opens its dialog without switching; history cleared; a Studio manga deleted after confirming; Privacy and Licences open the bundled documents in the app and Back returns to About |
-| `MarkdownLiteTest` | 6 | The Markdown the document pages read: headings, paragraphs, bullets with continued lines, tables without their rule; bold, code, links and bare https addresses; relative links resolved to GitHub, anything not https left as text; unclosed markers stay text; the repository's PRIVACY.md and LICENSES.md parse, every link https |
-| `SettingsSearchTest` | 4 | The hub's search: a blank query finds nothing; any part of a label matches without case or accents; each label once per page, in the hub's order; nothing matching is empty |
-| `EnginePickerTest` | 5 | `core:ui`'s picker in Compose: a keyed engine's disc without a key asks for the key, with one selects and closes; its name opens its sheet without selecting; an on-device engine is selected at once; planned and hidden engines are not listed |
-
-### feature:library (16)
-
-| Class | Tests | Covers |
-|---|---|---|
-| `LibraryScreenTest` | 11 | The Sites and History screens in Compose over Room: every control on the list has a label for TalkBack; with no sites the list says how to add one; a site added through the dialog is saved as https with no language override; Add is disabled until the address is a web address; opening a site asks for its languages and keeps a changed pair before the reader opens; Cancel opens nothing; pinning moves a site under Pinned; search filters by name or host; the site sheet (long press) saves a rename and deletes; History opens a visit, removes one and clears all |
-| `LibraryViewModelTest` | 5 | Sites: an http address is saved as https and named from its host; `javascript:`, `file:`, `intent:` and non-URLs are never saved; a new site takes the ad-block default; opening with the Settings pair stores no override, another pair is kept; pin and delete |
-
-### app (18)
-
-| Class | Tests | Covers |
-|---|---|---|
-| `UpdateDialogTest` | 8 | The update dialog in Compose for every state: idle shows nothing; Available offers Update or Later; a manual check can be cancelled; up to date and a failed check offer no update or retry; a failed download offers Retry; a download offers only Cancel; a verified download offers Install or Later |
-| `StartupTasksTest` | 7 | Every start: someone who never chose and has Qwen stays on Qwen; an explicit choice is never changed; without Qwen nothing is written; the first-start packs are fetched until done once, offline retried next start; manga-ocr and LaMa are queued until queued once, then never again, and before the packs are awaited; nothing is fetched before the first-open setup is answered |
-| `ManifestPolicyTest` | 6 | The committed manifest: only INTERNET, ACCESS_NETWORK_STATE, REQUEST_INSTALL_PACKAGES and, for Studio runs in the background, FOREGROUND_SERVICE, FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS and WAKE_LOCK; the run service unexported, special-use, with its subtype stated; no cleartext switch or network security config; no backup; only the launcher exported; the FileProvider unexported and sharing only `updates/` and the cache's `share/` |
-
-### core:ui (18)
-
-| Class | Tests | Covers |
-|---|---|---|
-| `ApiKeyValidationTest` | 11 | HTTPS save gating; invalid and cleartext endpoints rejected even with a saved key; key and model requirements; other providers unaffected; saving a new host with the saved key asks first (`keyHostChange`), the same host on another path, in another case or a newly typed key does not |
-| `AppLocaleTest` | 7 | The app language (Robolectric, API 31 and 34): locales normalised to the UI languages (`ja-JP`, `zh-TW`, `zh-Hant-CN`, `zh-CN`, Java's `in`, an unknown language → English); Android 12 opens in English on a French phone and keeps a choice across a restart (default locale too); an unknown stored tag reads as English; Android 13+ puts a first start on English, follows a per-app language set in the system and restores the saved one when the system forgets it; `set` goes through the system |
-
-Its engine picker and card rows are tested from `feature:settings`; the pipeline is also covered end to end by an
-instrumented test.
-
-## Instrumented tests
-
-Run with a device or emulator attached.
-
-| Test | Command | Covers |
-|---|---|---|
-| `SecureKeyStoreInstrumentedTest` | `./gradlew :core:data:connectedDebugAndroidTest` | An API key round-trips across store instances and is encrypted at rest with the real AndroidKeyStore |
-| `PipelineInstrumentedTest` | `./gradlew :core:pipeline:connectedDebugAndroidTest` | A rendered page (white bubble on hatched art, free text on grey) goes through the whole pipeline to fitted patches; `ENCLOSED` / `FREE` hold; the second run comes from the patch cache. ML Kit Latin, no network |
-
-## Checks on a phone
-
-Behaviour that depends on a real GPU, real sites or real memory pressure is checked by hand. Use a debug build
-(`run-as` and the launch extras only work there) and `adb shell cmd package compile -m speed -f
-com.smnexstudio.panelglass.debug` after installing.
-
-| Check | How | Pass when |
-|---|---|---|
-| Screen translation, each engine | `am start -n com.smnexstudio.panelglass.debug/com.smnexstudio.panelglass.MainActivity --es url <chapter> --es engine <ENGINE_ID> --ez start true` (`--es src JA --es tgt HI` for a language sweep) | Bubbles are replaced in place; `adb logcat -s TranslationPipeline` shows a `timing` line per screen |
-| Custom AI engine | Settings › Engine & keys › Custom AI › Set key: enter a key, a model and the server's address; save; pick the engine and translate. Repeat with a pasted `…/chat/completions` address | The bubbles are translated by that server; the address is kept as typed; a plain `http://` address is refused; no image is sent (the request body carries text only) |
-| On-device backend | Settings › Models & downloads › *Qwen runs on* → GPU / CPU, then open the reader | `LiteRT-LM loaded on gpu` / `on cpu` in `adb logcat -s LocalLlmEngine` |
-| Memory per engine and state | [MEMORY_USAGE.md › Reproducing](MEMORY_USAGE.md#reproducing) | Figures in line with that document; no process killed while translating |
-| Model released in the background | Start translating, press Home mid-generation, poll `dumpsys meminfo` | `UI hidden: releasing the model after its last call` ~5 s after the last `generate` line; PSS back to ~0.5 GB |
-| Memory leaks | [MEMORY_USAGE.md › Leak check](MEMORY_USAGE.md#leak-check-2026-10-30): open and close the reader 15 times, the review editor 6 times, recreate the activity with the reader open (`font_scale`); collect garbage twice and read `dumpsys meminfo` | Activities, windows, WebViews and the Java heap stay flat as the repetitions go on; one activity more while the reader stays open after a recreation is the known case |
-| Page turns, rotation, slow pages | A paged reader (tap to turn), rotate, a slow image host | Old patches cleared and the new page translated; `ScreenSession` log lines |
-| What a screen saw | Debug dump ([FLOW.md › Diagnostics](FLOW.md#diagnostics)) | `regions.txt` kinds, texts and fit sizes look right |
-| ONNX Runtime options | `run-as … touch files/debug-ortbench`, open the reader, `adb logcat -s OrtBench` | Medians per option set (remove the file after) |
-| On-device model quality | `run-as … touch files/debug-llm-compare`, start the app, read `files/debug-llm-compare.out` | Every installed model translates the fixed lines |
-| UI | Every changed screen in all four themes and at least one right-to-left language (Arabic) | Nothing clipped or overlapping; rows aligned |
-| Studio import | Studio tab › Import: a PDF, a CBZ with ComicInfo.xml, a chapter downloaded by Mihon, a `.7z`, a `.zip` of two chapter `.cbz` files, 20 images at once (then *Add more images* on the chapter), a long manhwa strip; also a `.cbr` and a password-protected PDF; one archive from a cloud provider (Drive) | Pages in the right order with thumbnails; details pre-filled from ComicInfo.xml; the pack offers one chapter per inner archive; the `.cbr` and the locked PDF refused with their own message; the cloud file imports (copied first when it can't be read in place); Cancel mid-import leaves no chapter |
-| Studio translate | A chapter's **Translate** with Google Translate (emulator) and Gemini / Qwen (phone only); Cancel mid-run, then Continue; kill the app mid-run (`adb shell am kill`) and Continue; a tall strip; Gemini without a key; a target language whose pack is missing | `studio GOOGLE: translate=…` per page in `adb logcat -s TranslationPipeline` (`detect tiled: tiles=…` for a strip); a tapped page lists every bubble's source and translation; Continue translates only the pages left; no key → **Add key** opens its sheet and the engine stays as it was; a missing pack → **Download**, then the run goes on |
-| Studio in the background | Translate a 20-page chapter, press Home and turn the screen off; Pause and Resume from the notification; `adb shell am kill com.smnexstudio.panelglass.debug` mid-run, then open the app; `adb shell dumpsys deviceidle force-idle` (then `unforce`); open the reader with Qwen mid-run; turn on Battery Saver; Settings › Models › *Studio runs only while charging* with Qwen and no charger; **Translate again** a translated chapter, `run-as … kill -9` its process while it translates, then open the app | The notification shows the page and progress and the run finishes with the screen off; Pause holds it after the page in progress and Resume goes on; after the kill the run continues from the first unfinished page; the reader pauses an on-device run ("the reader is using the on-device model") and leaving it resumes the run; Battery Saver and the charger setting pause it with their reason; the notification goes when the run ends; the killed Translate again carries on with only the pages it had not redone ("Translating… page 1 of 17" after 3 of 20) and ends with every page translated and cleaned |
-| Studio review | Tap a translated page: select bubbles on the page and in Proofread, ◀ ▶ through them at 3×; double-tap a bubble; pinch to 8× on a dense page; edit a translation (Bubble tab, long-press in place, focus mode's card) with the on-screen keyboard up; Re-translate after correcting the source; Add bubble over a missed SFX; dismiss and restore a bubble; Reviewed, next page; leave and come back | The canvas follows the selection without re-zooming; text stays sharp when zoomed (tiles); the bubble being edited stays visible above the keyboard; edits and the reviewed state survive leaving the screen; the minimap appears above 2× |
-| Studio clean and style | On a translated page: Final shows the lettering on the cleaned art; Clean and Original toggle; restyle a bubble (search the font list, bold, size, a preset and a custom colour by square, hue bar and hex code, outline and its colour, Apply to every bubble), watching the page change with each one; fill one at 50%; reshape one into a concave shape (the text follows while the corner is dragged) and into an ellipse; brush out a leftover mark, restore a stroke of art; undo and redo each; Run › Clean every page | The page stays in view under every tool (its options are in the pane below); Final opens on the cleaned art, never the original text; text fits inside each shape; cleaned art has no source text left; a reshape or stroke re-cleans the page after a moment ("Cleaning…"); undo brings back the exact previous state |
-| Studio export | Export a chapter as Images, then the whole manga as CBZ and as ZIP from the Manga screen; export again; Change folder › Choose folder, export, then back to Downloads; revoke the picked folder in the Files app and export; import a large PDF and export with the storage nearly full (fill it with `adb shell dd`); export it again choosing **Clean** | No picker for Downloads: files land in `Download/Panelglass/<Manga>/` (`Ch 001 - Title/001.png…` + `ComicInfo.xml`, or `Ch 001 - Title.cbz`); "Export anyway?" for unreviewed pages, "Replace exported files?" the second time; a revoked folder says to choose it again; a full storage says how much is needed and free, before anything is written; Kavita / Komga read the CBZ with its title and number; the Clean export sits beside the translated one as `Ch 001 - Title (Clean)`, its bubbles and replaced effects empty and nothing lettered |
-| Studio fonts | Text style › Font: search "bold", filter Sound effects, turn off "Fits English", star two fonts, long-press one; set a Japanese target and check the list; My fonts (Studio tab › Aa): add a `.ttf`, a Regular + Bold `.otf` pair, a `.zip` and the same `.ttf` again; rename one, set its role, use it on a bubble, delete it | Each row draws its name and a sample in its own face; stars put fonts first; a font without the target's script is hidden until the switch is off; the pair becomes one font, the zip is refused (not a font), the repeat says "already added"; the delete dialog says how many bubbles use it, and those bubbles then letter with the default ("Font removed · using …") |
-| Studio sound effects | On a page with effects (Proofread › Effects only): Keep, Replace; Impact, Horror and Match original; drag the effect, turn it by the top handle, scale it by the corner; Stretch, Slant, Bend; Remember this effect, then translate another chapter with the same effect; Add › Sound effect over a missed one | Replace erases the original (re-cleaned after a moment) and Keep brings it back; the transform box follows the effect at any zoom; the remembered effect gets the same translation later |
-| Studio LaMa | Settings › Models & downloads › Studio cleanup (LaMa): download (208 MB); brush out text over art and set an effect to Replace; time a page on the phone; on a phone under 4 GB the row reads "Needs 4 GB of RAM" | Text over art is filled from the picture, not smeared; the download survives leaving the app; `dumpsys meminfo` drops by the model's size after cleaning |
-| Studio storage | Settings › Storage › Studio library: sizes per manga; Delete one | The dialog says what goes (chapters, pages, translations, cleaned pages, size) and that exported files stay; the manga and its files are gone after |
-| Studio library | Reorder pages and chapters by long-press drag, move pages to another chapter and a chapter to another manga, delete each; kill the app mid-import (`adb shell am kill`) and reopen the Studio tab | Orders stick after leaving the screen; nothing left in `files/studio/pages` that no page uses |
-
-Clear `cache/patches` (`adb shell run-as com.smnexstudio.panelglass.debug rm -rf cache/patches`) before a timing or memory
-check: a cached page never calls the engine. The first page load after opening the reader can stay blank on some
-sites; ⋮ › *Reload* loads it.
-
-## Not covered
-
-- **The real LiteRT-LM runtime, GPU and CPU**, and the real manga-ocr / detector sessions: only on a phone.
-- **Live provider APIs** (Gemini): MockWebServer only; the emulator's HTTPS to providers is intercepted on the
-  development machine, so real calls need a phone.
-- **Compose UI**: Settings, Sites and History, Export and the review editor's panels are tested in Compose, as are the
-  Studio's drag-to-reorder, the review-canvas gestures, the update dialog and the engine picker. The reader, the
-  Studio's library, manga, chapter and import screens, the review screen around its panels, My fonts and the font
-  browser are checked by hand.
-- **The reader's view model and screen capture** (`ReaderViewModel`, `ScreenTranslate`, `PipelineScheduler`): they
-  own a WebView and PixelCopy; testing them needs seams that do not exist yet. Their pure helpers are tested.
-- **The Studio's background run on a device**: `StudioRunService` (foreground start, notification actions, wake lock)
-  and `AndroidDeviceProbe` (thermal, battery, network) run only on a phone. The pause rules and the gate are unit-tested
-  (`RunGateTest`); screen off, Doze, Pause / Resume, a killed process and the reader were checked on a phone, heat,
-  Battery Saver, low battery and the charger setting were not.
-- **Studio home, manga and chapter view models**: their repositories are tested; the view models are not (import,
-  export, fonts and review are).
-- **Instrumented and end-to-end tests in CI**: none run there (no device); an offline start-to-export run on an
-  emulator and a smoke test of the R8 release APK are still manual (`release.yml` tests the debug build).
-- **`mt.js` / `pt.js`**: the page scripts have no JavaScript tests; their Kotlin sides (anchoring, change detection)
-  are unit-tested.
-- **CPU timing on a low-end phone**: not measured.
-
-## Known flaky test
-
-- `StudioImporterTest.discardDeletesStagedPages` fails now and then **on Windows only**: an antivirus scan can hold a
-  PNG just written, and `StudioFiles.deletePageDir` (`runCatching { deleteRecursively() }`) leaves its directory. On
-  Android nothing holds the file, and a directory left behind is removed by the orphan sweep. The assertion is kept.
-
-## Adding a test
-
-- Put it in the module of the code under test, next to its neighbours (`src/test/kotlin/…`); use Robolectric
-  (`@RunWith(RobolectricTestRunner::class)`) only when an Android class is needed.
-- Name tests as the behaviour in a sentence (`aModelBusyWhenTheUiIsHiddenIsReleasedAfterItsLastCall`).
-- Provider code: MockWebServer, never a live API. On-device code: a scripted `LlmRunner`, never LiteRT-LM.
-- Update the counts and tables here when you add a class.
+1. **Locate Tests Beside Code:** Place tests in `src/test/kotlin/` within the corresponding module.
+2. **Use Robolectric Sparingly:** Prefer pure JUnit 5 tests. Use Robolectric (`@RunWith(RobolectricTestRunner::class)`) only when Android `Context`, Bitmaps, or Compose UI trees are required.
+3. **Descriptive Sentence Naming:** Format test method names as readable sentences describing expected behavior:
+   ```kotlin
+   @Test fun aModelBusyWhenTheUiIsHiddenIsReleasedAfterItsLastCall()
+   ```
+4. **Never Call Live APIs:** Cloud engines must mock HTTP exchanges via `MockWebServer`. On-device neural models must use `LlmRunner` fakes.
+5. **Update Documentation Counts:** When introducing new test classes, update the test inventory tables in this document.

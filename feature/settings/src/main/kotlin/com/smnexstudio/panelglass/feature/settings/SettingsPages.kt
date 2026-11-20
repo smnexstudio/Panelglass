@@ -88,6 +88,8 @@ import com.smnexstudio.panelglass.core.ui.Jakarta
 import com.smnexstudio.panelglass.core.ui.PrimaryPill
 import com.smnexstudio.panelglass.core.ui.SectionLabel
 import com.smnexstudio.panelglass.core.ui.TextAction
+import com.smnexstudio.panelglass.core.ui.StickerDialog
+import com.smnexstudio.panelglass.core.data.backup.BackupSummary
 import com.smnexstudio.panelglass.core.ui.ToggleCardRow
 import com.smnexstudio.panelglass.core.ui.TokenCard
 import com.smnexstudio.panelglass.core.ui.Tokens
@@ -116,6 +118,7 @@ internal fun SettingsPageContent(
         SettingsPage.STUDIO -> StudioPage(vm, onBack, onManageFonts)
         SettingsPage.STORAGE -> StoragePage(vm, sheets, onBack, onOpen)
         SettingsPage.APPEARANCE -> AppearancePage(vm, sheets, onBack)
+        SettingsPage.BACKUP -> BackupPage(vm, onBack)
         SettingsPage.ABOUT -> AboutPage(vm, onBack, onOpen)
         SettingsPage.LICENCES -> LegalPage(pageTitle(page), LegalDoc.LICENCES, onBack) { openUrl(context, it) }
         SettingsPage.PRIVACY -> LegalPage(pageTitle(page), LegalDoc.PRIVACY, onBack) { openUrl(context, it) }
@@ -761,6 +764,83 @@ private fun AppearancePage(vm: SettingsViewModel, sheets: SettingsSheets, onBack
         }
         PageNote(stringResource(UiR.string.set_app_language_note))
     }
+}
+
+// ---- backup & restore ------------------------------------------------------------------------
+
+/**
+ * Sites, glossaries and notes to a file and back. The files go through the system's save and open dialogs, so no
+ * storage permission is needed; a restore is read and checked first, and applied only after the user confirms.
+ */
+@Composable
+private fun BackupPage(vm: SettingsViewModel, onBack: (() -> Unit)?) {
+    val state by vm.backup.collectAsStateWithLifecycle()
+    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) vm.saveBackup(uri)
+    }
+    // Some file providers call a .json file text or plain bytes.
+    val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.openBackup(uri) }
+    DisposableEffect(Unit) { onDispose { vm.dismissBackup() } }
+    SettingsPageFrame(pageTitle(SettingsPage.BACKUP), onBack) {
+        TokenCard(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+            LinkRow(stringResource(UiR.string.backup_create), stringResource(UiR.string.backup_create_note), external = false) {
+                runCatching { save.launch(vm.backupFileName()) }
+            }
+            CardDivider()
+            LinkRow(stringResource(UiR.string.backup_restore), stringResource(UiR.string.backup_restore_note), external = false) {
+                runCatching { open.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }
+            }
+        }
+        val message = when (val s = state) {
+            BackupUi.Idle, is BackupUi.Confirm -> null
+            BackupUi.Working -> stringResource(UiR.string.backup_working) to Tokens.InkSoft
+            is BackupUi.Saved -> stringResource(UiR.string.backup_saved) + "\n" + backupCounts(s.summary) to Tokens.Ink
+            is BackupUi.Restored -> stringResource(UiR.string.backup_restored) + "\n" + backupCounts(s.summary) to Tokens.Ink
+            is BackupUi.Failed -> stringResource(
+                when (s.problem) {
+                    BackupFailure.WRITE -> UiR.string.backup_failed_write
+                    BackupFailure.UNREADABLE -> UiR.string.backup_failed_read
+                    BackupFailure.NEWER -> UiR.string.backup_failed_newer
+                    BackupFailure.RESTORE -> UiR.string.backup_failed_restore
+                },
+            ) to Tokens.Error
+        }
+        message?.let { (text, color) ->
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = color, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp))
+        }
+        PageNote(stringResource(UiR.string.backup_note))
+    }
+
+    (state as? BackupUi.Confirm)?.let { pending ->
+        // A file written by hand may have no date: the dialog leaves the date out rather than showing 1970.
+        val day = remember(pending.file.createdAt) {
+            pending.file.createdAt.takeIf { it > 0 }?.let {
+                java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(it))
+            }
+        }
+        val made = day?.let { stringResource(UiR.string.backup_made_on, it) + " " }.orEmpty()
+        StickerDialog(onDismiss = { vm.dismissBackup() }) {
+            Text(stringResource(UiR.string.backup_confirm_title), fontFamily = Jakarta, fontWeight = FontWeight.W700, fontSize = 17.sp, color = Tokens.Ink)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                made + stringResource(UiR.string.backup_confirm_body) + "\n\n" + backupCounts(pending.summary),
+                fontFamily = Jakarta, fontSize = 13.sp, lineHeight = 18.sp, color = Tokens.InkSoft,
+            )
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                TextAction(stringResource(UiR.string.action_cancel), Tokens.InkSoft) { vm.dismissBackup() }
+                Spacer(Modifier.width(4.dp))
+                TextAction(stringResource(UiR.string.backup_confirm_action), Tokens.SkyDeep) { vm.confirmRestore() }
+            }
+        }
+    }
+}
+
+/** "Sites: 4 · Glossary terms: 12 · Series: 3", with the translation notes when there are any. */
+@Composable
+private fun backupCounts(s: BackupSummary): String {
+    val counts = stringResource(UiR.string.backup_counts, s.sites, s.terms, s.series)
+    return if (s.translationNotes) counts + " · " + stringResource(UiR.string.settings_notes) else counts
 }
 
 // ---- about & updates -------------------------------------------------------------------------
