@@ -14,6 +14,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.net.Proxy
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -72,11 +74,14 @@ class HttpEngineSupport(
         .create(JsonApi::class.java)
 
     // Separate client: local HTTP is never enabled on the normal provider/update client.
-    private val localHttpClient: OkHttpClient = okHttp.newBuilder().apply {
+    private val localHttpClient: OkHttpClient = okHttp.newBuilder().proxy(Proxy.NO_PROXY).dns(PrivateLanDns()).apply {
         networkInterceptors().removeAll { it is HttpsOnly }
         addNetworkInterceptor { chain ->
             val url = chain.request().url
-            if (!url.isHttps && !CustomEndpoint.isLocalHost(url.host)) throw IOException("Local HTTP host required")
+            if (!url.isHttps) {
+                val peer = chain.connection()?.socket()?.inetAddress
+                if (peer == null || !PrivateLanDns.allowed(peer)) throw IOException("Private LAN address required")
+            }
             chain.proceed(chain.request())
         }
     }.build()
@@ -86,7 +91,7 @@ class HttpEngineSupport(
 
     suspend fun post(engine: EngineId, url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
         val resp = try {
-            val target = if (engine == EngineId.CUSTOM && url.startsWith("http://") && CustomEndpoint.normalize(url) != null) localApi else api
+            val target = if (engine == EngineId.CUSTOM_LAN && !url.toHttpUrl().isHttps) localApi else api
             target.post(url, headers, body)
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.

@@ -33,7 +33,7 @@ object CustomEndpoint {
 
         val uri = runCatching { URI(trimmed) }.getOrNull() ?: return null
         val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return null
-        if (scheme != SCHEME_HTTPS && !(scheme == SCHEME_HTTP && (allowHttp || isLocalHost(uri.host.orEmpty())))) return null
+        if (scheme != SCHEME_HTTPS && !(scheme == SCHEME_HTTP && allowHttp)) return null
         // A query string or a fragment is not part of a base address.
         if (uri.rawQuery != null || uri.rawFragment != null) return null
         // Credentials in the URL: the key has its own field.

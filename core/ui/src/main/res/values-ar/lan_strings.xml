@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">مفتاح API (اختياري)</string>
+    <string name="lan_endpoint_note">عنوان خادمك الخاص. يدعم HTTPS. يسمح HTTP فقط بالعناوين الخاصة أو المحلية. يمكن لصق المسار الكامل /chat/completions.</string>
+    <string name="lan_http_warning">اتصال HTTP غير مشفر: يمكن للآخرين على الشبكة قراءة نص الترجمة ومفتاح API أو تعديلهما. استخدم خادماً وشبكة خاصين موثوقين فقط.</string>
+    <string name="lan_picker_note">خادم خاص · مفتاح API اختياري</string>
+</resources>

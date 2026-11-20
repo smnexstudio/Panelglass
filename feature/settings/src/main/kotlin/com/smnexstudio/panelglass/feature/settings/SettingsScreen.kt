@@ -227,7 +227,7 @@ private fun SettingsSheetsHost(vm: SettingsViewModel, sheets: SettingsSheets, on
             modelsLoading = choices.loading,
             modelsError = choices.error,
             onLoadModels = if (engine == EngineId.GEMINI) ({ typed -> vm.loadModels(engine, typed) }) else null,
-            currentBaseUrl = s.customBaseUrl,
+            currentBaseUrl = if (engine == EngineId.CUSTOM_LAN) s.lanBaseUrl else s.customBaseUrl,
         )
     }
 }

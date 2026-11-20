@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Ключ API (необязательно)</string>
+    <string name="lan_endpoint_note">Адрес частного сервера. Поддерживается HTTPS. HTTP разрешён только для частных или петлевых адресов. Можно вставить полный адрес /chat/completions.</string>
+    <string name="lan_http_warning">HTTP не зашифрован: другие участники сети могут читать или изменять текст перевода и ключ API. Используйте только доверенные частные серверы и сети.</string>
+    <string name="lan_picker_note">Частный сервер · ключ API необязателен</string>
+</resources>

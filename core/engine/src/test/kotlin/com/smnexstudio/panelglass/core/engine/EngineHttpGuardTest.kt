@@ -70,7 +70,7 @@ class EngineHttpGuardTest {
 
     @Test fun customLocalHttpWorksWithProductionGuards() = runBlocking {
         server.enqueue(MockResponse().setBody("{}"))
-        val reply = support(httpsOnly = true).post(EngineId.CUSTOM, server.url("/v1/chat/completions").toString(), emptyMap(), body)
+        val reply = support(httpsOnly = true).post(EngineId.CUSTOM_LAN, server.url("/v1/chat/completions").toString(), emptyMap(), body)
         assertEquals("{}", reply.toString())
         assertEquals(1, server.requestCount)
     }

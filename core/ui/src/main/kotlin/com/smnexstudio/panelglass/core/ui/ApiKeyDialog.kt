@@ -106,13 +106,13 @@ fun ApiKeyDialog(
     // Custom AI: the provider is read from the saved address; a sheet with none saved starts on the default preset.
     val startProvider = if (currentBaseUrl.isBlank()) CustomProvider.DEFAULT else CustomProvider.of(currentBaseUrl)
     var provider by remember(engine) { mutableStateOf(startProvider) }
-    var baseUrl by remember(engine) { mutableStateOf(if (startProvider.isPreset) startProvider.baseUrl else currentBaseUrl) }
+    var baseUrl by remember(engine) { mutableStateOf(if (engine == EngineId.CUSTOM_LAN) currentBaseUrl else if (startProvider.isPreset) startProvider.baseUrl else currentBaseUrl) }
     var menuOpen by remember(engine) { mutableStateOf(false) }
     // (saved host, new host) while the sheet asks whether the saved key may go to the new server.
     var hostPrompt by remember(engine) { mutableStateOf<Pair<String, String>?>(null) }
     val keyFocus = remember { FocusRequester() }
     LaunchedEffect(engine) { if (hasKey) onLoadModels?.invoke(null) }
-    val wantsBaseUrl = engine == EngineId.CUSTOM
+    val wantsBaseUrl = engine == EngineId.CUSTOM || engine == EngineId.CUSTOM_LAN
     val canSave = apiKeyCanSave(engine, hasKey, key, model, baseUrl)
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Tokens.Ink, unfocusedBorderColor = Tokens.Border,
@@ -125,7 +125,7 @@ fun ApiKeyDialog(
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))
-        if (wantsBaseUrl) {
+        if (engine == EngineId.CUSTOM) {
             ProviderRow(provider) { picked ->
                 provider = picked
                 hostPrompt = null
@@ -140,7 +140,7 @@ fun ApiKeyDialog(
         }
         OutlinedTextField(
             value = key, onValueChange = { key = it; hostPrompt = null },
-            placeholder = { Text(stringResource(if (hasKey) R.string.key_hint_saved else R.string.key_hint)) },
+            placeholder = { Text(stringResource(if (hasKey) R.string.key_hint_saved else if (engine == EngineId.CUSTOM_LAN) R.string.lan_key_optional else R.string.key_hint)) },
             singleLine = true, visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
             shape = RoundedCornerShape(14.dp), colors = fieldColors, modifier = Modifier.fillMaxWidth().focusRequester(keyFocus),
@@ -218,10 +218,10 @@ fun ApiKeyDialog(
             // A preset's address is shown, locked; only Custom takes a typed one.
             OutlinedTextField(
                 value = baseUrl, onValueChange = { baseUrl = it; hostPrompt = null },
-                enabled = !provider.isPreset,
+                enabled = engine == EngineId.CUSTOM_LAN || !provider.isPreset,
                 placeholder = { Text(stringResource(R.string.key_base_url_hint)) },
                 label = { Text(stringResource(R.string.key_base_url)) },
-                leadingIcon = if (provider.isPreset) ({ Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null,
+                leadingIcon = if (engine == EngineId.CUSTOM && provider.isPreset) ({ Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 shape = RoundedCornerShape(14.dp),
@@ -235,14 +235,18 @@ fun ApiKeyDialog(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                if (provider.isPreset) stringResource(R.string.key_base_url_set_by, provider.displayName)
+                if (engine == EngineId.CUSTOM_LAN) stringResource(R.string.lan_endpoint_note)
+                else if (provider.isPreset) stringResource(R.string.key_base_url_set_by, provider.displayName)
                 else stringResource(R.string.key_base_url_note),
                 fontFamily = Jakarta, fontSize = 11.5.sp, lineHeight = 15.sp, color = Tokens.InkFaint,
             )
         }
+        if (engine == EngineId.CUSTOM_LAN && runCatching { java.net.URI(baseUrl.trim()).scheme.equals("http", true) }.getOrDefault(false)) {
+            Text(stringResource(R.string.lan_http_warning), color = Tokens.Error, fontFamily = Jakarta, fontWeight = FontWeight.W600)
+        }
         Spacer(Modifier.height(10.dp))
         Text(
-            stringResource(R.string.key_note, if (wantsBaseUrl && provider.isPreset) provider.displayName else engine.uiName()),
+            stringResource(R.string.key_note, if (engine == EngineId.CUSTOM && provider.isPreset) provider.displayName else engine.uiName()),
             fontFamily = Jakarta, fontWeight = FontWeight.W500, fontSize = 11.5.sp, lineHeight = 16.sp, color = Tokens.InkFaint,
         )
         Spacer(Modifier.height(18.dp))
