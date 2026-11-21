@@ -26,6 +26,7 @@ enum class EngineId(
      * the on-device OCR feeds it, no image is ever sent.
      */
     CUSTOM("Custom AI", KeyRequirement.USER_KEY, ""),
+    CUSTOM_LAN("LAN / Private Custom AI", KeyRequirement.NONE, ""),
     DEEPL("DeepL", KeyRequirement.USER_KEY, offered = false),
     /**
      * Google's ML Kit on-device translation: free, no key, language packs downloaded on first use. Named with

@@ -50,7 +50,7 @@ abstract class LlmEngine(
 
     override suspend fun translate(req: TranslateRequest): List<TranslatedItem> {
         if (req.items.isEmpty()) return emptyList()
-        val key = keys.get(id) ?: throw EngineException(EngineFailure.MissingKey(id))
+        val key = keys.get(id) ?: if (id == com.smnexstudio.panelglass.core.model.EngineId.CUSTOM_LAN) "" else throw EngineException(EngineFailure.MissingKey(id))
         val system = LlmContract.systemPrompt(req)
         val montage = if (acceptsImages) req.sfxMontage else null
         val crops = if (acceptsImages) req.readImages.entries.sortedBy { it.key }.map { "Item ${it.key}" to it.value } else emptyList()

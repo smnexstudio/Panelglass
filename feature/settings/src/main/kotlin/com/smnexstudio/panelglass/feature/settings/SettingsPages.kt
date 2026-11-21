@@ -169,7 +169,7 @@ private fun EnginePage(vm: SettingsViewModel, sheets: SettingsSheets, onBack: ((
 
         SectionLabel(stringResource(UiR.string.set_engines_cloud))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
-            val cloud = vm.engines.filter { it.needsKey }
+            val cloud = vm.engines.filter { it.needsKey || it == EngineId.CUSTOM_LAN }
             cloud.forEachIndexed { i, e ->
                 if (i > 0) CardDivider()
                 val selected = s.engineId == e
@@ -177,6 +177,7 @@ private fun EnginePage(vm: SettingsViewModel, sheets: SettingsSheets, onBack: ((
                 val open = openCloud == e
                 EngineOption(e, selected,
                     when (e) {
+                        EngineId.CUSTOM_LAN -> stringResource(UiR.string.lan_picker_note)
                         EngineId.GEMINI -> stringResource(UiR.string.set_engine_gemini_sub)
                         // A named provider says which, and the model when one is set: "DeepSeek · deepseek-chat".
                         EngineId.CUSTOM -> CustomProvider.of(s.customBaseUrl).takeIf { it.isPreset }
@@ -188,7 +189,7 @@ private fun EnginePage(vm: SettingsViewModel, sheets: SettingsSheets, onBack: ((
                     onOpen = { openCloud = if (open) null else e },
                     trailing = {
                         Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable { sheets.keyFor = e }.padding(4.dp)) {
-                            StatusChip(stringResource(if (hasKey) UiR.string.set_key_saved else UiR.string.set_key_missing), good = hasKey)
+                            StatusChip(stringResource(if (hasKey) UiR.string.set_key_saved else if (e == EngineId.CUSTOM_LAN) UiR.string.lan_key_optional else UiR.string.set_key_missing), good = hasKey || e == EngineId.CUSTOM_LAN)
                         }
                         Icon(
                             if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null,
@@ -276,8 +277,9 @@ private fun CloudDetails(e: EngineId, s: com.smnexstudio.panelglass.core.model.S
             DetailLine(stringResource(UiR.string.key_provider), if (p.isPreset) p.displayName else stringResource(UiR.string.key_provider_custom))
         }
         if (e == EngineId.CUSTOM) DetailLine(stringResource(UiR.string.key_base_url), s.customBaseUrl.ifBlank { notSet })
+        if (e == EngineId.CUSTOM_LAN) DetailLine(stringResource(UiR.string.key_base_url), s.lanBaseUrl.ifBlank { notSet })
         if (e.hasModel) DetailLine(stringResource(UiR.string.key_model), s.modelFor(e).ifBlank { notSet })
-        DetailLine(stringResource(UiR.string.set_api_key), stringResource(if (hasKey) UiR.string.set_key_saved else UiR.string.set_key_missing))
+        DetailLine(stringResource(UiR.string.set_api_key), stringResource(if (hasKey) UiR.string.set_key_saved else if (e == EngineId.CUSTOM_LAN) UiR.string.lan_key_optional else UiR.string.set_key_missing))
         if (e == EngineId.CUSTOM) Text(
             stringResource(UiR.string.set_engine_custom_note), style = MaterialTheme.typography.bodySmall, color = Tokens.InkSoft,
             modifier = Modifier.padding(top = 8.dp),

@@ -69,6 +69,7 @@ class SettingsRepository @Inject constructor(
         val studioRunChapter = longPreferencesKey("studioRunChapter")
         /** The user's own OpenAI-compatible server for the "Custom AI" engine; an address, not a secret. */
         val customBaseUrl = stringPreferencesKey("customBaseUrl")
+        val lanBaseUrl = stringPreferencesKey("lanBaseUrl")
         /** The language pairs last set in Settings, newest first (`JA>EN KO>EN`). */
         val recentPairs = stringPreferencesKey("recentPairs")
         /** When From or To was last changed alone ([setSource] / [setTarget]). */
@@ -104,6 +105,7 @@ class SettingsRepository @Inject constructor(
             studioExportFolder = p[K.studioExportFolder]?.takeIf { it.isNotBlank() },
             downloadWifiOnly = p[K.downloadWifiOnly] ?: d.downloadWifiOnly,
             customBaseUrl = p[K.customBaseUrl] ?: d.customBaseUrl,
+            lanBaseUrl = p[K.lanBaseUrl] ?: d.lanBaseUrl,
         )
     }
 
@@ -276,6 +278,11 @@ class SettingsRepository @Inject constructor(
      */
     suspend fun setCustomBaseUrl(v: String) {
         dataStore.edit { p -> v.trim().let { if (it.isEmpty()) p.remove(K.customBaseUrl) else p[K.customBaseUrl] = it } }
+    }
+
+    /** Saves only the LAN endpoint. Blank clears it. */
+    suspend fun setLanBaseUrl(v: String) {
+        dataStore.edit { p -> v.trim().let { if (it.isEmpty()) p.remove(K.lanBaseUrl) else p[K.lanBaseUrl] = it } }
     }
 
     private inline fun <reified T : Enum<T>> enumOrNull(name: String): T? =

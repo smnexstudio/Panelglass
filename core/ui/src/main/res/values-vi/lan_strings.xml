@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Khóa API (không bắt buộc)</string>
+    <string name="lan_endpoint_note">Địa chỉ máy chủ riêng. Hỗ trợ HTTPS. HTTP chỉ cho phép địa chỉ riêng hoặc loopback. Có thể dán địa chỉ /chat/completions đầy đủ.</string>
+    <string name="lan_http_warning">HTTP không mã hóa: người khác trên mạng có thể đọc hoặc sửa văn bản dịch và khóa API. Chỉ dùng máy chủ và mạng riêng đáng tin cậy.</string>
+    <string name="lan_picker_note">Máy chủ riêng · khóa API tùy chọn</string>
+</resources>

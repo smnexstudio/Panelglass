@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Clave API (opcional)</string>
+    <string name="lan_endpoint_note">Dirección del servidor privado. Admite HTTPS. HTTP solo permite direcciones privadas o de bucle local. También admite la dirección completa /chat/completions.</string>
+    <string name="lan_http_warning">HTTP sin cifrar: otros usuarios de la red pueden leer o modificar el texto traducido y la clave API. Usa solo servidores y redes privados de confianza.</string>
+    <string name="lan_picker_note">Servidor privado · clave API opcional</string>
+</resources>

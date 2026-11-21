@@ -21,7 +21,8 @@ import javax.inject.Singleton
 
 /**
  * Provider API keys, encrypted with an AndroidKeyStore AES/GCM key and stored as opaque
- * base64 blobs in DataStore. Keys are never logged and never leave the device.
+ * base64 blobs in DataStore, indexed separately by engine ID. Configured keys are retrieved for
+ * authentication requests to the selected provider or LAN server; they must not be logged.
  */
 @Singleton
 class SecureKeyStore @Inject constructor(

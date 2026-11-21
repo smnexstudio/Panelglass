@@ -48,6 +48,8 @@ data class Settings(
     val downloadWifiOnly: Boolean = true,
     /** Server address for Custom AI; not a secret. */
     val customBaseUrl: String = "",
+    /** Separate LAN endpoint; never inherits the cloud endpoint. */
+    val lanBaseUrl: String = "",
 ) {
     /**
      * The model to call for [id]: the user's choice, else the provider's default; blank when neither exists. A

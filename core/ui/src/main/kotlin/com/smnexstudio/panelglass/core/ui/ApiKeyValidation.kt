@@ -10,9 +10,10 @@ internal fun apiKeyCanSave(
     key: String,
     model: String,
     baseUrl: String,
-): Boolean = (key.isNotBlank() || hasKey) &&
+): Boolean = (!engine.needsKey || key.isNotBlank() || hasKey) &&
     (!engine.hasModel || model.isNotBlank()) &&
-    (engine != EngineId.CUSTOM || CustomEndpoint.normalize(baseUrl) != null)
+    (engine != EngineId.CUSTOM || CustomEndpoint.normalize(baseUrl) != null) &&
+    (engine != EngineId.CUSTOM_LAN || CustomEndpoint.normalize(baseUrl, true) != null)
 
 /**
  * The (saved, new) hosts when saving the "Custom AI" sheet would send the saved key to a server other than the one it
@@ -26,8 +27,8 @@ internal fun keyHostChange(
     savedBaseUrl: String,
     baseUrl: String,
 ): Pair<String, String>? {
-    if (engine != EngineId.CUSTOM || !hasKey || key.isNotBlank()) return null
-    val saved = CustomEndpoint.host(savedBaseUrl) ?: return null
-    val now = CustomEndpoint.host(baseUrl) ?: return null
+    if (engine !in setOf(EngineId.CUSTOM, EngineId.CUSTOM_LAN) || !hasKey || key.isNotBlank()) return null
+    val saved = CustomEndpoint.host(savedBaseUrl, engine == EngineId.CUSTOM_LAN) ?: return null
+    val now = CustomEndpoint.host(baseUrl, engine == EngineId.CUSTOM_LAN) ?: return null
     return if (saved == now) null else saved to now
 }

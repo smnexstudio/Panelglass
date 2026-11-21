@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Clé API (facultative)</string>
+    <string name="lan_endpoint_note">Adresse du serveur privé. HTTPS est pris en charge. HTTP exige des adresses privées ou de bouclage. Une adresse /chat/completions complète fonctionne aussi.</string>
+    <string name="lan_http_warning">HTTP non chiffré : les autres utilisateurs du réseau peuvent lire ou modifier le texte traduit et la clé API. Utilisez uniquement un serveur et un réseau privés fiables.</string>
+    <string name="lan_picker_note">Serveur privé · clé API facultative</string>
+</resources>

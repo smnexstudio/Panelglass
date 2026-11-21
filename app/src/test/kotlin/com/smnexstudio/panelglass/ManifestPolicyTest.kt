@@ -58,9 +58,8 @@ class ManifestPolicyTest {
         assertTrue(subtype.getAttributeNS(android, "value").isNotBlank())
     }
 
-    @Test fun cleartextIsNeverAllowed() {
-        assertFalse(application.hasAttributeNS(android, "usesCleartextTraffic"), "usesCleartextTraffic must not be set (it defaults to false)")
-        assertFalse(application.hasAttributeNS(android, "networkSecurityConfig"), "no network security config that could allow cleartext")
+    @Test fun localEndpointNetworkConfigIsDeclared() {
+        assertEquals("@xml/network_security_config", application.getAttributeNS(android, "networkSecurityConfig"))
     }
 
     @Test fun nothingIsBackedUp() {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API-Schlüssel (optional)</string>
+    <string name="lan_endpoint_note">Adresse des privaten Servers. HTTPS wird unterstützt. HTTP ist nur für private oder Loopback-Adressen erlaubt. Eine vollständige /chat/completions-Adresse funktioniert ebenfalls.</string>
+    <string name="lan_http_warning">Unverschlüsseltes HTTP: Andere im Netzwerk können Übersetzungstext und API-Schlüssel lesen oder verändern. Nur vertrauenswürdige private Server und Netzwerke verwenden.</string>
+    <string name="lan_picker_note">Privater Server · API-Schlüssel optional</string>
+</resources>

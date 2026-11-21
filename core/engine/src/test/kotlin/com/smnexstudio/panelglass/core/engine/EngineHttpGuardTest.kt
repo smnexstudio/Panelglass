@@ -61,11 +61,44 @@ class EngineHttpGuardTest {
         assertEquals(0, elsewhere.requestCount)
     }
 
-    @Test fun plainHttpIsRefusedBeforeAnythingIsSent() {
+    @Test fun plainHttpForOtherEnginesIsRefusedBeforeAnythingIsSent() {
         server.enqueue(MockResponse().setBody("{}"))
-        val f = failureOf { support(httpsOnly = true).post(EngineId.CUSTOM, server.url("/v1/chat/completions").toString(), emptyMap(), body) }
+        val f = failureOf { support(httpsOnly = true).post(EngineId.GEMINI, server.url("/v1/chat/completions").toString(), emptyMap(), body) }
         assertTrue(f is EngineFailure.Network)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test fun customLocalHttpWorksWithProductionGuards() = runBlocking {
+        server.enqueue(MockResponse().setBody("{}"))
+        val reply = support(httpsOnly = true).post(EngineId.CUSTOM_LAN, server.url("/v1/chat/completions").toString(), emptyMap(), body)
+        assertEquals("{}", reply.toString())
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun cloudCustomAndGeminiRejectHttpWithProductionGuards() {
+        for (engine in listOf(EngineId.CUSTOM, EngineId.GEMINI)) {
+            val f = failureOf {
+                support(httpsOnly = true).post(engine, server.url("/v1/chat/completions").toString(),
+                    mapOf("Authorization" to "Bearer synthetic-test-key"), body)
+            }
+            assertTrue("$engine: $f", f is EngineFailure.Network)
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test fun lanProductionClientNeverForwardsRedirects() {
+        for (code in listOf(301, 302, 303, 307, 308)) {
+            server.enqueue(MockResponse().setResponseCode(code)
+                .setHeader("Location", elsewhere.url("/v1/chat/completions")))
+            val f = failureOf {
+                support(httpsOnly = true).post(EngineId.CUSTOM_LAN,
+                    server.url("/v1/chat/completions").toString(),
+                    mapOf("Authorization" to "Bearer synthetic-lan-key"), body)
+            }
+            assertTrue("$code: $f", f is EngineFailure.Unavailable && f.reason.startsWith("HTTP $code"))
+        }
+        assertEquals(5, server.requestCount)
+        assertEquals(0, elsewhere.requestCount)
     }
 
     @Test fun aReplyDeclaredLargerThanTheCapIsMalformed() {

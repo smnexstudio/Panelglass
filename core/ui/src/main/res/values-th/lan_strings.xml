@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">คีย์ API (ไม่บังคับ)</string>
+    <string name="lan_endpoint_note">ที่อยู่เซิร์ฟเวอร์ส่วนตัว รองรับ HTTPS ส่วน HTTP อนุญาตเฉพาะที่อยู่ส่วนตัวหรือลูปแบ็ก สามารถวางที่อยู่ /chat/completions แบบเต็มได้</string>
+    <string name="lan_http_warning">HTTP ไม่เข้ารหัส: ผู้อื่นในเครือข่ายอาจอ่านหรือแก้ไขข้อความแปลและคีย์ API ใช้เฉพาะเซิร์ฟเวอร์และเครือข่ายส่วนตัวที่เชื่อถือได้</string>
+    <string name="lan_picker_note">เซิร์ฟเวอร์ส่วนตัว · คีย์ API ไม่บังคับ</string>
+</resources>

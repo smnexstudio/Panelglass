@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.engine.http
 
 import android.util.Log
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.data.di.HttpsOnly
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -13,6 +14,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.net.Proxy
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -42,7 +45,9 @@ interface JsonApi {
  * - **No redirects.** A 307/308 would re-send the whole request (page text, notes, glossary) to another host, and
  *   OkHttp drops only `Authorization` across hosts, not Gemini's `x-goog-api-key`. An API has no reason to redirect a
  *   call, so a 3xx is a typed failure that names the problem instead.
- * - **HTTPS only** on every hop ([HttpsOnly] as a network interceptor), on top of Android's cleartext policy.
+ * - **HTTPS only** for normal provider calls ([HttpsOnly] as a network interceptor). Only CUSTOM_LAN HTTP POSTs
+ *   use the separate non-proxying client with private/loopback DNS and connected-peer validation.
+ *   Android platform cleartext permission is enabled for LAN support; this does not prove WebView redirect safety.
  * - **Replies capped** at [maxReplyBytes] ([ReplyCap]): the user's own server is not one we vouch for.
  *
  * [httpsOnly] is off only in JVM tests, whose MockWebServer speaks plain HTTP.
@@ -70,9 +75,26 @@ class HttpEngineSupport(
         .build()
         .create(JsonApi::class.java)
 
+    // Separate client: local HTTP is never enabled on the normal provider/update client.
+    private val localHttpClient: OkHttpClient = okHttp.newBuilder().proxy(Proxy.NO_PROXY).dns(PrivateLanDns()).apply {
+        networkInterceptors().removeAll { it is HttpsOnly }
+        addNetworkInterceptor { chain ->
+            val url = chain.request().url
+            if (!url.isHttps) {
+                val peer = chain.connection()?.socket()?.inetAddress
+                if (peer == null || !PrivateLanDns.allowed(peer)) throw IOException("Private LAN address required")
+            }
+            chain.proceed(chain.request())
+        }
+    }.build()
+    private val localApi: JsonApi = Retrofit.Builder().baseUrl("https://localhost/")
+        .client(localHttpClient).addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build().create(JsonApi::class.java)
+
     suspend fun post(engine: EngineId, url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
         val resp = try {
-            api.post(url, headers, body)
+            val target = if (engine == EngineId.CUSTOM_LAN && !url.toHttpUrl().isHttps) localApi else api
+            target.post(url, headers, body)
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API 키(선택 사항)</string>
+    <string name="lan_endpoint_note">개인 서버 주소입니다. HTTPS를 지원합니다. HTTP는 사설 또는 루프백 주소만 허용합니다. 전체 /chat/completions 주소도 사용할 수 있습니다.</string>
+    <string name="lan_http_warning">암호화되지 않은 HTTP: 네트워크의 다른 사용자가 번역 텍스트와 API 키를 읽거나 변경할 수 있습니다. 신뢰할 수 있는 개인 서버와 네트워크만 사용하세요.</string>
+    <string name="lan_picker_note">개인 서버 · API 키 선택 사항</string>
+</resources>
