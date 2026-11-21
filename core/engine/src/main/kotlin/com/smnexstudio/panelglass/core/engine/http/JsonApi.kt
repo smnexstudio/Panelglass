@@ -15,7 +15,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import java.net.Proxy
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -47,7 +46,7 @@ interface JsonApi {
  *   call, so a 3xx is a typed failure that names the problem instead.
  * - **HTTPS only** for normal provider calls ([HttpsOnly] as a network interceptor). Only CUSTOM_LAN HTTP POSTs
  *   use the separate non-proxying client with private/loopback DNS and connected-peer validation.
- *   Android platform cleartext permission is enabled for LAN support; this does not prove WebView redirect safety.
+ *   The isolated socket transport leaves Android platform cleartext blocking enabled for WebView.
  * - **Replies capped** at [maxReplyBytes] ([ReplyCap]): the user's own server is not one we vouch for.
  *
  * [httpsOnly] is off only in JVM tests, whose MockWebServer speaks plain HTTP.
@@ -75,26 +74,24 @@ class HttpEngineSupport(
         .build()
         .create(JsonApi::class.java)
 
-    // Separate client: local HTTP is never enabled on the normal provider/update client.
-    private val localHttpClient: OkHttpClient = okHttp.newBuilder().proxy(Proxy.NO_PROXY).dns(PrivateLanDns()).apply {
-        networkInterceptors().removeAll { it is HttpsOnly }
-        addNetworkInterceptor { chain ->
-            val url = chain.request().url
-            if (!url.isHttps) {
-                val peer = chain.connection()?.socket()?.inetAddress
-                if (peer == null || !PrivateLanDns.allowed(peer)) throw IOException("Private LAN address required")
-            }
-            chain.proceed(chain.request())
+    // A raw-socket exception only for LAN JSON POSTs; WebView keeps the platform HTTP block.
+    private val localTransport = LanSocketTransport(maxReplyBytes)
+
+    private suspend fun postLocal(url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
+        val authorization = headers.entries.firstOrNull { it.key.equals("Authorization", true) }?.value
+        val reply = localTransport.postCancellable(url.toHttpUrl(), authorization, body.toString().toByteArray(Charsets.UTF_8))
+        val text = reply.body.toString(Charsets.UTF_8)
+        if (reply.code !in 200..299) {
+            throw EngineException(mapStatus(EngineId.CUSTOM_LAN, reply.code, text, reply.headers["retry-after"]))
         }
-    }.build()
-    private val localApi: JsonApi = Retrofit.Builder().baseUrl("https://localhost/")
-        .client(localHttpClient).addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build().create(JsonApi::class.java)
+        if (text.isBlank()) throw EngineException(EngineFailure.Malformed(EngineId.CUSTOM_LAN))
+        return json.parseToJsonElement(text)
+    }
 
     suspend fun post(engine: EngineId, url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
         val resp = try {
-            val target = if (engine == EngineId.CUSTOM_LAN && !url.toHttpUrl().isHttps) localApi else api
-            target.post(url, headers, body)
+            if (engine == EngineId.CUSTOM_LAN && !url.toHttpUrl().isHttps) return postLocal(url, headers, body)
+            api.post(url, headers, body)
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.
             Log.w(TAG, "${engine.name}: ${e.javaClass.simpleName}")

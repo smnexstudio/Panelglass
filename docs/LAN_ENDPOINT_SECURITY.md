@@ -1,16 +1,26 @@
 # LAN endpoint revision: security and verification
 
+## Current transport design (local revision)
+
 Cloud Custom AI remains HTTPS-only with a required key. LAN / Private Custom AI has separate endpoint, model and key identities; its key is optional and no Authorization header is sent when absent. No cloud configuration or credential is inherited.
 
-LAN HTTP uses a dedicated non-proxying client. DNS results must all be RFC1918 or loopback IPv4, or unique-local or loopback IPv6. Empty and mixed public/private answers are rejected. The connected peer is checked before sending HTTP request headers/body, including IP-literal URLs. Link-local, unspecified, multicast, public and CGNAT addresses are not allowed. HTTPS retains standard certificate validation. Redirects remain disabled and response caps remain enabled.
+Android network-security configuration now blocks cleartext globally, without domain exceptions or debug trust overrides. Reader navigation callbacks, initial HTTP resource rejection, mixed-content blocking and network-disabled popup probes remain defense in depth. The LAN exception no longer relaxes the platform policy used by WebView, including paths not exposed by navigation callbacks. This is an architectural policy change, not a claim of Android runtime verification.
 
-Reader callbacks explicitly reject HTTP downgrade navigation and initial HTTP resources independently of ad blocking. Popup URL probes cannot load network resources. These callback tests do not prove redirect-hop safety.
+Only CUSTOM_LAN HTTP POSTs use LanSocketTransport, a narrow HTTP/1.1 JSON socket transport. HTTPS requests retain the existing Retrofit/OkHttp TLS path and standard certificate validation. Every DNS answer must be private/loopback; the transport connects directly to one validated address and checks the connected peer before sending headers or body. Public, link-local, unspecified, multicast, CGNAT and mixed DNS answers are rejected. No proxy, redirects, cookies, connection pooling or automatic request replay are used. The transport requests identity encoding; unsupported compressed responses and ambiguous or duplicate headers fail closed. Replies, request bodies and HTTP metadata are bounded. Cancellation closes the channel-backed socket; connect/read timeouts and a coroutine deadline are configured. Host DNS resolution still depends on the system resolver.
 
-## Remaining release blocker
+## Verification and review limits
 
-The Android base configuration still permits cleartext. WebView HTTPS-to-HTTP main-frame, POST, subresource and service-worker redirect safety remains unverified. The revision is NOT ready for merge until this security requirement is resolved. Do not describe Robolectric callback tests or successful APK packaging as device verification. Per the project owner’s instruction, Android runtime testing, emulator setup, system-image downloads and device installation are out of scope for this work; do not resume them.
+Fresh full engine JVM suite after integration: 170 tests, zero failures/errors/skips, BUILD SUCCESSFUL in 1m 22s. This includes eight socket-transport tests and existing cloud/LAN engine regressions. The initial cancellation test failed because ClosedByInterruptException escaped as IO failure; the wrapper was corrected and all eight tests then passed, including in the full engine run.
 
-Additional pending work includes translation review, complete settings-flow regression coverage and full CI-equivalent execution. PRIVACY.md and architecture NFR-2 now document the LAN HTTP exception and unresolved WebView redirect risk; maintainer review is still required. Local endpoint normalization also rejects non-local HTTP host names and addresses before saving, while transport DNS and peer checks remain authoritative. The input helper now rejects link-local and CGNAT addresses, matching the transport policy, and accepts expanded IPv6 loopback notation. DNS and connected-peer validation remain necessary for accepted hostnames.
+Fresh ManifestPolicyTest run: seven tests, zero failures/errors/skips, BUILD SUCCESSFUL in 36s. This verifies committed-source policy shape, not WebView runtime behavior. No full-project fresh regression run or APK build for this redesign is established by these test results.
+
+The new HTTP parser and Android compatibility still require review. These JVM results do not establish production readiness or eliminate the need for maintainer approval. Native-speaker/rendered translation review is not established. The historical results below predate this redesign and must not be combined into a new fresh test total.
+
+Per the project owner's instruction, emulator downloads, installation, configuration and execution, Android runtime testing and device installation are out of scope and must not be resumed.
+
+## Packaging status for this redesign
+
+Debug assembly attempts hit bounded execution/connector time limits, including a 45-second configuration attempt, a 90-second retry whose saved log did not establish successful completion, and a 40-second incremental attempt. No successful complete APK build, ZIP-integrity check or APK signature verification is claimed for this redesign. An APK file exists in the build directory but is not accepted as verification without successful build evidence. Historical APK hashes below do not identify this redesign. Full-project CI, maintainer review and Android compatibility remain outstanding; this review commit is NOT MERGE-READY. No emulator or device work was performed.
 
 ## Local verification status (2026-11-21)
 

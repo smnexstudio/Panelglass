@@ -73,10 +73,11 @@ the page text is not sent anywhere.
 Cloud translation, updates and downloads require HTTPS. The explicit exception is LAN / Private Custom AI,
 which can send unencrypted HTTP to validated private or loopback destinations.
 
-The reader is intended to remain HTTPS-only: direct HTTP links are upgraded, HTTP requests exposed to its
-callbacks are blocked, and mixed content is disabled. Android platform cleartext permission is nevertheless enabled
-for LAN support. Complete WebView HTTPS-to-HTTP redirect safety is not yet verified; this development revision
-is not merge-ready. See `docs/LAN_ENDPOINT_SECURITY.md` for the remaining verification requirement.
+The reader retains Android platform cleartext blocking, direct HTTP link upgrades, callback HTTP rejection,
+and mixed-content blocking. LAN HTTP POSTs use a separate, private-address-validated socket transport rather
+than enabling platform cleartext permission. Cloud and LAN HTTPS requests retain normal TLS verification.
+The new transport still requires maintainer review; source/JVM tests are not Android runtime verification.
+See `docs/LAN_ENDPOINT_SECURITY.md` for the design, limits and verification status.
 
 ## Permissions
 

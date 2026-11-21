@@ -91,7 +91,7 @@ Every requirement maps directly to automated unit test evidence ([TESTING.md](TE
 | ID | Non-Functional Requirement | Test / Verification Evidence |
 |---|---|---|
 | **NFR-1** | Zero Panelglass backend. App communicates strictly with user-visited sites, Gemini API, Hugging Face, Google ML Kit, and GitHub releases. | Code review; `OfflineEnginesTest` |
-| **NFR-2** | HTTPS for cloud providers, updates, downloads and reader policy. Only the isolated LAN engine may use HTTP with private/loopback DNS and peer validation; mixed content is refused. Platform cleartext is enabled for this exception; WebView redirect safety remains a release blocker. | `ManifestPolicyTest`, `WebUrlTest`, `PrivateLanDnsTest`, `EngineHttpGuardTest`, `NavigationPolicyTest`; Android redirect verification pending |
+| **NFR-2** | Android platform cleartext blocked without domain exceptions. Cloud and reader HTTPS policy retained. Only isolated LAN JSON POST sockets may use HTTP after private/loopback DNS and peer validation; redirects are never followed. | `ManifestPolicyTest`, `WebUrlTest`, `PrivateLanDnsTest`, `LanSocketTransportTest`, `EngineHttpGuardTest`, `NavigationPolicyTest`; source/JVM evidence only; new transport review pending |
 | **NFR-3** | API keys are encrypted at rest with hardware-backed Android Keystore keys (AES-GCM); logs never hold secrets or page URLs. | `SecureKeyStoreInstrumentedTest`; Code review |
 | **NFR-4** | Automated cloud backups and device-to-device transfers are disabled (`data_extraction_rules.xml`). Uninstall leaves zero data. | `ManifestPolicyTest` |
 | **NFR-5** | Downloaded models are verified against hardcoded SHA-256 hashes; update APKs are verified before installation. | `ModelPinningTest`, `SystemDownloadsIntegrityTest`, `ReleaseInfoTest` |
@@ -276,7 +276,7 @@ Every pipeline stage is monitored by a **50-second watchdog timer** in the reade
 
 ## Security Model & Sandboxing
 
-- **Network Security:** Android platform cleartext permission is enabled for LAN endpoints, not globally blocked. Cloud provider and update clients retain HTTPS enforcement. The isolated LAN HTTP client disables proxies, validates DNS results and the connected peer against private/loopback ranges, and does not follow redirects. Reader callbacks reject HTTP and mixed content is disabled, but full WebView redirect-hop safety is unverified and remains a release blocker. See `LAN_ENDPOINT_SECURITY.md`.
+- **Network Security:** Android platform cleartext blocking remains enabled for WebView and platform-aware clients. The LAN exception is a narrow JSON POST socket transport with private/loopback DNS and connected-peer validation, bounded framing/bodies, cancellation, no proxies and no redirect forwarding. HTTPS retains the existing TLS client. Reader callbacks and mixed-content blocking remain defense in depth. The new transport still requires review; no Android runtime verification is claimed. See `LAN_ENDPOINT_SECURITY.md`.
 - **Android Keystore:** API keys reside in private encrypted storage; decrypted bytes exist in memory only during the active HTTP request.
 - **Prompt Sanitization:** Untrusted web text is framed strictly as data in LLM prompts, never as instructions.
 - **WebView Isolation:** No JavaScript interfaces are bound to the WebView. Local file access is disabled.

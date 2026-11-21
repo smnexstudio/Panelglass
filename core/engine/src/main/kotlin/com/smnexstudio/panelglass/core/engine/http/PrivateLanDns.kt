@@ -4,7 +4,7 @@ import okhttp3.Dns
 import java.net.InetAddress
 import java.net.UnknownHostException
 
-/** Validate the exact DNS results handed to OkHttp; never fall back to public addresses. */
+/** Validate exact DNS results for the LAN transport; never fall back to public addresses. */
 internal class PrivateLanDns(private val delegate: Dns = Dns.SYSTEM) : Dns {
     override fun lookup(hostname: String): List<InetAddress> {
         val addresses = delegate.lookup(hostname)
