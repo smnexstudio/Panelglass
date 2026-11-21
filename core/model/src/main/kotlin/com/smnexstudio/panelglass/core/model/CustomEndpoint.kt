@@ -22,7 +22,7 @@ object CustomEndpoint {
     /**
      * The canonical base address of [raw], or null when it is not a usable server address.
      *
-     * HTTPS or local/LAN HTTP; [allowHttp] bypasses the host check in tests. Credentials in the
+     * HTTPS by default; [allowHttp] permits HTTP only for local/LAN host names and addresses. Credentials in the
      * address are refused: the key belongs in the key field, not in the URL.
      */
     fun normalize(raw: String, allowHttp: Boolean = false): String? {
@@ -39,6 +39,8 @@ object CustomEndpoint {
         // Credentials in the URL: the key has its own field.
         if (uri.rawUserInfo != null) return null
         val host = uri.host?.takeIf { it.isNotEmpty() } ?: return null
+        // This is an early input check, not a substitute for transport DNS and peer validation.
+        if (scheme == SCHEME_HTTP && !isLocalHost(host)) return null
 
         var path = uri.rawPath.orEmpty()
         // Trailing slashes first, so a pasted `…/chat/completions/` still matches the suffix below.
@@ -62,21 +64,27 @@ object CustomEndpoint {
     }
 
     /**
-     * True for a host that is not on the public internet: localhost, a loopback/private/link-local/CGNAT IPv4 address
-     * (10/8, 127/8, 172.16/12, 192.168/16, 169.254/16, 100.64/10), a local IPv6 address (::1, fc00::/7, fe80::/10),
+     * Input precheck for localhost, RFC1918 or loopback IPv4, unique-local or loopback IPv6,
+     * excluding link-local, CGNAT, unspecified and multicast addresses. Also accepts
      * a `.local`/`.lan`/`.home.arpa`/`.internal` name, or a single-label name such as `mypc`.
      */
     fun isLocalHost(host: String): Boolean {
         val h = host.trim().removePrefix("[").removeSuffix("]").lowercase(Locale.ROOT).trimEnd('.')
         if (h.isEmpty()) return false
-        if (':' in h) return h == "::1" || h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")
+        if (':' in h) {
+            if ('%' in h) return false
+            // A colon identifies an IP literal: parsing here never resolves a hostname.
+            val bytes = runCatching { java.net.InetAddress.getByName(h).address }.getOrNull() ?: return false
+            if (bytes.size != 16) return false
+            return (bytes[0].toInt() and 254) == 252 ||
+                (bytes.take(15).all { it.toInt() == 0 } && bytes[15].toInt() == 1)
+        }
         val parts = h.split('.')
         if (parts.all { it.isNotEmpty() && it.all(Char::isDigit) }) {
             if (parts.size != 4 || parts.any { it.length > 3 || it.toInt() > 255 }) return false
             val a = parts[0].toInt()
             val b = parts[1].toInt()
-            return a == 10 || a == 127 || (a == 172 && b in 16..31) || (a == 192 && b == 168) ||
-                (a == 169 && b == 254) || (a == 100 && b in 64..127)
+            return a == 10 || a == 127 || (a == 172 && b in 16..31) || (a == 192 && b == 168)
         }
         if (h == "localhost" || LOCAL_SUFFIXES.any { h.endsWith(it) }) return true
         return '.' !in h

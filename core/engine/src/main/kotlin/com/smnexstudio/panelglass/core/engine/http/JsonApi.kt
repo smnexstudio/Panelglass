@@ -45,7 +45,9 @@ interface JsonApi {
  * - **No redirects.** A 307/308 would re-send the whole request (page text, notes, glossary) to another host, and
  *   OkHttp drops only `Authorization` across hosts, not Gemini's `x-goog-api-key`. An API has no reason to redirect a
  *   call, so a 3xx is a typed failure that names the problem instead.
- * - **HTTPS only** on every hop ([HttpsOnly] as a network interceptor), on top of Android's cleartext policy.
+ * - **HTTPS only** for normal provider calls ([HttpsOnly] as a network interceptor). Only CUSTOM_LAN HTTP POSTs
+ *   use the separate non-proxying client with private/loopback DNS and connected-peer validation.
+ *   Android platform cleartext permission is enabled for LAN support; this does not prove WebView redirect safety.
  * - **Replies capped** at [maxReplyBytes] ([ReplyCap]): the user's own server is not one we vouch for.
  *
  * [httpsOnly] is off only in JVM tests, whose MockWebServer speaks plain HTTP.

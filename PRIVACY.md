@@ -36,9 +36,16 @@ The engine is the one you choose in **Settings › Engine & keys**. Panelglass n
 | Qwen 2.5 and Gemma 4 (on-device) | Nothing: the model runs on the phone | No one |
 | Gemini | Small images of the text on your screen, the glossary and your translation notes | Google, under your own API key and Google's terms |
 | Custom AI | The text read on the phone (never an image), the glossary and your notes | The provider you picked (DeepSeek, xAI, OpenAI, Anthropic, OpenRouter) or the server address you entered |
+| LAN / Private Custom AI | The text read on the phone (never an image), the glossary and your notes | Your separately configured server, with a separate optional API key |
 
 With Gemini or Custom AI, the provider's own privacy policy and terms apply to what you send them. Requests go
 straight from your phone to the provider, over HTTPS.
+
+LAN / Private Custom AI sends requests directly to your configured server. HTTPS uses normal certificate validation.
+HTTP is allowed only when the transport validates private or loopback destination addresses. HTTP is not encrypted:
+others on the network may read or modify translation text, glossary entries, notes and any API key you provide.
+Use HTTP only with a trusted private server and network. LAN configuration and credentials are separate from cloud
+Custom AI; cloud credentials are not automatically reused. The server operator controls how received data is handled.
 
 **Translate page** (reader ⋮ › Translate page) identifies and translates the page's text on the phone with ML Kit:
 the page text is not sent anywhere.
@@ -63,8 +70,13 @@ the page text is not sent anywhere.
   translation and language identification, the languages involved. It never sends the text or the images. Google
   describes this at https://developers.google.com/ml-kit/android-data-disclosure.
 
-Everything goes over HTTPS. The app sends nothing in clear text: an `http://` address is opened as `https://`, and a
-site that only serves plain http does not load.
+Cloud translation, updates and downloads require HTTPS. The explicit exception is LAN / Private Custom AI,
+which can send unencrypted HTTP to validated private or loopback destinations.
+
+The reader is intended to remain HTTPS-only: direct HTTP links are upgraded, HTTP requests exposed to its
+callbacks are blocked, and mixed content is disabled. Android platform cleartext permission is nevertheless enabled
+for LAN support. Complete WebView HTTPS-to-HTTP redirect safety is not yet verified; this development revision
+is not merge-ready. See `docs/LAN_ENDPOINT_SECURITY.md` for the remaining verification requirement.
 
 ## Permissions
 
