@@ -7,6 +7,8 @@ workflow publishes the version's section as the GitHub Release notes.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-23
+
 ### Added
 
 - **Translate whole page** (reader ⋮): the app scrolls a vertical reader from the top to the bottom by itself and translates every screen, with 30% overlap so no bubble is cut in two, then returns you to where you were; every translation stays while you read the page. Engines that cost quota or time (a key, or on the device) ask first how many screens it will be. **Cancel scan** stops it and scrolls back; touching the page stops it where you are. Contributed by @marufmoinuddin (#29).
