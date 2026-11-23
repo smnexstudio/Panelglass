@@ -11,10 +11,14 @@ workflow publishes the version's section as the GitHub Release notes.
 
 - **Translate whole page** (reader ⋮): the app scrolls a vertical reader from the top to the bottom by itself and translates every screen, with 30% overlap so no bubble is cut in two, then returns you to where you were; every translation stays while you read the page. Engines that cost quota or time (a key, or on the device) ask first how many screens it will be. **Cancel scan** stops it and scrolls back; touching the page stops it where you are. Contributed by @marufmoinuddin (#29).
 - **Backup & restore** (Settings, between Appearance & language and About & updates): saves your sites, each series' glossary and notes, and your translation notes to a file you choose, and restores them on another phone or after a reinstall. A restore shows what the file holds and waits for your OK; it adds to what you have (a site at the same address, or a term of the same series, is updated) and never deletes anything. Backups never hold API keys, other settings, downloaded models or Studio files.
+- **Cancel in Settings › Try a translation.** A try that hangs can be cancelled, and a cloud engine's try now stops by itself after 45 seconds as "took too long". Saving a new model or key stops a running try and clears its old result, so Translate runs the text again with what you saved.
 
 ### Changed
 
 - The README was rewritten: features, engines, the Studio, getting started and an FAQ, with the screenshots of the reader and the Studio.
+- **Gemini asks for the least thinking each model allows.** A bubble needs no reasoning, so each request starts at the lowest level the model's family accepts (a token budget for 2.5, MINIMAL for Gemini 3 Flash and Flash-Lite, LOW for the Pro models, 3.7 and later and Gemini 4) and steps down only if the model refuses it. `temperature` is no longer sent to Gemini 4 and 3.6 and later, which ignore it. Models whose saved settings came from the old rules are tried once more with the new ones.
+- **The model list puts the best choices first.** In the Gemini key sheet, the models suited to translating bubbles (the Flash and Flash-Lite ones your key can use) come first; every other model is still there.
+- **Clearer failures** in Settings and the reader: too slow, no secure connection, and a model your key cannot use each get their own message instead of "network error" or "unavailable". A 403 that is not about the key (a project that needs verification or billing) shows Google's reason instead of asking for a key you already have.
 
 ### Fixed
 

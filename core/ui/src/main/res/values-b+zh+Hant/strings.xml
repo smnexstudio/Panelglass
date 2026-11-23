@@ -807,4 +807,7 @@
     <string name="set_privacy_note">各引擎會傳送哪些內容</string>
     <string name="set_view_on_github">在 GitHub 上查看</string>
     <string name="set_doc_in_english">此頁面為英文。</string>
+    <string name="error_secure">無法與 %1$s 建立安全連線</string>
+    <string name="error_model_not_found">%1$s 的此金鑰無法使用該模型，請選擇其他模型</string>
+    <string name="action_try_model">試試 %1$s</string>
 </resources>

@@ -20,6 +20,7 @@ import com.smnexstudio.panelglass.core.model.Manga
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
 import com.smnexstudio.panelglass.core.engine.EngineResolution
 import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
+import com.smnexstudio.panelglass.core.ui.message
 import com.smnexstudio.panelglass.core.model.ModelState
 import com.smnexstudio.panelglass.core.model.SfxMode
 import com.smnexstudio.panelglass.core.data.update.AppUpdates
@@ -34,6 +35,7 @@ import com.smnexstudio.panelglass.core.ocr.LamaStore
 import com.smnexstudio.panelglass.core.engine.mt.PackState
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
+import com.smnexstudio.panelglass.core.model.NetworkKind
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.model.Lang
@@ -136,6 +138,9 @@ enum class BackupFailure { WRITE, UNREADABLE, NEWER, RESTORE }
 
 /** Settings › Reader › Block lists › Update. */
 enum class BlockListUpdate { IDLE, RUNNING, DONE, FAILED }
+
+/** A cloud Try that has not answered in this long is stopped as "took too long". */
+internal const val TRY_TIMEOUT_MS = 45_000L
 
 /** The model dropdown's content for the key sheet: the key's own model list, fetched on demand. */
 data class ModelChoices(
@@ -432,6 +437,12 @@ class SettingsViewModel @Inject constructor(
         // Read the pending selection now: the sheet dismisses (and clears it) right after calling us.
         val completesSelection = _needsKey.value == id && (key != null || id in keys.value)
         _needsKey.value = null
+        // A new key or model makes what a running Try is waiting on (and what it last showed) stale: stop it and leave
+        // the box ready, so Translate runs the text again with what was just saved.
+        if (key != null || (model != null && id.hasModel && model.trim() != settings.value.modelFor(id))) {
+            cancelTry()
+            _tryState.update { it.copy(output = null, via = null, failure = null) }
+        }
         viewModelScope.launch {
             if (key != null) registry.setKey(id, key)
             if (model != null && id.hasModel) repo.setModel(id, model)
@@ -464,7 +475,8 @@ class SettingsViewModel @Inject constructor(
             } catch (e: EngineException) {
                 ModelChoices(error = when (val f = e.failure) {
                     is EngineFailure.MissingKey -> context.getString(UiR.string.key_models_error_key)
-                    is EngineFailure.Network -> context.getString(UiR.string.key_models_error_network, EngineId.GEMINI.displayName)
+                    is EngineFailure.Network -> if (f.kind == NetworkKind.UNREACHABLE) context.getString(UiR.string.key_models_error_network, EngineId.GEMINI.displayName)
+                        else f.message(context, { it.joinToString() })
                     is EngineFailure.Unavailable -> context.getString(UiR.string.key_models_error).let { if (f.reason.isEmpty()) it else context.getString(UiR.string.error_with_reason, it, f.reason) }
                     else -> context.getString(UiR.string.key_models_error)
                 })
@@ -500,6 +512,19 @@ class SettingsViewModel @Inject constructor(
 
     fun setTryInput(s: String) = _tryState.update { it.copy(input = s) }
 
+    /**
+     * How long a Try on a cloud engine may take before it is called too slow. Retries and request step-downs can add
+     * up to minutes, and a box that spins for ever tells the user nothing. On-device models have no cap (loading one
+     * is slow the first time); Cancel stops either.
+     */
+    internal var tryTimeoutMs = TRY_TIMEOUT_MS
+
+    /** Stops a running Try; the box is ready to Translate again at once. */
+    fun cancelTry() {
+        tryJob?.cancel(); tryJob = null
+        _tryState.update { it.copy(running = false) }
+    }
+
     fun tryTranslate() {
         val text = _tryState.value.input.trim()
         if (text.isEmpty()) return
@@ -507,13 +532,17 @@ class SettingsViewModel @Inject constructor(
         tryJob = viewModelScope.launch {
             _tryState.update { it.copy(running = true, output = null, via = null, failure = null) }
             val s = settings.value
-            when (val r = registry.resolveSelected()) {
+            val engine = when (val r = registry.resolveSelected()) {
                 is EngineResolution.Failed -> { _tryState.update { it.copy(running = false, failure = r.failure) }; return@launch }
-                is EngineResolution.Ready -> Unit
+                is EngineResolution.Ready -> r.engine
             }
             val req = TranslateRequest(listOf(RegionItem(0, "try", RegionKind.ENCLOSED, text)), s.defaultSourceLang, s.defaultTargetLang)
             try {
-                val out = registry.translate(req)
+                val out = (if (engine.id.isLocalLlm) registry.translate(req) else kotlinx.coroutines.withTimeoutOrNull(tryTimeoutMs) { registry.translate(req) })
+                    ?: run {
+                        _tryState.update { it.copy(running = false, failure = EngineFailure.Network(engine.id, NetworkKind.TIMEOUT)) }
+                        return@launch
+                    }
                 val via = listOfNotNull(out.engine.uiName(context), s.modelFor(out.engine).takeIf { out.engine.hasModel }, "${out.elapsedMs} ms").joinToString(" · ")
                 _tryState.update { it.copy(running = false, output = out.items.firstOrNull()?.text ?: "", via = via) }
             } catch (e: EngineException) {

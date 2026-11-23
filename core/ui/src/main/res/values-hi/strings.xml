@@ -823,4 +823,7 @@
     <string name="set_privacy_note">हर इंजन के साथ आपके फ़ोन से क्या जाता है</string>
     <string name="set_view_on_github">GitHub पर देखें</string>
     <string name="set_doc_in_english">यह पेज अंग्रेज़ी में है।</string>
+    <string name="error_secure">%1$s से सुरक्षित कनेक्शन नहीं बन सका</string>
+    <string name="error_model_not_found">%1$s आपकी कुंजी के लिए यह मॉडल उपलब्ध नहीं कराता; दूसरा चुनें</string>
+    <string name="action_try_model">%1$s आज़माएं</string>
 </resources>

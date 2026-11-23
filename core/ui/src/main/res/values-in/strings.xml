@@ -807,4 +807,7 @@
     <string name="set_privacy_note">Apa yang keluar dari ponsel Anda, per mesin</string>
     <string name="set_view_on_github">Lihat di GitHub</string>
     <string name="set_doc_in_english">Halaman ini dalam bahasa Inggris.</string>
+    <string name="error_secure">Tidak dapat membuat koneksi aman ke %1$s</string>
+    <string name="error_model_not_found">%1$s tidak menyediakan model ini untuk kunci Anda; pilih model lain</string>
+    <string name="action_try_model">Coba %1$s</string>
 </resources>

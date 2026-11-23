@@ -823,4 +823,7 @@
     <string name="set_privacy_note">Qué sale de tu teléfono con cada motor</string>
     <string name="set_view_on_github">Ver en GitHub</string>
     <string name="set_doc_in_english">Esta página está en inglés.</string>
+    <string name="error_secure">No se pudo establecer una conexión segura con %1$s</string>
+    <string name="error_model_not_found">%1$s no ofrece este modelo con tu clave; elige otro</string>
+    <string name="action_try_model">Probar %1$s</string>
 </resources>

@@ -65,6 +65,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.smnexstudio.panelglass.core.ui.R as UiR
 import com.smnexstudio.panelglass.core.ui.uiName
+import com.smnexstudio.panelglass.core.ui.message
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -367,7 +368,7 @@ internal fun PacksSheet(p: PackState, onDownload: (String) -> Unit, onDelete: (S
 @Composable
 internal fun TryBox(
     t: TryState, onInput: (String) -> Unit, onRun: () -> Unit, onAddKey: (EngineId) -> Unit, onUseOnDevice: () -> Unit,
-    onDownloadPacks: (List<String>) -> Unit,
+    onDownloadPacks: (List<String>) -> Unit, onCancel: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth().padding(14.dp)) {
         OutlinedTextField(
@@ -381,7 +382,11 @@ internal fun TryBox(
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             PrimaryPill(stringResource(UiR.string.try_translate), onClick = onRun, enabled = !t.running && t.input.isNotBlank())
-            if (t.running) { Spacer(Modifier.width(12.dp)); CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Tokens.Ink) }
+            if (t.running) {
+                Spacer(Modifier.width(12.dp)); CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Tokens.Ink)
+                // A try that hangs (a slow model, a stuck connection) can always be stopped, then run again.
+                Spacer(Modifier.width(8.dp)); TextAction(stringResource(UiR.string.action_cancel), Tokens.SkyDeep, onCancel)
+            }
         }
         t.output?.let {
             Spacer(Modifier.height(12.dp))
@@ -414,21 +419,18 @@ internal fun packName(tag: String): String =
 
 @Composable
 private fun failureText(f: EngineFailure): Pair<String, Action> {
-    val name = f.engine.uiName()
-    // The provider's own reason is appended as it came: it is the provider's text, not ours.
-    @Composable fun withReason(res: Int, reason: String): String =
-        stringResource(res, name).let { if (reason.isEmpty()) it else stringResource(UiR.string.error_with_reason, it, reason) }
-    return when (f) {
-        is EngineFailure.MissingKey -> stringResource(UiR.string.error_needs_key, name) to Action.ADD_KEY
-        is EngineFailure.ModelMissing -> stringResource(UiR.string.error_model_missing) to Action.NONE
-        is EngineFailure.PackMissing -> stringResource(UiR.string.error_pack_missing, f.tags.joinToString(", ") { packName(it) }) to Action.DOWNLOAD_PACK
-        is EngineFailure.QuotaExceeded -> stringResource(UiR.string.error_quota, name) to Action.USE_ON_DEVICE
-        is EngineFailure.RateLimited -> stringResource(UiR.string.error_rate_limited, name) to Action.NONE
-        is EngineFailure.Overloaded -> withReason(UiR.string.error_overloaded, f.reason) to Action.USE_ON_DEVICE
-        is EngineFailure.Malformed -> stringResource(UiR.string.error_malformed, name) to Action.USE_ON_DEVICE
-        is EngineFailure.Network -> stringResource(UiR.string.error_network, name) to Action.USE_ON_DEVICE
-        is EngineFailure.Unavailable -> withReason(UiR.string.error_unavailable, f.reason) to Action.USE_ON_DEVICE
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // One wording for every screen: core:ui's EngineFailure.message (specific about busy / too slow / model not offered).
+    val text = f.message(context, { tags -> tags.joinToString(", ") { packName(it) } })
+    val action = when (f) {
+        is EngineFailure.MissingKey -> Action.ADD_KEY
+        is EngineFailure.PackMissing -> Action.DOWNLOAD_PACK
+        is EngineFailure.ModelMissing, is EngineFailure.RateLimited -> Action.NONE
+        // A model the key cannot use is fixed by picking another one, not by leaving Gemini.
+        is EngineFailure.Unavailable -> if (f.isModelNotFound) Action.NONE else Action.USE_ON_DEVICE
+        else -> Action.USE_ON_DEVICE
     }
+    return text to action
 }
 
 @Composable

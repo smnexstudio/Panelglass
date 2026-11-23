@@ -7,6 +7,7 @@ import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
 import com.smnexstudio.panelglass.core.model.PlannedEngine
+import com.smnexstudio.panelglass.core.model.modelMayBeTheCause
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
@@ -40,16 +41,34 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
      * field it refused, so a 400 steps one level down, once, and the level that worked is remembered per model, across
      * runs ([SettingsRepository.requestProfile]): otherwise the first screen after every launch pays a refused call.
      */
-    enum class Options { THINKING_BUDGET_0, THINKING_LEVEL_MINIMAL, JSON_ONLY, PLAIN }
+    enum class Options { THINKING_BUDGET_0, THINKING_BUDGET_128, THINKING_LEVEL_MINIMAL, THINKING_LEVEL_LOW, JSON_ONLY, PLAIN }
     private val optionsFor = java.util.concurrent.ConcurrentHashMap<String, Options>()
+
+    /**
+     * Profiles saved by the first ladder (budget 0, minimal, JSON only) are not read back: it ended at JSON only for
+     * every model that refuses MINIMAL (the Pro models, 3.7 / 3.8 Flash, Gemini 4), which leaves thinking on. The
+     * ladder now has the LOW rung, so those models are tried again once, under this key.
+     */
+    private fun profileKey(model: String) = "$model|v2"
+
+    /** What this app's own calls last saw of each model: free to know, and the basis of [alternativeTo]. */
+    val health = ModelHealth()
+    /** The ids the key's last `models.list` held, kept so a suggestion needs no request; null until one was fetched. */
+    @Volatile private var listedIds: Set<String>? = null
+
+    /**
+     * A model worth suggesting when [model] fails (overloaded, not found, no answer in time), or null. Never sends a
+     * request: it uses the key's last model list and what the app's calls just saw.
+     */
+    fun alternativeTo(model: String): String? = GeminiModelAdvice.alternative(model, listedIds, health)
 
     override suspend fun complete(apiKey: String, system: String, turns: List<Turn>, maxOutputTokens: Int): String {
         val typed = settings.current().modelFor(id)
         if (typed.isBlank()) throw EngineException(EngineFailure.Unavailable(id, "No model configured"))
         val model = resolveModel(apiKey, typed)
         var level = optionsFor[model]
-            ?: settings.requestProfile(id, model)?.let { saved -> Options.entries.firstOrNull { it.name == saved } }?.also { optionsFor[model] = it }
-            ?: if (model.startsWith("gemma")) Options.PLAIN else Options.THINKING_BUDGET_0
+            ?: settings.requestProfile(id, profileKey(model))?.let { saved -> Options.entries.firstOrNull { it.name == saved } }?.also { optionsFor[model] = it }
+            ?: GeminiRequestRules.start(model)
         val images = turns.sumOf { t -> t.images.size + (if (t.image != null) 1 else 0) }
         while (true) {
             val t0 = System.currentTimeMillis()
@@ -57,7 +76,7 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
                 val resp = try {
                     support.post(
                         id, "$baseUrl/models/$model:generateContent",
-                        mapOf("x-goog-api-key" to apiKey, "Content-Type" to "application/json"), body(level, system, turns, maxOutputTokens),
+                        mapOf("x-goog-api-key" to apiKey, "Content-Type" to "application/json"), body(model, level, system, turns, maxOutputTokens),
                     )
                 } finally {
                     // Durations and shapes only: no key, no URL, no page text.
@@ -65,21 +84,27 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
                 }
                 if (optionsFor[model] != level) {
                     optionsFor[model] = level
-                    settings.setRequestProfile(id, model, level.name)
+                    settings.setRequestProfile(id, profileKey(model), level.name)
                     // Model id and option level only; runCatching because plain JVM tests have no Log.
                     runCatching { android.util.Log.i(TAG, "model $model accepts ${level.name}") }
                 }
-                return replyText(resp) ?: throw EngineException(EngineFailure.Malformed(id))
+                val text = replyText(resp) ?: throw EngineException(EngineFailure.Malformed(id))
+                health.succeeded(model)
+                return text
             } catch (e: EngineException) {
                 val f = e.failure
                 val refusedRequest = f is EngineFailure.Unavailable && f.reason.startsWith("HTTP 400")
-                if (!refusedRequest || level == Options.PLAIN) throw e
-                level = Options.entries[level.ordinal + 1]
+                if (!refusedRequest) {
+                    // The model did not answer (busy, gone, or too slow): remembered, so it is not suggested next.
+                    if (f.modelMayBeTheCause) health.failed(model)
+                    throw e
+                }
+                level = GeminiRequestRules.stepDown(level) ?: throw e
             }
         }
     }
 
-    private fun body(level: Options, system: String, turns: List<Turn>, maxOutputTokens: Int) = buildJsonObject {
+    private fun body(model: String, level: Options, system: String, turns: List<Turn>, maxOutputTokens: Int) = buildJsonObject {
         val plain = level == Options.PLAIN
         if (!plain) put("system_instruction", obj("parts" to arr(obj("text" to s(system)))))
         put("contents", buildJsonArray {
@@ -100,11 +125,17 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
         // Every level caps the reply: notes are the reader's own instructions, and one asking for an essay per line
         // must not run up the key's bill (a cut reply fails as Malformed after one repair call).
         val cap = "maxOutputTokens" to n(maxOutputTokens)
+        // Gemini 4 and 3.6+ ignore temperature and will refuse it: left out for them.
+        val temp: Array<Pair<String, JsonElement>> =
+            if (GeminiRequestRules.sendsTemperature(model)) arrayOf("temperature" to n(0.2)) else emptyArray()
+        val json = "responseMimeType" to s("application/json")
         put("generationConfig", when (level) {
-            Options.THINKING_BUDGET_0 -> obj("temperature" to n(0.2), cap, "responseMimeType" to s("application/json"), "thinkingConfig" to obj("thinkingBudget" to n(0)))
-            Options.THINKING_LEVEL_MINIMAL -> obj("temperature" to n(0.2), cap, "responseMimeType" to s("application/json"), "thinkingConfig" to obj("thinkingLevel" to s("minimal")))
-            Options.JSON_ONLY -> obj("temperature" to n(0.2), cap, "responseMimeType" to s("application/json"))
-            Options.PLAIN -> obj("temperature" to n(0.2), cap)
+            Options.THINKING_BUDGET_0 -> obj(*temp, cap, json, "thinkingConfig" to obj("thinkingBudget" to n(0)))
+            Options.THINKING_BUDGET_128 -> obj(*temp, cap, json, "thinkingConfig" to obj("thinkingBudget" to n(128)))
+            Options.THINKING_LEVEL_MINIMAL -> obj(*temp, cap, json, "thinkingConfig" to obj("thinkingLevel" to s("minimal")))
+            Options.THINKING_LEVEL_LOW -> obj(*temp, cap, json, "thinkingConfig" to obj("thinkingLevel" to s("low")))
+            Options.JSON_ONLY -> obj(*temp, cap, json)
+            Options.PLAIN -> obj(*temp, cap)
         })
     }
 
@@ -117,22 +148,27 @@ class GeminiEngine @Inject constructor(support: HttpEngineSupport, keys: SecureK
      */
     suspend fun listModels(apiKey: String? = null): List<Model> {
         val key = apiKey?.takeIf { it.isNotBlank() } ?: keys.get(id) ?: throw EngineException(EngineFailure.MissingKey(id))
-        return fetchModels(key)
+        val sorted = fetchModels(key)
             .filter { (mid, _) -> (mid.startsWith("gemini") || mid.startsWith("gemma")) && NON_TEXT.none { it in mid } }
             .map { (mid, display) -> Model(mid, display) }
             .sortedWith(compareBy<Model>({ !it.id.startsWith("gemini") }, { it.id }))
+        // The ones worth picking first (curated, and the key can call them), then the rest.
+        return GeminiModelAdvice.ordered(sorted)
     }
 
     private suspend fun fetchModels(apiKey: String): List<Pair<String, String>> {
         val list = support.get(id, "$baseUrl/models?pageSize=1000", mapOf("x-goog-api-key" to apiKey))
-        return runCatching { list.jsonObject["models"]!!.jsonArray }.getOrNull().orEmpty().mapNotNull { m ->
+        return parseModels(list).also { found -> listedIds = found.map { it.first }.toSet() }
+    }
+
+    private fun parseModels(list: JsonElement): List<Pair<String, String>> =
+        runCatching { list.jsonObject["models"]!!.jsonArray }.getOrNull().orEmpty().mapNotNull { m ->
             val o = m.objOrEmpty()
             val name = o["name"]?.jsonPrimitive?.content?.removePrefix("models/") ?: return@mapNotNull null
             val methods = runCatching { o["supportedGenerationMethods"]!!.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
             if (methods != null && "generateContent" !in methods) return@mapNotNull null
             name to (o["displayName"]?.jsonPrimitive?.content ?: name)
         }
-    }
 
     /** The answer's text parts joined; parts flagged `thought` (a thinking model's reasoning) are not the answer. */
     private fun replyText(resp: JsonElement): String? {

@@ -807,4 +807,7 @@
     <string name="set_privacy_note">Những gì rời khỏi điện thoại, theo từng công cụ</string>
     <string name="set_view_on_github">Xem trên GitHub</string>
     <string name="set_doc_in_english">Trang này bằng tiếng Anh.</string>
+    <string name="error_secure">Không thể tạo kết nối an toàn tới %1$s</string>
+    <string name="error_model_not_found">%1$s không cung cấp mô hình này cho khóa của bạn; hãy chọn mô hình khác</string>
+    <string name="action_try_model">Thử %1$s</string>
 </resources>

@@ -13,6 +13,8 @@ import com.smnexstudio.panelglass.core.data.prefs.SettingsRepository
 import com.smnexstudio.panelglass.core.data.repo.HistoryRepository
 import com.smnexstudio.panelglass.core.data.repo.SiteRepository
 import com.smnexstudio.panelglass.core.engine.EngineRegistry
+import com.smnexstudio.panelglass.core.engine.llm.GeminiEngine
+import com.smnexstudio.panelglass.core.ui.message
 import com.smnexstudio.panelglass.core.engine.local.LocalModelUse
 import com.smnexstudio.panelglass.core.engine.mt.LanguagePackStore
 import com.smnexstudio.panelglass.core.ui.languageName
@@ -700,18 +702,28 @@ class ReaderViewModel @Inject constructor(
     }
 
     /** The status line for a failed viewport: say what went wrong, not just which engine. */
-    private fun screenError(f: EngineFailure?): String {
-        val name = f?.engine?.uiName(context) ?: return context.getString(UiR.string.error_translation_failed)
-        if (f is EngineFailure.PackMissing) return context.getString(UiR.string.error_pack_missing, packNames(f.tags))
-        val res = when (f) {
-            is EngineFailure.Overloaded -> UiR.string.error_overloaded_scroll
-            is EngineFailure.MissingKey -> UiR.string.error_needs_key
-            is EngineFailure.QuotaExceeded -> UiR.string.error_quota
-            is EngineFailure.Network -> UiR.string.error_network
-            is EngineFailure.Unavailable -> if (f.reason.startsWith("Watchdog")) UiR.string.error_too_long else UiR.string.error_failed
-            else -> UiR.string.error_failed
+    private fun screenError(f: EngineFailure?): String =
+        f?.message(context, ::packNames, inReader = true) ?: context.getString(UiR.string.error_translation_failed)
+
+    /** The bar's failure line, same words as the status line but with the actions beside it (so no "scroll to retry"). */
+    fun failureMessage(f: EngineFailure): String = f.message(context, ::packNames)
+
+    /**
+     * A Gemini model to offer instead of the one that just failed, or null. It sends no request (the key's last model
+     * list and what this app's own calls saw are enough), so suggesting costs no quota.
+     */
+    suspend fun alternativeModel(): String? {
+        val gemini = registry[EngineId.GEMINI] as? GeminiEngine ?: return null
+        return gemini.alternativeTo(settingsRepo.current().modelFor(EngineId.GEMINI))
+    }
+
+    /** The bar's "Try <model>": save it as Gemini's model (the user tapped it) and translate the screen again. */
+    fun useModel(model: String, capture: suspend () -> ViewportCapture?) {
+        viewModelScope.launch {
+            settingsRepo.setModel(EngineId.GEMINI, model)
+            knownModel = EngineId.GEMINI to model
+            startScreen(capture)
         }
-        return context.getString(res, name)
     }
 
     /** ML Kit tags named in the UI's language ("Hindi, Arabic"). */
@@ -856,6 +868,18 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
+     * The engine the session uses and the model it was last seen with (as saved), to notice a model changed in
+     * Settings. Kept with its engine: a model only counts as changed for the engine it belonged to, so switching
+     * engine is never mistaken for it.
+     */
+    @Volatile private var knownModel: Pair<EngineId, String>? = null
+
+    /** Records [engine]'s currently saved model as the one the session knows. */
+    private fun rememberModel(engine: EngineId) {
+        viewModelScope.launch { knownModel = engine to settingsRepo.current().modelFor(engine) }
+    }
+
+    /**
      * Settings may have changed the engine or the languages while the reader was off screen, and there was no page
      * load to pick them up: re-resolve, and re-translate what is on screen when the result would differ.
      */
@@ -865,6 +889,14 @@ class ReaderViewModel @Inject constructor(
         val cfg = withOverride(s.resolve(site).copy(seriesKey = Site.seriesKeyFor(site, url)), site)
         val old = _ui.value.config
         _ui.update { it.copy(site = site, config = cfg) }
+        // A different model was saved in Settings for the same engine while a translation ran: what it is waiting on
+        // (and what it already drew) belongs to the old model. Stop it and leave the Start button, which translates
+        // with the new one. A different engine is not this: it falls through to the usual re-translate below.
+        val model = s.modelFor(cfg.engineId)
+        val before = knownModel
+        val modelChanged = cfg.engineId.hasModel && before != null && before.first == cfg.engineId && before.second != model
+        knownModel = cfg.engineId to model
+        if (modelChanged && _screen.value.active) { stopScreen(); return }
         if (old == null || old == cfg) return
         if (old.engineId != cfg.engineId) prewarm(cfg)
         if (_screen.value.active) { clearScreenPatches(); translateViewport() }
@@ -902,6 +934,7 @@ class ReaderViewModel @Inject constructor(
             client.adBlockEnabled = adBlock
             var cfg = withOverride(s.resolve(site).copy(seriesKey = Site.seriesKeyFor(site, initialUrl)), site)
             pendingEngine?.let { cfg = cfg.copy(engineId = it); pendingEngine = null }
+            knownModel = cfg.engineId to s.modelFor(cfg.engineId)
             _ui.update { it.copy(site = site, adBlockEnabled = adBlock, config = cfg) }
             prewarm(cfg)
             // Translate-on-open: the screen starts it (it owns the capture), once, when it sees this flag.
@@ -958,6 +991,7 @@ class ReaderViewModel @Inject constructor(
     fun switchToOnDevice(capture: suspend () -> ViewportCapture?) {
         val cfg = _ui.value.config?.copy(engineId = EngineId.GOOGLE) ?: return
         _ui.update { it.copy(config = cfg) }
+        knownModel = EngineId.GOOGLE to ""
         startScreen(capture)
     }
 
@@ -969,6 +1003,7 @@ class ReaderViewModel @Inject constructor(
         val cfg = _ui.value.config?.copy(engineId = id)
         if (cfg == null) { pendingEngine = id; return }
         _ui.update { it.copy(config = cfg) }
+        rememberModel(id)
         prewarm(cfg)
     }
 
@@ -982,7 +1017,11 @@ class ReaderViewModel @Inject constructor(
 
     fun engineLabel(): String {
         val cfg = _ui.value.config ?: return ""
-        return cfg.engineId.uiName(context) + " · " + cfg.src.code.uppercase() + " → " + cfg.tgt.code.uppercase()
+        // The model too, for engines that have one: after a change in Settings this shows which one Start will use.
+        // Only the model that belongs to this engine: after a switch it is never another engine's.
+        val model = knownModel?.takeIf { cfg.engineId.hasModel && it.first == cfg.engineId && it.second.isNotBlank() }?.second
+        val engine = cfg.engineId.uiName(context) + (model?.let { " ($it)" } ?: "")
+        return engine + " · " + cfg.src.code.uppercase() + " → " + cfg.tgt.code.uppercase()
     }
 
 

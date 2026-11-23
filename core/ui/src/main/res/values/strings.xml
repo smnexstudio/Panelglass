@@ -852,4 +852,7 @@
     <string name="set_privacy_note">What leaves your phone, per engine</string>
     <string name="set_view_on_github">View on GitHub</string>
     <string name="set_doc_in_english">This page is in English.</string>
+    <string name="error_secure">Could not make a secure connection to %1$s</string>
+    <string name="error_model_not_found">%1$s does not offer this model for your key; pick another</string>
+    <string name="action_try_model">Try %1$s</string>
 </resources>

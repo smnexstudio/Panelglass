@@ -807,4 +807,7 @@
     <string name="set_privacy_note">엔진별로 휴대폰 밖으로 나가는 것</string>
     <string name="set_view_on_github">GitHub에서 보기</string>
     <string name="set_doc_in_english">이 페이지는 영어로 되어 있습니다.</string>
+    <string name="error_secure">%1$s에 보안 연결을 만들 수 없습니다</string>
+    <string name="error_model_not_found">%1$s에서 이 키로는 이 모델을 사용할 수 없습니다. 다른 모델을 선택하세요</string>
+    <string name="action_try_model">%1$s 사용해 보기</string>
 </resources>

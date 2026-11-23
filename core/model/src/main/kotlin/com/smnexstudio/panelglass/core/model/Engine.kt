@@ -79,7 +79,8 @@ sealed class EngineFailure {
      */
     @Serializable data class Overloaded(override val engine: EngineId, val retryAfterMs: Long = 1_000, val reason: String = "") : EngineFailure()
     @Serializable data class Malformed(override val engine: EngineId) : EngineFailure()
-    @Serializable data class Network(override val engine: EngineId) : EngineFailure()
+    /** The call never produced a reply. [kind] says why, so the message can be "took too long" and not "network error". */
+    @Serializable data class Network(override val engine: EngineId, val kind: NetworkKind = NetworkKind.UNREACHABLE) : EngineFailure()
     /** The on-device model file is not present yet. */
     @Serializable data class ModelMissing(override val engine: EngineId) : EngineFailure()
     /**
@@ -87,8 +88,35 @@ sealed class EngineFailure {
      * automatically: the user downloads it (one tap) before it is used. [tags] are ML Kit language tags.
      */
     @Serializable data class PackMissing(override val engine: EngineId, val tags: List<String>) : EngineFailure()
-    @Serializable data class Unavailable(override val engine: EngineId, val reason: String = "") : EngineFailure()
+    @Serializable data class Unavailable(override val engine: EngineId, val reason: String = "") : EngineFailure() {
+        /** HTTP 404: the provider does not know the model (retired, renamed, or not open to this key). */
+        val isModelNotFound: Boolean get() = reason.startsWith("HTTP 404")
+    }
 }
+
+/** Why a call produced no reply. */
+@Serializable
+enum class NetworkKind {
+    /** No connection, or the host could not be reached. */
+    UNREACHABLE,
+    /** Connected, but no answer in time: a slow or stuck model. */
+    TIMEOUT,
+    /** The TLS handshake failed (a proxy or antivirus re-signing the connection, or a wrong clock). */
+    SECURE,
+}
+
+/**
+ * Whether another model of the same provider could succeed where this call failed: it was busy, too slow, or does not
+ * know the model. A refused key, no connection, a failed TLS handshake or a spent quota are not the model's fault, and
+ * suggesting another one would only add a request that fails the same way.
+ */
+val EngineFailure.modelMayBeTheCause: Boolean
+    get() = when (this) {
+        is EngineFailure.Overloaded -> true
+        is EngineFailure.Network -> kind == NetworkKind.TIMEOUT
+        is EngineFailure.Unavailable -> isModelNotFound
+        else -> false
+    }
 
 class EngineException(val failure: EngineFailure, cause: Throwable? = null) :
     Exception(failure::class.simpleName, cause)

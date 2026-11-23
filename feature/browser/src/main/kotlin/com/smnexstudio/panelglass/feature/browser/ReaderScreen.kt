@@ -56,6 +56,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import com.smnexstudio.panelglass.core.model.modelMayBeTheCause
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -324,6 +326,12 @@ fun ReaderScreen(
         HorizontalDivider(thickness = 1.dp, color = Tokens.InkRaised)
         Column(Modifier.fillMaxWidth().background(Tokens.Ink).navigationBarsPadding()) {
             val failure = screen.failure
+            // A Gemini model to offer in place of the one that failed. Never a request: the key's last model list and
+            // what this app's own calls saw decide it (ReaderViewModel.alternativeModel).
+            val alternative by produceState<String?>(null, failure) {
+                // Only a failure another model could avoid (busy, too slow, model not found): not a key, TLS or offline one.
+                value = if (failure != null && failure.engine == EngineId.GEMINI && failure.modelMayBeTheCause) vm.alternativeModel() else null
+            }
             when (failure) {
                 is EngineFailure.MissingKey -> ErrorRow(stringResource(UiR.string.error_needs_key, failure.engine.uiName()), stringResource(UiR.string.action_add_key)) { onOpenKeySheet(failure.engine.name) }
                 // Only Japanese, Korean and Chinese download by themselves: any other language waits for this tap.
@@ -333,9 +341,20 @@ fun ReaderScreen(
                 // The escape hatch is Google Translate (ML Kit, on-device, no key) — named as such, since the failing
                 // engine may itself be the on-device model — and only offered while it is not the one that failed.
                 is EngineFailure.QuotaExceeded -> ErrorRow(stringResource(UiR.string.error_quota, failure.engine.uiName()), stringResource(UiR.string.action_use_google_translate)) { vm.switchToOnDevice { captureViewport(webView) } }
-                is EngineFailure.Unavailable, is EngineFailure.Network, is EngineFailure.Overloaded ->
-                    if (failure.engine == EngineId.GOOGLE) ErrorRow(stringResource(UiR.string.error_unavailable_now, failure.engine.uiName()), null, null)
-                    else ErrorRow(stringResource(UiR.string.error_unavailable_now, failure.engine.uiName()), stringResource(UiR.string.action_use_google_translate)) { vm.switchToOnDevice { captureViewport(webView) } }
+                is EngineFailure.Unavailable, is EngineFailure.Network, is EngineFailure.Overloaded -> {
+                    val message = vm.failureMessage(failure)
+                    when {
+                        failure.engine == EngineId.GOOGLE -> ErrorRow(message, null, null)
+                        // Gemini: first a model that is not the one that just failed (the user taps; nothing switches
+                        // by itself), then the on-device escape hatch.
+                        alternative != null -> ErrorRowTwoActions(
+                            message, stringResource(UiR.string.action_try_model, alternative!!),
+                            { vm.useModel(alternative!!) { captureViewport(webView) } },
+                            stringResource(UiR.string.action_use_google_translate), { vm.switchToOnDevice { captureViewport(webView) } },
+                        )
+                        else -> ErrorRow(message, stringResource(UiR.string.action_use_google_translate)) { vm.switchToOnDevice { captureViewport(webView) } }
+                    }
+                }
                 else -> Unit
             }
             if (seriesSheet) SeriesMemorySheet(
@@ -411,6 +430,20 @@ private fun LoadBar(progress: Int, modifier: Modifier = Modifier) {
     AnimatedVisibility(visible = loading, enter = fadeIn(tween(120)), exit = fadeOut(tween(300)), modifier = modifier) {
         Box(Modifier.fillMaxWidth().height(3.dp)) {
             Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(Tokens.Yellow))
+        }
+    }
+}
+
+@Composable
+private fun ErrorRowTwoActions(
+    message: String, action: String, onAction: () -> Unit, action2: String, onAction2: () -> Unit,
+) {
+    // Two actions do not fit beside a sentence: the message gets the line, the actions the one under it.
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp)) {
+        Text(message, style = MaterialTheme.typography.bodySmall, color = Tokens.Error)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextAction(action, Tokens.Sky, onAction)
+            TextAction(action2, Tokens.Sky, onAction2)
         }
     }
 }
