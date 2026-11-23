@@ -823,4 +823,7 @@
     <string name="set_privacy_note">Cosa lascia il telefono, motore per motore</string>
     <string name="set_view_on_github">Visualizza su GitHub</string>
     <string name="set_doc_in_english">Questa pagina è in inglese.</string>
+    <string name="error_secure">Impossibile stabilire una connessione sicura con %1$s</string>
+    <string name="error_model_not_found">%1$s non offre questo modello per la tua chiave; scegline un altro</string>
+    <string name="action_try_model">Prova %1$s</string>
 </resources>

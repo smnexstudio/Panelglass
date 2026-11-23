@@ -823,4 +823,7 @@
     <string name="set_privacy_note">O que sai do telemóvel, por motor</string>
     <string name="set_view_on_github">Ver no GitHub</string>
     <string name="set_doc_in_english">Esta página está em inglês.</string>
+    <string name="error_secure">Não foi possível criar uma conexão segura com %1$s</string>
+    <string name="error_model_not_found">%1$s não oferece este modelo para a sua chave; escolha outro</string>
+    <string name="action_try_model">Tentar %1$s</string>
 </resources>

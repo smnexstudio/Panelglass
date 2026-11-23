@@ -823,4 +823,7 @@
     <string name="set_privacy_note">Was dein Telefon je Engine verlässt</string>
     <string name="set_view_on_github">Auf GitHub ansehen</string>
     <string name="set_doc_in_english">Diese Seite ist auf Englisch.</string>
+    <string name="error_secure">Sichere Verbindung zu %1$s nicht möglich</string>
+    <string name="error_model_not_found">%1$s bietet dieses Modell für deinen Schlüssel nicht an; wähle ein anderes</string>
+    <string name="action_try_model">%1$s versuchen</string>
 </resources>

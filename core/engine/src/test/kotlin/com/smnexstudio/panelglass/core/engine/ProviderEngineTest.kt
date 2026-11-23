@@ -114,16 +114,17 @@ class ProviderEngineTest {
         settings.setModel(EngineId.GEMINI, "gemini-3.5-flash-lite")
         val invalid = """{"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}}"""
         val ok = """{"candidates":[{"content":{"parts":[{"text":"[{\"i\":0,\"text\":\"Hello\"},{\"i\":1,\"text\":\"Thanks\"}]"}]}}]}"""
-        server.enqueue(MockResponse().setResponseCode(400).setBody(invalid))   // thinkingBudget refused
-        server.enqueue(MockResponse().setResponseCode(400).setBody(invalid))   // thinkingLevel refused
+        server.enqueue(MockResponse().setResponseCode(400).setBody(invalid))   // thinkingLevel minimal refused
+        server.enqueue(MockResponse().setResponseCode(400).setBody(invalid))   // thinkingLevel low refused
         server.enqueue(MockResponse().setBody(ok))                             // JSON mode, no thinking config
         server.enqueue(MockResponse().setBody(ok))
         val engine = GeminiEngine(testSupport(), keys, settings).apply { baseUrl = server.url("/v1beta").toString() }
 
         assertEquals(listOf("Hello", "Thanks"), engine.translate(req).sortedBy { it.i }.map { it.text })
         val cfgs = List(3) { Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject["generationConfig"]!!.jsonObject }
-        assertEquals("0", cfgs[0]["thinkingConfig"]!!.jsonObject["thinkingBudget"]!!.jsonPrimitive.content)
-        assertEquals("minimal", cfgs[1]["thinkingConfig"]!!.jsonObject["thinkingLevel"]!!.jsonPrimitive.content)
+        // A Gemini 3 id starts at a thinking level, never at the 2.5-style budget (a 400 there).
+        assertEquals("minimal", cfgs[0]["thinkingConfig"]!!.jsonObject["thinkingLevel"]!!.jsonPrimitive.content)
+        assertEquals("low", cfgs[1]["thinkingConfig"]!!.jsonObject["thinkingLevel"]!!.jsonPrimitive.content)
         assertTrue("thinkingConfig" !in cfgs[2] && "responseMimeType" in cfgs[2])
 
         // The level that worked is reused: one request, straight to it.
@@ -132,7 +133,7 @@ class ProviderEngineTest {
         assertEquals(4, server.requestCount)
 
         // A new run (fresh engine, same settings store) starts from the saved level: no refused call after launch.
-        assertEquals("JSON_ONLY", settings.requestProfile(EngineId.GEMINI, "gemini-3.5-flash-lite"))
+        assertEquals("JSON_ONLY", settings.requestProfile(EngineId.GEMINI, "gemini-3.5-flash-lite|v2"))
         server.enqueue(MockResponse().setBody(ok))
         GeminiEngine(testSupport(), keys, settings).apply { baseUrl = server.url("/v1beta").toString() }.translate(req)
         val cfg = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject["generationConfig"]!!.jsonObject

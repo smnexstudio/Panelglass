@@ -131,6 +131,28 @@ class SettingsViewModelTest {
         assertTrue("Google Translate is on-device", attempted.isEmpty())
     }
 
+    /**
+     * What the Try box showed belongs to the model it ran with: saving another model clears it and leaves the box ready
+     * to run again, and Cancel always returns the box to ready.
+     */
+    @Test fun savingAnotherModelClearsTheTryBoxAndCancelStopsIt() = runBlocking<Unit> {
+        val vm = vm() // the rig builds its registry here
+        registry.setKey(EngineId.GEMINI, "invented-key")
+        settings.setEngine(EngineId.GEMINI)
+        vm.setTryInput("invented line")
+        vm.tryTranslate()
+        val failed = withTimeout(5_000) { vm.tryState.first { !it.running && it.failure != null } }
+        assertTrue("got ${failed.failure}", failed.failure is EngineFailure.Network)
+
+        vm.saveEngineConfig(EngineId.GEMINI, null, "gemini-3.5-flash-lite")
+        assertNull(vm.tryState.value.failure)
+        assertFalse(vm.tryState.value.running)
+
+        vm.cancelTry()
+        assertFalse(vm.tryState.value.running)
+        assertEquals("invented line", vm.tryState.value.input)
+    }
+
     @Test fun swapTradesTheLanguagesAndRemembersThePair() = runBlocking<Unit> {
         val vm = vm()
         vm.setLanguages(Lang.JA, Lang.EN).join()

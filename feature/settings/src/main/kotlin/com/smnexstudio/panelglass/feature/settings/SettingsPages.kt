@@ -203,7 +203,7 @@ private fun EnginePage(vm: SettingsViewModel, sheets: SettingsSheets, onBack: ((
         SectionLabel(stringResource(UiR.string.settings_try))
         TokenCard(Modifier.padding(horizontal = 16.dp)) {
             TryBox(
-                tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onAddKey = { sheets.keyFor = it },
+                tryState, onInput = { vm.setTryInput(it) }, onRun = { vm.tryTranslate() }, onCancel = { vm.cancelTry() }, onAddKey = { sheets.keyFor = it },
                 onUseOnDevice = { vm.selectEngine(EngineId.GOOGLE) }, onDownloadPacks = { vm.downloadPacksAndTry(it) },
             )
         }

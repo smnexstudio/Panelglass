@@ -823,4 +823,7 @@
     <string name="set_privacy_note">Ce qui quitte votre téléphone, selon le moteur</string>
     <string name="set_view_on_github">Voir sur GitHub</string>
     <string name="set_doc_in_english">Cette page est en anglais.</string>
+    <string name="error_secure">Connexion sécurisée à %1$s impossible</string>
+    <string name="error_model_not_found">%1$s ne propose pas ce modèle pour votre clé ; choisissez-en un autre</string>
+    <string name="action_try_model">Essayer %1$s</string>
 </resources>

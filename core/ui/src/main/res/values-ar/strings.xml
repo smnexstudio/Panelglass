@@ -887,4 +887,7 @@
     <string name="set_privacy_note">ما الذي يغادر هاتفك لكل محرّك</string>
     <string name="set_view_on_github">عرض على GitHub</string>
     <string name="set_doc_in_english">هذه الصفحة باللغة الإنجليزية.</string>
+    <string name="error_secure">تعذّر إنشاء اتصال آمن بـ %1$s</string>
+    <string name="error_model_not_found">%1$s لا يوفّر هذا النموذج لمفتاحك؛ اختر نموذجًا آخر</string>
+    <string name="action_try_model">جرّب %1$s</string>
 </resources>

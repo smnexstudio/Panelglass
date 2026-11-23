@@ -807,4 +807,7 @@
     <string name="set_privacy_note">สิ่งที่ออกจากโทรศัพท์ของคุณ ในแต่ละเอนจิน</string>
     <string name="set_view_on_github">ดูบน GitHub</string>
     <string name="set_doc_in_english">หน้านี้เป็นภาษาอังกฤษ</string>
+    <string name="error_secure">สร้างการเชื่อมต่อที่ปลอดภัยกับ %1$s ไม่ได้</string>
+    <string name="error_model_not_found">%1$s ไม่มีโมเดลนี้สำหรับคีย์ของคุณ โปรดเลือกโมเดลอื่น</string>
+    <string name="action_try_model">ลอง %1$s</string>
 </resources>

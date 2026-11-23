@@ -855,4 +855,7 @@
     <string name="set_privacy_note">Что покидает телефон для каждого движка</string>
     <string name="set_view_on_github">Открыть на GitHub</string>
     <string name="set_doc_in_english">Эта страница на английском языке.</string>
+    <string name="error_secure">Не удалось установить защищённое соединение с %1$s</string>
+    <string name="error_model_not_found">%1$s не предоставляет эту модель для вашего ключа; выберите другую</string>
+    <string name="action_try_model">Попробовать %1$s</string>
 </resources>

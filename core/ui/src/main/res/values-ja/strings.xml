@@ -807,4 +807,7 @@
     <string name="set_privacy_note">エンジンごとに端末の外へ出るもの</string>
     <string name="set_view_on_github">GitHub で見る</string>
     <string name="set_doc_in_english">このページは英語です。</string>
+    <string name="error_secure">%1$s に安全に接続できませんでした</string>
+    <string name="error_model_not_found">%1$s ではこのキーでこのモデルを使えません。別のモデルを選んでください</string>
+    <string name="action_try_model">%1$s を試す</string>
 </resources>

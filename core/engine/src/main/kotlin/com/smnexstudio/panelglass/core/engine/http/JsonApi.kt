@@ -5,6 +5,7 @@ import com.smnexstudio.panelglass.core.data.di.HttpsOnly
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
 import com.smnexstudio.panelglass.core.model.EngineId
+import com.smnexstudio.panelglass.core.model.NetworkKind
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -110,8 +111,13 @@ class HttpEngineSupport(
     }
 
     /** An oversized reply is an unusable one, not a network problem; anything else that failed to arrive is. */
-    private fun ioFailure(engine: EngineId, e: IOException): EngineFailure =
-        if (e is ReplyTooLarge) EngineFailure.Malformed(engine) else EngineFailure.Network(engine)
+    private fun ioFailure(engine: EngineId, e: IOException): EngineFailure = when (e) {
+        is ReplyTooLarge -> EngineFailure.Malformed(engine)
+        // SocketTimeoutException is an InterruptedIOException; so is OkHttp's own call timeout.
+        is java.io.InterruptedIOException -> EngineFailure.Network(engine, NetworkKind.TIMEOUT)
+        is javax.net.ssl.SSLException -> EngineFailure.Network(engine, NetworkKind.SECURE)
+        else -> EngineFailure.Network(engine)
+    }
 
     companion object {
         private const val TAG = "HttpEngine"
@@ -122,8 +128,15 @@ class HttpEngineSupport(
         fun mapStatus(engine: EngineId, code: Int, body: String, retryAfter: String?): EngineFailure {
             val lower = body.lowercase()
             return when (code) {
-                401, 403 -> EngineFailure.MissingKey(engine)
+                401 -> EngineFailure.MissingKey(engine)
+                // A 403 is usually the key, but Google also answers it for a project that needs verification or
+                // billing: "add a key" would send the user round in a circle, so the provider's reason is shown.
+                // Only Google's 403 is known to mean more than the key; every other provider keeps 403 = key.
+                403 -> if (engine != EngineId.GEMINI || lower.isBlank() || KEY_WORDS.any { it in lower }) EngineFailure.MissingKey(engine)
+                else EngineFailure.Unavailable(engine, "HTTP 403" + (errorMessage(body)?.let { ": $it" } ?: ""))
                 402 -> EngineFailure.QuotaExceeded(engine)
+                // The server gave up waiting for the request: transient, like a timeout.
+                408 -> EngineFailure.Network(engine, NetworkKind.TIMEOUT)
                 429 -> if ("quota" in lower || "billing" in lower || "insufficient" in lower || "exceeded your current" in lower) EngineFailure.QuotaExceeded(engine)
                 else EngineFailure.RateLimited(engine, (retryAfter?.toLongOrNull()?.times(1000)) ?: 2_000)
                 456 -> EngineFailure.QuotaExceeded(engine) // DeepL: character limit reached
@@ -157,7 +170,9 @@ class HttpEngineSupport(
             return if (clean.length > MAX_MESSAGE) clean.take(MAX_MESSAGE) + "…" else clean
         }
 
-        private val SECRET_LIKE = Regex("[A-Za-z0-9_\\-]{24,}")
+        /** What a 403 body says when the key itself is the problem. */
+        private val KEY_WORDS = listOf("api key", "api_key", "leaked", "invalid key", "unauthorized", "unauthenticated", "incorrect")
+        private val SECRET_LIKE =Regex("[A-Za-z0-9_\\-]{24,}")
         private const val MAX_MESSAGE = 140
     }
 }
