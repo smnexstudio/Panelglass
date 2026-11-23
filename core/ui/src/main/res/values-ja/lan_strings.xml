@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API キー（任意）</string>
+    <string name="lan_endpoint_note">プライベートサーバーのアドレス。HTTPS に対応しています。HTTP はプライベートまたはループバックアドレスのみ許可されます。完全な /chat/completions アドレスも使用できます。</string>
+    <string name="lan_http_warning">HTTP は暗号化されません。ネットワーク上の第三者が翻訳テキストや API キーを読み取ったり改変したりする可能性があります。信頼できるプライベートサーバーとネットワークのみ使用してください。</string>
+    <string name="lan_picker_note">プライベートサーバー · API キーは任意</string>
+</resources>

@@ -41,7 +41,7 @@ class EngineRegistry @Inject constructor(
     private val settings: SettingsRepository,
 ) : EngineResolver {
     private val engines: Map<EngineId, TranslationEngine> =
-        (listOf(gemini, custom, deepL, google, openRouter) + locals.all).associateBy { it.id }
+        (listOf(gemini, custom, custom.forLan(), deepL, google, openRouter) + locals.all).associateBy { it.id }
 
     val all: List<TranslationEngine> get() = EngineId.entries.mapNotNull { engines[it] }
 
@@ -66,6 +66,9 @@ class EngineRegistry @Inject constructor(
         // The user's own server: without a usable HTTPS address there is nothing to call.
         if (id == EngineId.CUSTOM && CustomEndpoint.normalize(settings.current().customBaseUrl) == null) {
             return EngineResolution.Failed(EngineFailure.Unavailable(id, "No server address configured"))
+        }
+        if (id == EngineId.CUSTOM_LAN && CustomEndpoint.normalize(settings.current().lanBaseUrl, true) == null) {
+            return EngineResolution.Failed(EngineFailure.Unavailable(id, "No LAN server address configured"))
         }
         return EngineResolution.Ready(engine)
     }

@@ -63,7 +63,7 @@ fun EnginePickerSheet(
             Text(stringResource(R.string.picker_title), style = MaterialTheme.typography.titleLarge, color = Tokens.Ink, modifier = Modifier.padding(start = 4.dp))
             Text(stringResource(R.string.picker_subtitle), style = MaterialTheme.typography.bodyMedium, color = Tokens.InkSoft, modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 12.dp))
 
-            for (e in EngineId.entries.filter { it.offered && !it.needsKey && it !in hidden }) {
+            for (e in EngineId.entries.filter { it.offered && !it.needsKey && it != EngineId.CUSTOM_LAN && it !in hidden }) {
                 EngineRow(
                     engine = e, selected = e == selected,
                     subtitle = when {
@@ -77,6 +77,13 @@ fun EnginePickerSheet(
                 Spacer(Modifier.height(8.dp))
             }
 
+            EngineRow(
+                engine = EngineId.CUSTOM_LAN, selected = selected == EngineId.CUSTOM_LAN,
+                subtitle = stringResource(R.string.lan_picker_note),
+                onBody = { onConfigure(EngineId.CUSTOM_LAN) },
+                onCheck = { onSelect(EngineId.CUSTOM_LAN); onDismiss() },
+            )
+            Spacer(Modifier.height(8.dp))
             SheetSectionLabel(stringResource(R.string.picker_custom_keys))
             for (e in EngineId.entries.filter { it.offered && it.needsKey }) {
                 val k = keyed(e)
@@ -129,7 +136,7 @@ private fun EngineRow(engine: EngineId, selected: Boolean, subtitle: String, onB
 val EngineId.shortName: String
     get() = when (this) {
         EngineId.GOOGLE -> "G"; EngineId.GEMINI -> "Ge"; EngineId.OPENROUTER -> "R"; EngineId.DEEPL -> "D"
-        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"; EngineId.CUSTOM -> "AI"
+        EngineId.QWEN15_LOCAL -> "Q"; EngineId.GEMMA4_LOCAL -> "G4"; EngineId.CUSTOM -> "AI"; EngineId.CUSTOM_LAN -> "LAN"
     }
 
 /** Provider-tinted tile backgrounds. */
@@ -143,4 +150,5 @@ val EngineId.tileTint: Color
         EngineId.OPENROUTER -> Color(0xFFECE3FA)
         EngineId.DEEPL -> Color(0xFFD5EEF7)
         EngineId.CUSTOM -> Color(0xFFE8E4F8)
+        EngineId.CUSTOM_LAN -> Color(0xFFE6F4EA)
     }

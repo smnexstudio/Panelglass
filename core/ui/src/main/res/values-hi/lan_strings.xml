@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API कुंजी (वैकल्पिक)</string>
+    <string name="lan_endpoint_note">अपने निजी सर्वर का पता। HTTPS समर्थित है। HTTP केवल निजी या लूपबैक पतों के लिए है। पूरा /chat/completions पता भी मान्य है।</string>
+    <string name="lan_http_warning">HTTP एन्क्रिप्टेड नहीं है: नेटवर्क पर अन्य लोग अनुवाद का पाठ और API कुंजी पढ़ या बदल सकते हैं। केवल विश्वसनीय निजी सर्वर और नेटवर्क का उपयोग करें।</string>
+    <string name="lan_picker_note">निजी सर्वर · API कुंजी वैकल्पिक</string>
+</resources>

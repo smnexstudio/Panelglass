@@ -98,7 +98,7 @@ class RegistryAndQwenTest {
     @Test
     fun onlyGeminiGoogleCustomAndOnDeviceModelsAreOfferedAndAPlannedEngineNeverResolves() = runBlocking {
         assertEquals(
-            setOf(EngineId.QWEN15_LOCAL, EngineId.GEMMA4_LOCAL, EngineId.GEMINI, EngineId.GOOGLE, EngineId.CUSTOM),
+            setOf(EngineId.QWEN15_LOCAL, EngineId.GEMMA4_LOCAL, EngineId.GEMINI, EngineId.GOOGLE, EngineId.CUSTOM, EngineId.CUSTOM_LAN),
             EngineId.entries.filter { it.offered }.toSet(),
         )
         // Selected in an older version, key and all: it says so instead of quietly becoming another engine.

@@ -54,6 +54,11 @@ class MangaWebViewClient(
             } else countBlocked()
             return true
         }
+        // Never allow a downgrade or an HTTP frame navigation to reach the network.
+        if (scheme == "http" && (request.isRedirect || !request.isForMainFrame)) {
+            countBlocked()
+            return true
+        }
         if (!request.isForMainFrame) return false
         val crossSite = !sameSite(url.host, pageHost)
         // A known ad host never gets the whole reader, tap or not: pages hang "click anywhere" handlers on the art
@@ -61,8 +66,8 @@ class MangaWebViewClient(
         if (crossSite && adBlockEnabled && blockList.blocks(url)) { countBlocked(); return true }
         // Script-driven cross-site navigation without a tap is a popup or redirect ad.
         if (crossSite && !request.hasGesture() && !request.isRedirect) { countBlocked(); return true }
-        // https only: an http link is followed as its https upgrade (cleartext is off app-wide, so it would only fail).
-        // A server redirect down to http is left to fail: upgrading it would loop against that redirect.
+        // A direct HTTP link may only be opened as its HTTPS upgrade.
+        // HTTP redirects and frame navigations were explicitly blocked above.
         if (scheme == "http" && !request.isRedirect) { WebUrl.https(url.toString())?.let { view.loadUrl(it) }; return true }
         return false
     }
@@ -92,6 +97,12 @@ class MangaWebViewClient(
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
         val url = request.url
+        // Independent of the ad blocker, including app-initiated loads. Redirect-hop
+        // coverage still needs Android instrumentation; this callback sees the initial URL.
+        if (url.scheme?.lowercase() == "http") {
+            countBlocked()
+            return empty(request)
+        }
         if (adBlockEnabled && blockList.blocks(url)) {
             listener.onBlockedCountChanged(blocked.incrementAndGet())
             return empty(request)

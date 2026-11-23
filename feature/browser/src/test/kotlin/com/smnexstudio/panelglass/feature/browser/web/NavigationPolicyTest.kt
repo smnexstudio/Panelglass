@@ -87,9 +87,9 @@ class NavigationPolicyTest {
         assertEquals("https://read.comics.example.com/series/2", loaded())
     }
 
-    /** A server redirect down to http is left to fail (cleartext is off); upgrading it would loop. */
+    /** A downgrade redirect is explicitly cancelled, never upgraded into a redirect loop. */
     @Test fun aRedirectDownToHttpIsNotUpgraded() {
-        assertFalse(navigate(Req("http://read.comics.example.com/series/2", gesture = false, redirect = true)))
+        assertTrue(navigate(Req("http://read.comics.example.com/series/2", gesture = false, redirect = true)))
         assertNull(loaded())
     }
 
@@ -143,6 +143,22 @@ class NavigationPolicyTest {
         client.adBlockEnabled = false
         assertNull(client.shouldInterceptRequest(view, Req("https://ads.example.net/b.gif", main = false)))
         assertEquals(listOf(1, 2), counts)
+    }
+
+    @Test fun httpFrameNavigationsAreBlockedEvenWithoutAdBlocking() {
+        client.adBlockEnabled = false
+        assertTrue(navigate(Req("http://read.comics.example.com/frame", main = false)))
+        assertEquals(1, client.blockedCount)
+    }
+
+    @Test fun httpResourcesAreBlockedEvenWithoutAdBlocking() {
+        client.adBlockEnabled = false
+        for (main in listOf(true, false)) {
+            val response = client.shouldInterceptRequest(view, Req("http://read.comics.example.com/image.jpg", main = main))
+            assertTrue(response != null)
+            assertEquals(0, response!!.data.readBytes().size)
+        }
+        assertEquals(2, client.blockedCount)
     }
 
     @Test fun aNewPageResetsTheBlockedCount() {

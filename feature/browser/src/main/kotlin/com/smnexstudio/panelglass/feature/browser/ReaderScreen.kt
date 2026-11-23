@@ -160,7 +160,7 @@ fun ReaderScreen(
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
             settings.mediaPlaybackRequiresUserGesture = true
-            // https only: an https page's http subresources are never loaded (the app sends no cleartext at all).
+            // Refuse mixed content in the reader; the isolated LAN engine has a separate HTTP exception.
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             // Multiple windows on, so window.open / target=_blank reach onCreateWindow (NewWindows) and get a
             // decision; with them off a single-window WebView loads them over the reader itself.

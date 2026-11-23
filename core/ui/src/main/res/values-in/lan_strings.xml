@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Kunci API (opsional)</string>
+    <string name="lan_endpoint_note">Alamat server pribadi. HTTPS didukung. HTTP hanya mengizinkan alamat privat atau loopback. Alamat lengkap /chat/completions juga dapat digunakan.</string>
+    <string name="lan_http_warning">HTTP tidak terenkripsi: orang lain di jaringan dapat membaca atau mengubah teks terjemahan dan kunci API. Gunakan hanya server dan jaringan pribadi tepercaya.</string>
+    <string name="lan_picker_note">Server pribadi · kunci API opsional</string>
+</resources>

@@ -1,6 +1,7 @@
 package com.smnexstudio.panelglass.core.engine.http
 
 import android.util.Log
+import com.smnexstudio.panelglass.core.model.CustomEndpoint
 import com.smnexstudio.panelglass.core.data.di.HttpsOnly
 import com.smnexstudio.panelglass.core.model.EngineException
 import com.smnexstudio.panelglass.core.model.EngineFailure
@@ -14,6 +15,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -43,7 +45,9 @@ interface JsonApi {
  * - **No redirects.** A 307/308 would re-send the whole request (page text, notes, glossary) to another host, and
  *   OkHttp drops only `Authorization` across hosts, not Gemini's `x-goog-api-key`. An API has no reason to redirect a
  *   call, so a 3xx is a typed failure that names the problem instead.
- * - **HTTPS only** on every hop ([HttpsOnly] as a network interceptor), on top of Android's cleartext policy.
+ * - **HTTPS only** for normal provider calls ([HttpsOnly] as a network interceptor). Only CUSTOM_LAN HTTP POSTs
+ *   use the separate non-proxying client with private/loopback DNS and connected-peer validation.
+ *   The isolated socket transport leaves Android platform cleartext blocking enabled for WebView.
  * - **Replies capped** at [maxReplyBytes] ([ReplyCap]): the user's own server is not one we vouch for.
  *
  * [httpsOnly] is off only in JVM tests, whose MockWebServer speaks plain HTTP.
@@ -71,8 +75,23 @@ class HttpEngineSupport(
         .build()
         .create(JsonApi::class.java)
 
+    // A raw-socket exception only for LAN JSON POSTs; WebView keeps the platform HTTP block.
+    private val localTransport = LanSocketTransport(maxReplyBytes)
+
+    private suspend fun postLocal(url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
+        val authorization = headers.entries.firstOrNull { it.key.equals("Authorization", true) }?.value
+        val reply = localTransport.postCancellable(url.toHttpUrl(), authorization, body.toString().toByteArray(Charsets.UTF_8))
+        val text = reply.body.toString(Charsets.UTF_8)
+        if (reply.code !in 200..299) {
+            throw EngineException(mapStatus(EngineId.CUSTOM_LAN, reply.code, text, reply.headers["retry-after"]))
+        }
+        if (text.isBlank()) throw EngineException(EngineFailure.Malformed(EngineId.CUSTOM_LAN))
+        return json.parseToJsonElement(text)
+    }
+
     suspend fun post(engine: EngineId, url: String, headers: Map<String, String>, body: JsonObject): JsonElement {
         val resp = try {
+            if (engine == EngineId.CUSTOM_LAN && !url.toHttpUrl().isHttps) return postLocal(url, headers, body)
             api.post(url, headers, body)
         } catch (e: IOException) {
             // Class name only: the message can contain the URL, which for some providers carries the key.

@@ -36,7 +36,10 @@ class CustomOpenAiEngine @Inject constructor(
     keys: SecureKeyStore,
     private val settings: SettingsRepository,
 ) : LlmEngine(support, keys) {
-    override val id = EngineId.CUSTOM
+    private var lanMode = false
+    override val id: EngineId get() = if (lanMode) EngineId.CUSTOM_LAN else EngineId.CUSTOM
+
+    internal fun forLan(): CustomOpenAiEngine = CustomOpenAiEngine(support, keys, settings).apply { lanMode = true }
     /** Text only: the crops and the SFX montage stay on the phone. */
     override val acceptsImages: Boolean get() = false
 
@@ -59,12 +62,12 @@ class CustomOpenAiEngine @Inject constructor(
     var allowHttpForTests: Boolean = false
 
     /** The normalized base address from Settings, or null when the user has not set a usable one. */
-    private fun baseUrl(s: Settings): String? = CustomEndpoint.normalize(s.customBaseUrl, allowHttpForTests)
+    private fun baseUrl(s: Settings): String? = if (lanMode) CustomEndpoint.normalize(s.lanBaseUrl, true) else CustomEndpoint.normalize(s.customBaseUrl, allowHttpForTests)
 
     override suspend fun warmUp(src: Lang, tgt: Lang) {
         val base = baseUrl(settings.current()) ?: return
         lastBase = base
-        support.warm(warmUrl)
+        if (!lanMode) support.warm(warmUrl)
     }
 
     override suspend fun complete(apiKey: String, system: String, turns: List<Turn>, maxOutputTokens: Int): String {
@@ -75,10 +78,10 @@ class CustomOpenAiEngine @Inject constructor(
         lastBase = base
         val url = CustomEndpoint.completionsUrl(base)
 
-        val headers = mapOf(
-            "Authorization" to "Bearer $apiKey",
-            "Content-Type" to "application/json",
-        )
+        val headers = buildMap {
+            put("Content-Type", "application/json")
+            if (apiKey.isNotBlank()) put("Authorization", "Bearer $apiKey")
+        }
         val reply = try {
             support.post(id, url, headers, body(model, system, turns, maxOutputTokens, withTemperature = true))
         } catch (e: EngineException) {

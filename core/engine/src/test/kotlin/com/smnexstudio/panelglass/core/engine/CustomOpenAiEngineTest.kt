@@ -315,4 +315,38 @@ class CustomOpenAiEngineTest {
         val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
         assertTrue(e.failure is EngineFailure.Malformed)
     }
+    private suspend fun lanEngine(): CustomOpenAiEngine {
+        settings.setLanBaseUrl(server.url("/v1/chat/completions").toString())
+        settings.setModel(EngineId.CUSTOM_LAN, "lan-model")
+        val support = com.smnexstudio.panelglass.core.engine.http.HttpEngineSupport(
+            okhttp3.OkHttpClient(), Json { ignoreUnknownKeys = true }, true,
+        )
+        return CustomOpenAiEngine(support, keys, settings).forLan()
+    }
+
+    @Test fun lanWorksWithoutAKeyAndNeverUsesTheCloudKey() = runBlocking {
+        keys.set(EngineId.CUSTOM, "cloud-secret")
+        server.enqueue(MockResponse().setBody(ok))
+        val out = lanEngine().translate(req)
+        assertEquals(listOf("Hello", "Thanks"), out.sortedBy { it.i }.map { it.text })
+        val sent = server.takeRequest()
+        assertEquals(null, sent.getHeader("Authorization"))
+        assertEquals("/v1/chat/completions", sent.path)
+    }
+
+    @Test fun lanUsesOnlyItsOwnOptionalKey() = runBlocking {
+        keys.set(EngineId.CUSTOM, "cloud-secret")
+        keys.set(EngineId.CUSTOM_LAN, "lan-secret")
+        server.enqueue(MockResponse().setBody(ok))
+        lanEngine().translate(req)
+        assertEquals("Bearer lan-secret", server.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test fun lanDoesNotFollowRedirects() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(307).addHeader("Location", server.url("/other")))
+        val engine = lanEngine()
+        val e = assertThrows(EngineException::class.java) { runBlocking { engine.translate(req) } }
+        assertTrue(e.failure is EngineFailure.Unavailable)
+        assertEquals(1, server.requestCount)
+    }
 }

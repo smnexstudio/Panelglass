@@ -29,6 +29,8 @@ object NewWindows {
         val probe = WebView(parent.context).apply {
             // It only has to see the first URL: no scripts and no local files.
             settings.javaScriptEnabled = false
+            // This probe only observes a target; it must never fetch any network resource.
+            settings.blockNetworkLoads = true
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW

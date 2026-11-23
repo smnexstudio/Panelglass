@@ -190,6 +190,38 @@ class SettingsViewModelTest {
         assertEquals(2, summary.series)
     }
 
+    @Test fun unconfiguredLanEngineRequestsConfigurationWithoutSelecting() = runBlocking<Unit> {
+        val vm = vm()
+        vm.selectEngine(EngineId.CUSTOM_LAN).join()
+        assertEquals(EngineId.CUSTOM_LAN, vm.needsKey.value)
+        assertEquals(EngineId.GOOGLE, settings.current().engineId)
+        assertTrue(attempted.isEmpty())
+    }
+
+    @Test fun configuredLanEngineCanBeSelectedWithoutAKey() = runBlocking<Unit> {
+        val vm = vm()
+        settings.setLanBaseUrl("http://192.168.1.20:8080/v1")
+        settings.setModel(EngineId.CUSTOM_LAN, "lan-test-model")
+        vm.selectEngine(EngineId.CUSTOM_LAN).join()
+        assertEquals(EngineId.CUSTOM_LAN, settings.current().engineId)
+        assertFalse(registry.hasKey(EngineId.CUSTOM_LAN))
+        assertNull(vm.needsKey.value)
+        assertTrue(attempted.isEmpty())
+    }
+
+    @Test fun savingKeylessLanConfigurationCompletesPendingSelection() = runBlocking<Unit> {
+        val vm = vm()
+        vm.selectEngine(EngineId.CUSTOM_LAN).join()
+        vm.saveEngineConfig(EngineId.CUSTOM_LAN, null, "lan-test-model", "http://192.168.1.20:8080/v1")
+        engineBecomes(EngineId.CUSTOM_LAN)
+        assertEquals("lan-test-model", settings.current().modelFor(EngineId.CUSTOM_LAN))
+        assertTrue(settings.current().lanBaseUrl.startsWith("http://192.168.1.20:8080"))
+        assertFalse(registry.hasKey(EngineId.CUSTOM_LAN))
+        assertFalse(registry.hasKey(EngineId.CUSTOM))
+        assertNull(vm.needsKey.value)
+        assertTrue(attempted.isEmpty())
+    }
+
     @Test fun storageIsMeasuredFromThePhone() = runBlocking<Unit> {
         val vm = vm()
         vm.loadStorage().join()

@@ -418,6 +418,7 @@ class SettingsViewModel @Inject constructor(
 
     /** Explicit provider choice. A keyed engine without a key is not selected; the key sheet is requested instead. */
     fun selectEngine(id: EngineId) = viewModelScope.launch {
+        if (id == EngineId.CUSTOM_LAN && (CustomEndpoint.normalize(repo.current().lanBaseUrl, true) == null || repo.current().modelFor(id).isBlank())) { _needsKey.value = id; return@launch }
         if (id.needsKey && !registry.hasKey(id)) { _needsKey.value = id; return@launch }
         repo.setEngine(id)
     }
@@ -431,11 +432,11 @@ class SettingsViewModel @Inject constructor(
      */
     fun saveEngineConfig(id: EngineId, key: String?, model: String?, baseUrl: String? = null) {
         // Validate before changing the key, model or pending engine selection.
-        val normalizedBaseUrl = if (id == EngineId.CUSTOM) {
-            CustomEndpoint.normalize(baseUrl ?: return) ?: return
+        val normalizedBaseUrl = if (id == EngineId.CUSTOM || id == EngineId.CUSTOM_LAN) {
+            CustomEndpoint.normalize(baseUrl ?: return, id == EngineId.CUSTOM_LAN) ?: return
         } else null
         // Read the pending selection now: the sheet dismisses (and clears it) right after calling us.
-        val completesSelection = _needsKey.value == id && (key != null || id in keys.value)
+        val completesSelection = _needsKey.value == id && (!id.needsKey || key != null || id in keys.value)
         _needsKey.value = null
         // A new key or model makes what a running Try is waiting on (and what it last showed) stale: stop it and leave
         // the box ready, so Translate runs the text again with what was just saved.
@@ -446,7 +447,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             if (key != null) registry.setKey(id, key)
             if (model != null && id.hasModel) repo.setModel(id, model)
-            if (normalizedBaseUrl != null) repo.setCustomBaseUrl(normalizedBaseUrl)
+            if (normalizedBaseUrl != null) {
+                if (id == EngineId.CUSTOM_LAN) repo.setLanBaseUrl(normalizedBaseUrl) else repo.setCustomBaseUrl(normalizedBaseUrl)
+            }
             if (completesSelection) repo.setEngine(id)
         }
     }

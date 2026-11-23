@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API 密钥（可选）</string>
+    <string name="lan_endpoint_note">输入私有服务器地址。支持 HTTPS。HTTP 仅允许私有或回环地址，也可粘贴完整的 /chat/completions 地址。</string>
+    <string name="lan_http_warning">HTTP 未加密：网络中的其他人可能读取或修改翻译文本及 API 密钥。请仅使用可信的私有服务器和网络。</string>
+    <string name="lan_picker_note">私有服务器 · API 密钥可选</string>
+</resources>

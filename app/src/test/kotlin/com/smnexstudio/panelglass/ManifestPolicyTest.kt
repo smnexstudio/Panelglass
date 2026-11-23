@@ -58,9 +58,16 @@ class ManifestPolicyTest {
         assertTrue(subtype.getAttributeNS(android, "value").isNotBlank())
     }
 
-    @Test fun cleartextIsNeverAllowed() {
-        assertFalse(application.hasAttributeNS(android, "usesCleartextTraffic"), "usesCleartextTraffic must not be set (it defaults to false)")
-        assertFalse(application.hasAttributeNS(android, "networkSecurityConfig"), "no network security config that could allow cleartext")
+    @Test fun localEndpointNetworkConfigIsDeclared() {
+        assertEquals("@xml/network_security_config", application.getAttributeNS(android, "networkSecurityConfig"))
+    }
+
+    @Test fun platformCleartextIsBlockedWithoutDomainExceptions() {
+        val config = xml("src/main/res/xml/network_security_config.xml")
+        assertEquals("false", config.children("base-config").single().getAttribute("cleartextTrafficPermitted"))
+        assertTrue(config.children("domain-config").isEmpty(), "LAN must not relax WebView platform policy")
+        assertTrue(config.children("debug-overrides").isEmpty(), "No test trust override in production")
+        assertFalse(application.getAttributeNS(android, "usesCleartextTraffic") == "true")
     }
 
     @Test fun nothingIsBackedUp() {

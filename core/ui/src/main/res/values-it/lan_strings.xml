@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">Chiave API (facoltativa)</string>
+    <string name="lan_endpoint_note">Indirizzo del server privato. HTTPS è supportato. HTTP consente solo indirizzi privati o di loopback. Funziona anche un indirizzo /chat/completions completo.</string>
+    <string name="lan_http_warning">HTTP non cifrato: altri utenti della rete possono leggere o modificare il testo tradotto e la chiave API. Usa solo server e reti privati affidabili.</string>
+    <string name="lan_picker_note">Server privato · chiave API facoltativa</string>
+</resources>

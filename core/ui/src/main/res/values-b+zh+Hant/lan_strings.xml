@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lan_key_optional">API 金鑰（選填）</string>
+    <string name="lan_endpoint_note">輸入私人伺服器位址。支援 HTTPS。HTTP 僅允許私人或回環位址，也可貼上完整的 /chat/completions 位址。</string>
+    <string name="lan_http_warning">HTTP 未加密：網路中的其他人可能讀取或修改翻譯文字及 API 金鑰。請僅使用可信任的私人伺服器和網路。</string>
+    <string name="lan_picker_note">私人伺服器 · API 金鑰選填</string>
+</resources>
